@@ -1,0 +1,20 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        " Q ",
+        "QDQ",
+        " Q "
+    ],
+    "key": {
+        "Q": {
+            "item": "minecraft:quartz"
+        },
+        "D": {
+            "item": "minecraft:diamond"
+        }
+    },
+    "result": {
+        "item": "bodycam:bodycam_monitor",
+        "count": 1
+    }
+}
