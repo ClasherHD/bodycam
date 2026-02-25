@@ -1,6 +1,0 @@
-{
-    "parent": "item/generated",
-    "textures": {
-        "layer0": "bodycam:item/Wonderland_Compass"
-    }
-}
