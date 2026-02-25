@@ -62,6 +62,9 @@ public class BodycamSelectionScreen extends Screen {
             int y = startY + i * (buttonHeight + 5);
             this.addRenderableWidget(Button.builder(Component.literal(p.name), (btn) -> {
                 try {
+                    net.minecraft.client.Minecraft.getInstance().getSoundManager()
+                            .play(net.minecraft.client.resources.sounds.SimpleSoundInstance
+                                    .forUI(net.minecraft.sounds.SoundEvents.LODESTONE_COMPASS_LOCK, 1.0F));
                     this.minecraft.setScreen(new BodycamViewScreen(p.uuid, p.name, this.hasReach));
                 } catch (Exception e) {
                     e.printStackTrace();
