@@ -5,9 +5,10 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.entity.player.Player;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class BodycamSelectionScreen extends Screen {
 
@@ -26,27 +27,21 @@ public class BodycamSelectionScreen extends Screen {
             return;
 
         class PlayerEntry {
-            final java.util.UUID uuid;
+            final UUID uuid;
             final String name;
 
-            PlayerEntry(java.util.UUID uuid, String name) {
+            PlayerEntry(UUID uuid, String name) {
                 this.uuid = uuid;
                 this.name = name;
             }
         }
 
-        List<PlayerEntry> players = new java.util.ArrayList<>();
+        List<PlayerEntry> players = new ArrayList<>();
 
-        if (this.hasReach && mc.getConnection() != null) {
+        if (mc.getConnection() != null) {
             for (net.minecraft.client.multiplayer.PlayerInfo info : mc.getConnection().getOnlinePlayers()) {
                 if (!info.getProfile().getId().equals(mc.player.getUUID())) {
                     players.add(new PlayerEntry(info.getProfile().getId(), info.getProfile().getName()));
-                }
-            }
-        } else {
-            for (Player p : mc.level.players()) {
-                if (p != mc.player) {
-                    players.add(new PlayerEntry(p.getUUID(), p.getName().getString()));
                 }
             }
         }
@@ -62,12 +57,11 @@ public class BodycamSelectionScreen extends Screen {
             int y = startY + i * (buttonHeight + 5);
             this.addRenderableWidget(Button.builder(Component.literal(p.name), (btn) -> {
                 try {
-                    net.minecraft.client.Minecraft.getInstance().getSoundManager()
+                    Minecraft.getInstance().getSoundManager()
                             .play(net.minecraft.client.resources.sounds.SimpleSoundInstance
                                     .forUI(net.minecraft.sounds.SoundEvents.LODESTONE_COMPASS_LOCK, 1.0F));
                     this.minecraft.setScreen(new BodycamViewScreen(p.uuid, p.name, this.hasReach));
                 } catch (Exception e) {
-                    e.printStackTrace();
                 }
             }).bounds(startX, y, buttonWidth, buttonHeight).build());
         }

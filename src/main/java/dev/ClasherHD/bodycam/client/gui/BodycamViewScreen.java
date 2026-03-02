@@ -1,34 +1,45 @@
 package dev.ClasherHD.bodycam.client.gui;
 
+import dev.ClasherHD.bodycam.network.PacketHandler;
+import io.netty.buffer.Unpooled;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
+
+import java.util.UUID;
 
 public class BodycamViewScreen extends Screen {
 
-    private final java.util.UUID targetId;
+    private final UUID targetId;
     private final String targetName;
     private final boolean hasReach;
     public static boolean isMonitoring = false;
-    public static java.util.UUID targetUuid;
+    public static UUID targetUuid;
     public static String targetNameStatic;
+    public static boolean hasReachStatic;
 
-    public BodycamViewScreen(java.util.UUID targetId, String targetName, boolean hasReach) {
+    public BodycamViewScreen(UUID targetId, String targetName, boolean hasReach) {
         super(Component.translatable("item.bodycam.bodycam_monitor"));
         this.targetId = targetId;
         this.targetName = targetName;
         BodycamViewScreen.targetUuid = targetId;
         BodycamViewScreen.targetNameStatic = targetName;
         this.hasReach = hasReach;
+        BodycamViewScreen.hasReachStatic = hasReach;
     }
 
-    public java.util.UUID getTargetId() {
+    public UUID getTargetId() {
         return this.targetId;
     }
 
-    private static final net.minecraft.resources.ResourceLocation GUI_ICONS_LOCATION = new net.minecraft.resources.ResourceLocation(
+    private static final ResourceLocation GUI_ICONS_LOCATION = new ResourceLocation(
             "minecraft", "textures/gui/icons.png");
     private int fadeTicks = 0;
     private boolean manualExit = false;
@@ -44,23 +55,18 @@ public class BodycamViewScreen extends Screen {
             return;
         }
         BodycamViewScreen.isMonitoring = true;
-        if (this.hasReach) {
-            dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE
-                    .sendToServer(new dev.ClasherHD.bodycam.network.BodycamSetCameraPacket(this.targetId));
-        } else if (mc.level != null) {
-            Player targetPlayer = mc.level.getPlayerByUUID(this.targetId);
-            if (targetPlayer != null && targetPlayer.isAlive()) {
-                mc.setCameraEntity(targetPlayer);
-            }
-        }
+
+        FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
+        buf.writeUUID(this.targetId);
+        ClientPlayNetworking.send(PacketHandler.SET_CAMERA_ID, buf);
     }
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (this.minecraft != null && this.minecraft.options.keyShift.matches(keyCode, scanCode)) {
-            if (BodycamViewScreen.isMonitoring && this.hasReach) {
-                dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE
-                        .sendToServer(new dev.ClasherHD.bodycam.network.BodycamResetCameraPacket());
+            if (BodycamViewScreen.isMonitoring) {
+                FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
+                ClientPlayNetworking.send(PacketHandler.RESET_CAMERA_ID, buf);
             }
             this.manualExit = true;
             this.onClose();
@@ -68,7 +74,7 @@ public class BodycamViewScreen extends Screen {
         }
         if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE) {
             if (this.minecraft != null) {
-                this.minecraft.setScreen(new net.minecraft.client.gui.screens.PauseScreen(true));
+                this.minecraft.setScreen(new PauseScreen(true));
             }
             return true;
         }
@@ -101,13 +107,13 @@ public class BodycamViewScreen extends Screen {
                 graphics.drawString(this.font, exitText, this.width - this.font.width(exitText) - 10, 10, color, true);
             }
 
-            if (mc.player != null && this.hasReach) {
+            if (mc.player != null) {
                 float health = mc.player.getHealth();
                 float maxHealth = mc.player.getMaxHealth();
                 float absorption = mc.player.getAbsorptionAmount();
 
-                int maxHealthHearts = net.minecraft.util.Mth.ceil(maxHealth / 2.0F);
-                int absorbHearts = net.minecraft.util.Mth.ceil(absorption / 2.0F);
+                int maxHealthHearts = Mth.ceil(maxHealth / 2.0F);
+                int absorbHearts = Mth.ceil(absorption / 2.0F);
 
                 int xBase = this.width / 2 - 91;
                 int yBase = this.height - 39;
@@ -156,8 +162,6 @@ public class BodycamViewScreen extends Screen {
             if (mc != null && mc.player != null) {
                 mc.setCameraEntity(mc.player);
             }
-            if (this.hasReach) {
-            }
         }
         super.onClose();
     }
@@ -185,23 +189,24 @@ public class BodycamViewScreen extends Screen {
 
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || !mc.player.isAlive()) {
-            if (BodycamViewScreen.isMonitoring && this.hasReach) {
-                dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE
-                        .sendToServer(new dev.ClasherHD.bodycam.network.BodycamResetCameraPacket());
+            if (BodycamViewScreen.isMonitoring) {
+                FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
+                ClientPlayNetworking.send(PacketHandler.RESET_CAMERA_ID, buf);
             }
             BodycamViewScreen.isMonitoring = false;
             mc.setScreen(null);
             return;
         }
 
-        if (this.hasReach && mc.level != null) {
-            net.minecraft.world.entity.player.Player targetPlayer = mc.level.getPlayerByUUID(this.targetId);
-            if (targetPlayer == null) {
+        if (mc.level != null) {
+            Player targetPlayer = mc.level.getPlayerByUUID(this.targetId);
+            if (targetPlayer == null || (!this.hasReach
+                    && (mc.player.level() != targetPlayer.level() || mc.player.distanceTo(targetPlayer) > 500.0D))) {
                 this.targetLostTicks++;
                 if (this.targetLostTicks > 20) {
-                    if (BodycamViewScreen.isMonitoring && this.hasReach) {
-                        dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE
-                                .sendToServer(new dev.ClasherHD.bodycam.network.BodycamResetCameraPacket());
+                    if (BodycamViewScreen.isMonitoring) {
+                        FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
+                        ClientPlayNetworking.send(PacketHandler.RESET_CAMERA_ID, buf);
                     }
                     this.manualExit = true;
                     this.onClose();

@@ -1,4 +1,6 @@
 {
   "item.bodycam.bodycam_monitor": "Monitor",
-  "gui.bodycam.no_target": "No one to watch"
+  "gui.bodycam.no_target": "No one to watch",
+  "gui.bodycam.signal_lost": "Signal lost",
+  "enchantment.bodycam.reach": "Reach"
 }

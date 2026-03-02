@@ -1,6 +1,8 @@
 package dev.ClasherHD.bodycam.enchantment;
 
+import dev.ClasherHD.bodycam.item.BodycamMonitorItem;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentCategory;
 
@@ -26,12 +28,7 @@ public class BodycamReachEnchantment extends Enchantment {
     }
 
     @Override
-    public boolean canEnchant(net.minecraft.world.item.ItemStack stack) {
-        return stack.getItem() instanceof dev.ClasherHD.bodycam.item.BodycamMonitorItem;
-    }
-
-    @Override
-    public boolean canApplyAtEnchantingTable(net.minecraft.world.item.ItemStack stack) {
-        return stack.getItem() instanceof dev.ClasherHD.bodycam.item.BodycamMonitorItem;
+    public boolean canEnchant(ItemStack stack) {
+        return stack.getItem() instanceof BodycamMonitorItem;
     }
 }
