@@ -25,6 +25,7 @@ out/
 .classpath
 .settings/
 bin/
+bin/main/
 
 # VS Code
 .vscode/
