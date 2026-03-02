@@ -76,6 +76,8 @@ public class BodycamResetCameraPacket {
                         .getOrDefault(sender.getUUID(), net.minecraft.world.phys.Vec3.ZERO);
 
                 sender.teleportTo(originalLevel, lastPos.x, lastPos.y, lastPos.z, yRot, xRot);
+                sender.teleportTo(originalLevel, lastPos.x, lastPos.y, lastPos.z, yRot, xRot);
+
                 sender.setDeltaMovement(motion);
                 sender.hurtMarked = true;
                 sender.fallDistance = lastFall;

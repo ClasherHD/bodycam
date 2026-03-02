@@ -1,11 +1,11 @@
 modLoader="javafml"
 loaderVersion="[47,)"
-license="MIT"
+license="GPL-3.0"
 
 [[mods]]
 modId="bodycam"
-version="1.0.0"
-displayName="Bodycam for Wonderland.jar"
+version="1.2"
+displayName="Bodycam"
 authors="Clasher"
 description="Erlaubt es den Spieler seine Freunde zu beobachten"
 

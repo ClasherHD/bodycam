@@ -123,6 +123,8 @@ public class BodycamSetCameraPacket {
             if (player.level() != target.level()) {
                 player.teleportTo(target.serverLevel(), target.getX(), target.getY(), target.getZ(), target.getYRot(),
                         target.getXRot());
+                player.teleportTo(target.serverLevel(), target.getX(), target.getY(), target.getZ(), target.getYRot(),
+                        target.getXRot());
             } else {
                 player.connection.teleport(target.getX(), target.getY(), target.getZ(), target.getYRot(),
                         target.getXRot());

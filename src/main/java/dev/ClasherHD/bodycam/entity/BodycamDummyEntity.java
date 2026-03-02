@@ -99,6 +99,8 @@ public class BodycamDummyEntity extends LivingEntity {
 
                     player.teleportTo((net.minecraft.server.level.ServerLevel) this.level(), this.getX(),
                             this.getY(), this.getZ(), this.getYRot(), this.getXRot());
+                    player.teleportTo((net.minecraft.server.level.ServerLevel) this.level(), this.getX(),
+                            this.getY(), this.getZ(), this.getYRot(), this.getXRot());
                     player.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
 
                     boolean success = player.hurt(source, amount);
@@ -137,8 +139,13 @@ public class BodycamDummyEntity extends LivingEntity {
                     player.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
                     player.teleportTo(dummyLevel, this.getX(), this.getY(),
                             this.getZ(), this.getYRot(), this.getXRot());
+                    player.teleportTo(dummyLevel, this.getX(), this.getY(),
+                            this.getZ(), this.getYRot(), this.getXRot());
                     player.heal(amount);
                     player.setGameMode(net.minecraft.world.level.GameType.SPECTATOR);
+                    player.teleportTo(camLevel, camera.getX(),
+                            camera.getY(),
+                            camera.getZ(), camera.getYRot(), camera.getXRot());
                     player.teleportTo(camLevel, camera.getX(),
                             camera.getY(),
                             camera.getZ(), camera.getYRot(), camera.getXRot());
@@ -169,8 +176,13 @@ public class BodycamDummyEntity extends LivingEntity {
                     player.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
                     player.teleportTo(dummyLevel, this.getX(), this.getY(),
                             this.getZ(), this.getYRot(), this.getXRot());
+                    player.teleportTo(dummyLevel, this.getX(), this.getY(),
+                            this.getZ(), this.getYRot(), this.getXRot());
                     boolean success = player.addEffect(effectInstance, entity);
                     player.setGameMode(net.minecraft.world.level.GameType.SPECTATOR);
+                    player.teleportTo(camLevel, camera.getX(),
+                            camera.getY(),
+                            camera.getZ(), camera.getYRot(), camera.getXRot());
                     player.teleportTo(camLevel, camera.getX(),
                             camera.getY(),
                             camera.getZ(), camera.getYRot(), camera.getXRot());
