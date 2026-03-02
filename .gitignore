@@ -1,4 +1,36 @@
-# Project exclude paths
-/.gradle/
-/build/
+# Gradle
+.gradle/
+build/
 /build/classes/java/main/
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+
+# Laufzeit und Logs (Minecraft)
+run/
+logs/
+crash-reports/
+usercache.json
+usernamecache.json
+*.log
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# Eclipse
+.project
+.classpath
+.settings/
+bin/
+bin/main/
+
+# VS Code
+.vscode/
+.factorypath
+
+# OS spezifisch
+.DS_Store
+Thumbs.db
