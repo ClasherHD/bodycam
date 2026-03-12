@@ -29,5 +29,10 @@ public class PacketHandler {
                 BodycamResetCameraPacket::encode,
                 BodycamResetCameraPacket::decode,
                 BodycamResetCameraPacket::handle);
+
+        INSTANCE.registerMessage(id(), BodycamForceClosePacket.class,
+                BodycamForceClosePacket::encode,
+                BodycamForceClosePacket::decode,
+                BodycamForceClosePacket::handle);
     }
 }

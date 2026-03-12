@@ -37,16 +37,10 @@ public class BodycamSelectionScreen extends Screen {
 
         List<PlayerEntry> players = new java.util.ArrayList<>();
 
-        if (this.hasReach && mc.getConnection() != null) {
+        if (mc.getConnection() != null) {
             for (net.minecraft.client.multiplayer.PlayerInfo info : mc.getConnection().getOnlinePlayers()) {
                 if (!info.getProfile().getId().equals(mc.player.getUUID())) {
                     players.add(new PlayerEntry(info.getProfile().getId(), info.getProfile().getName()));
-                }
-            }
-        } else {
-            for (Player p : mc.level.players()) {
-                if (p != mc.player) {
-                    players.add(new PlayerEntry(p.getUUID(), p.getName().getString()));
                 }
             }
         }
@@ -61,13 +55,20 @@ public class BodycamSelectionScreen extends Screen {
             PlayerEntry p = players.get(i);
             int y = startY + i * (buttonHeight + 5);
             this.addRenderableWidget(Button.builder(Component.literal(p.name), (btn) -> {
+                if (!this.hasReach && mc.level != null) {
+                    Player targetPlayer = mc.level.getPlayerByUUID(p.uuid);
+                    if (targetPlayer == null || targetPlayer.distanceTo(mc.player) > 500.0D) {
+                        mc.player.displayClientMessage(Component.translatable("message.bodycam.signal_weak").withStyle(net.minecraft.ChatFormatting.RED), false);
+                        mc.setScreen(null);
+                        return;
+                    }
+                }
                 try {
                     net.minecraft.client.Minecraft.getInstance().getSoundManager()
                             .play(net.minecraft.client.resources.sounds.SimpleSoundInstance
                                     .forUI(net.minecraft.sounds.SoundEvents.LODESTONE_COMPASS_LOCK, 1.0F));
                     this.minecraft.setScreen(new BodycamViewScreen(p.uuid, p.name, this.hasReach));
                 } catch (Exception e) {
-                    e.printStackTrace();
                 }
             }).bounds(startX, y, buttonWidth, buttonHeight).build());
         }

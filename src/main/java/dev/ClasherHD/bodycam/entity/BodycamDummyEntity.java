@@ -26,6 +26,10 @@ public class BodycamDummyEntity extends LivingEntity {
     public static final java.util.Map<java.util.UUID, Float> DUMMY_FALL = new java.util.concurrent.ConcurrentHashMap<>();
     public static final java.util.Map<java.util.UUID, net.minecraft.world.phys.Vec3> DUMMY_MOTION = new java.util.concurrent.ConcurrentHashMap<>();
 
+    private int currentLoadedChunkX = Integer.MAX_VALUE;
+    private int currentLoadedChunkZ = Integer.MAX_VALUE;
+    private boolean isChunkForced = false;
+
     public static net.minecraft.world.entity.ai.attributes.AttributeSupplier.Builder createAttributes() {
         return net.minecraft.world.entity.Mob.createMobAttributes()
                 .add(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH)
@@ -40,6 +44,15 @@ public class BodycamDummyEntity extends LivingEntity {
 
     public BodycamDummyEntity(EntityType<? extends LivingEntity> type, Level level) {
         super(type, level);
+    }
+
+    @Override
+    public void remove(net.minecraft.world.entity.Entity.RemovalReason reason) {
+        if (!this.level().isClientSide() && this.isChunkForced && this.level() instanceof net.minecraft.server.level.ServerLevel) {
+            net.minecraftforge.common.world.ForgeChunkManager.forceChunk((net.minecraft.server.level.ServerLevel) this.level(), "bodycam", this, this.currentLoadedChunkX, this.currentLoadedChunkZ, false, false);
+            this.isChunkForced = false;
+        }
+        super.remove(reason);
     }
 
     @Override
@@ -208,6 +221,38 @@ public class BodycamDummyEntity extends LivingEntity {
                     || !this.getUUID().equals(owner.getPersistentData().getUUID("bodycam_dummy_uuid"))) {
                 this.discard();
                 return;
+            }
+
+
+
+            int currentChunkX = this.blockPosition().getX() >> 4;
+            int currentChunkZ = this.blockPosition().getZ() >> 4;
+
+            if (currentChunkX != this.currentLoadedChunkX || currentChunkZ != this.currentLoadedChunkZ) {
+                if (this.isChunkForced && this.currentLoadedChunkX != Integer.MAX_VALUE && this.currentLoadedChunkZ != Integer.MAX_VALUE) {
+                    net.minecraftforge.common.world.ForgeChunkManager.forceChunk((net.minecraft.server.level.ServerLevel) this.level(), "bodycam", this, this.currentLoadedChunkX, this.currentLoadedChunkZ, false, false);
+                }
+                net.minecraftforge.common.world.ForgeChunkManager.forceChunk((net.minecraft.server.level.ServerLevel) this.level(), "bodycam", this, currentChunkX, currentChunkZ, true, true);
+                this.currentLoadedChunkX = currentChunkX;
+                this.currentLoadedChunkZ = currentChunkZ;
+                this.isChunkForced = true;
+            }
+
+            boolean hasReach = false;
+            net.minecraft.world.item.ItemStack mainHand = owner.getMainHandItem();
+            net.minecraft.world.item.ItemStack offHand = owner.getOffhandItem();
+            if (mainHand.getItem() instanceof dev.ClasherHD.bodycam.item.BodycamMonitorItem
+                    && mainHand.getEnchantmentLevel(dev.ClasherHD.bodycam.bodycam.REACH_ENCHANTMENT.get()) > 0) {
+                hasReach = true;
+            } else if (offHand.getItem() instanceof dev.ClasherHD.bodycam.item.BodycamMonitorItem
+                    && offHand.getEnchantmentLevel(dev.ClasherHD.bodycam.bodycam.REACH_ENCHANTMENT.get()) > 0) {
+                hasReach = true;
+            }
+            if (!hasReach) {
+                if (owner.level() != this.level() || owner.distanceTo(this) > 500.0D) {
+                    dev.ClasherHD.bodycam.network.BodycamResetCameraPacket.executeReset(owner);
+                    return;
+                }
             }
 
             DUMMY_POS.put(this.getOwnerUUID(), this.position());

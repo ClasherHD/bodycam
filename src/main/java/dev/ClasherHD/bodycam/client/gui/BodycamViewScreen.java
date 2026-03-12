@@ -14,6 +14,7 @@ public class BodycamViewScreen extends Screen {
     public static boolean isMonitoring = false;
     public static java.util.UUID targetUuid;
     public static String targetNameStatic;
+    public static boolean lastHasReach = false;
 
     public BodycamViewScreen(java.util.UUID targetId, String targetName, boolean hasReach) {
         super(Component.translatable("item.bodycam.bodycam_monitor"));
@@ -22,6 +23,10 @@ public class BodycamViewScreen extends Screen {
         BodycamViewScreen.targetUuid = targetId;
         BodycamViewScreen.targetNameStatic = targetName;
         this.hasReach = hasReach;
+        BodycamViewScreen.lastHasReach = hasReach;
+
+        this.cachedTargetText = "CAM: " + this.targetName;
+        this.cachedExitText = Component.translatable("gui.bodycam.exit_message").getString();
     }
 
     public java.util.UUID getTargetId() {
@@ -30,9 +35,9 @@ public class BodycamViewScreen extends Screen {
 
     private static final net.minecraft.resources.ResourceLocation GUI_ICONS_LOCATION = new net.minecraft.resources.ResourceLocation(
             "minecraft", "textures/gui/icons.png");
-    private int fadeTicks = 0;
-    private boolean manualExit = false;
-    private int targetLostTicks = 0;
+    private String cachedTargetText;
+    private String cachedExitText;
+    private int textTickTimer = 60;
 
     @Override
     protected void init() {
@@ -44,10 +49,9 @@ public class BodycamViewScreen extends Screen {
             return;
         }
         BodycamViewScreen.isMonitoring = true;
-        if (this.hasReach) {
-            dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE
-                    .sendToServer(new dev.ClasherHD.bodycam.network.BodycamSetCameraPacket(this.targetId));
-        } else if (mc.level != null) {
+        dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE
+                .sendToServer(new dev.ClasherHD.bodycam.network.BodycamSetCameraPacket(this.targetId));
+        if (mc.level != null) {
             Player targetPlayer = mc.level.getPlayerByUUID(this.targetId);
             if (targetPlayer != null && targetPlayer.isAlive()) {
                 mc.setCameraEntity(targetPlayer);
@@ -58,15 +62,13 @@ public class BodycamViewScreen extends Screen {
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (this.minecraft != null && this.minecraft.options.keyShift.matches(keyCode, scanCode)) {
-            if (BodycamViewScreen.isMonitoring && this.hasReach) {
+            if (BodycamViewScreen.isMonitoring) {
                 dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE
                         .sendToServer(new dev.ClasherHD.bodycam.network.BodycamResetCameraPacket());
             }
-            this.manualExit = true;
-            this.onClose();
             return true;
         }
-        if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE) {
+        if (keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) {
             if (this.minecraft != null) {
                 this.minecraft.setScreen(new net.minecraft.client.gui.screens.PauseScreen(true));
             }
@@ -77,6 +79,11 @@ public class BodycamViewScreen extends Screen {
 
     @Override
     public void renderBackground(GuiGraphics graphics) {
+    }
+
+    private void renderExitText(GuiGraphics graphics) {
+        if (this.textTickTimer <= 0) return;
+        graphics.drawString(this.font, this.cachedExitText, this.width - this.font.width(this.cachedExitText) - 10, 10, 0xFFFFFFFF, true);
     }
 
     @Override
@@ -91,17 +98,11 @@ public class BodycamViewScreen extends Screen {
         }
 
         try {
-            graphics.drawString(this.font, "CAM: " + this.targetName, 10, 10, 0xFFFFFF, false);
+            graphics.drawString(this.font, this.cachedTargetText, 10, 10, 0xFFFFFF, false);
 
-            if (this.fadeTicks < 100) {
-                float alpha = 1.0F - (this.fadeTicks / 100.0F);
-                int alphaInt = (int) (alpha * 255.0F);
-                int color = (alphaInt << 24) | 0xFFFFFF;
-                String exitText = "Beenden mit SHIFT";
-                graphics.drawString(this.font, exitText, this.width - this.font.width(exitText) - 10, 10, color, true);
-            }
+            this.renderExitText(graphics);
 
-            if (mc.player != null && this.hasReach) {
+            if (mc.player != null) {
                 float health = mc.player.getHealth();
                 float maxHealth = mc.player.getMaxHealth();
                 float absorption = mc.player.getAbsorptionAmount();
@@ -149,29 +150,6 @@ public class BodycamViewScreen extends Screen {
     }
 
     @Override
-    public void onClose() {
-        if (BodycamViewScreen.isMonitoring) {
-            BodycamViewScreen.isMonitoring = false;
-            Minecraft mc = Minecraft.getInstance();
-            if (mc != null && mc.player != null) {
-                mc.setCameraEntity(mc.player);
-            }
-            if (this.hasReach) {
-            }
-        }
-        super.onClose();
-    }
-
-    @Override
-    public void removed() {
-        Minecraft mc = Minecraft.getInstance();
-        if (BodycamViewScreen.isMonitoring && (this.manualExit || mc.player == null || !mc.player.isAlive())) {
-            BodycamViewScreen.isMonitoring = false;
-        }
-        super.removed();
-    }
-
-    @Override
     public boolean isPauseScreen() {
         return false;
     }
@@ -179,8 +157,8 @@ public class BodycamViewScreen extends Screen {
     @Override
     public void tick() {
         super.tick();
-        if (this.fadeTicks < 100) {
-            this.fadeTicks++;
+        if (this.textTickTimer > 0) {
+            this.textTickTimer--;
         }
 
         Minecraft mc = Minecraft.getInstance();
@@ -194,21 +172,9 @@ public class BodycamViewScreen extends Screen {
             return;
         }
 
-        if (this.hasReach && mc.level != null) {
+        if (mc.level != null) {
             net.minecraft.world.entity.player.Player targetPlayer = mc.level.getPlayerByUUID(this.targetId);
-            if (targetPlayer == null) {
-                this.targetLostTicks++;
-                if (this.targetLostTicks > 20) {
-                    if (BodycamViewScreen.isMonitoring && this.hasReach) {
-                        dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE
-                                .sendToServer(new dev.ClasherHD.bodycam.network.BodycamResetCameraPacket());
-                    }
-                    this.manualExit = true;
-                    this.onClose();
-                    return;
-                }
-            } else {
-                this.targetLostTicks = 0;
+            if (targetPlayer != null) {
                 if (mc.getCameraEntity() != targetPlayer) {
                     mc.setCameraEntity(targetPlayer);
                 }

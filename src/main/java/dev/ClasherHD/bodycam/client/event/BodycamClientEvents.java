@@ -21,7 +21,8 @@ public class BodycamClientEvents {
                 if (dev.ClasherHD.bodycam.client.gui.BodycamViewScreen.isMonitoring && mc.screen == null) {
                     mc.setScreen(new dev.ClasherHD.bodycam.client.gui.BodycamViewScreen(
                             dev.ClasherHD.bodycam.client.gui.BodycamViewScreen.targetUuid,
-                            dev.ClasherHD.bodycam.client.gui.BodycamViewScreen.targetNameStatic, true));
+                            dev.ClasherHD.bodycam.client.gui.BodycamViewScreen.targetNameStatic, 
+                            dev.ClasherHD.bodycam.client.gui.BodycamViewScreen.lastHasReach));
                 }
             }
         }

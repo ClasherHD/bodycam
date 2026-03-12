@@ -13,6 +13,7 @@ public class BodycamSetCameraPacket {
     public static final ConcurrentHashMap<UUID, net.minecraft.world.phys.Vec3> ORIGINAL_POS = new ConcurrentHashMap<>();
     public static final ConcurrentHashMap<UUID, net.minecraft.world.phys.Vec2> ORIGINAL_ROT = new ConcurrentHashMap<>();
     public static final ConcurrentHashMap<UUID, String> ORIGINAL_DIM = new ConcurrentHashMap<>();
+    public static final ConcurrentHashMap<UUID, Integer> ORIGINAL_GAMEMODE = new ConcurrentHashMap<>();
 
     public final UUID targetId;
 
@@ -56,8 +57,8 @@ public class BodycamSetCameraPacket {
 
             if (!hasReach) {
                 if (player.level() != target.level() || player.distanceTo(target) > 500.0D) {
-                    player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
-                            "§cSignal zu schwach! Ziel ist zu weit entfernt oder in einer anderen Dimension."));
+                    player.sendSystemMessage(net.minecraft.network.chat.Component.translatable(
+                            "message.bodycam.signal_weak").withStyle(net.minecraft.ChatFormatting.RED));
                     return;
                 }
             }
@@ -74,6 +75,7 @@ public class BodycamSetCameraPacket {
             ORIGINAL_DIM.put(player.getUUID(), player.level().dimension().location().toString());
             ORIGINAL_POS.put(player.getUUID(), player.position());
             ORIGINAL_ROT.put(player.getUUID(), new net.minecraft.world.phys.Vec2(player.getXRot(), player.getYRot()));
+            ORIGINAL_GAMEMODE.put(player.getUUID(), player.gameMode.getGameModeForPlayer().getId());
 
             dev.ClasherHD.bodycam.entity.BodycamDummyEntity dummy = new dev.ClasherHD.bodycam.entity.BodycamDummyEntity(
                     dev.ClasherHD.bodycam.bodycam.BODYCAM_DUMMY.get(), player.serverLevel());
@@ -118,6 +120,8 @@ public class BodycamSetCameraPacket {
             player.getPersistentData().putUUID("bodycam_dummy_uuid", dummy.getUUID());
 
             player.getPersistentData().putBoolean("bodycam_active", true);
+            player.getPersistentData().putUUID("bodycam_target_uuid", msg.targetId);
+            player.getPersistentData().putInt("bodycam_disconnect_ticks", 0);
             player.setGameMode(net.minecraft.world.level.GameType.SPECTATOR);
 
             if (player.level() != target.level()) {
@@ -126,7 +130,7 @@ public class BodycamSetCameraPacket {
                 player.teleportTo(target.serverLevel(), target.getX(), target.getY(), target.getZ(), target.getYRot(),
                         target.getXRot());
             } else {
-                player.connection.teleport(target.getX(), target.getY(), target.getZ(), target.getYRot(),
+                player.teleportTo(target.serverLevel(), target.getX(), target.getY(), target.getZ(), target.getYRot(),
                         target.getXRot());
             }
 

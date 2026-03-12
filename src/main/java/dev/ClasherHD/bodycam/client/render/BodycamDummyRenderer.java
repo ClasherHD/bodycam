@@ -24,6 +24,11 @@ public class BodycamDummyRenderer extends LivingEntityRenderer<BodycamDummyEntit
     }
 
     @Override
+    protected void scale(BodycamDummyEntity pLivingEntity, com.mojang.blaze3d.vertex.PoseStack pMatrixStack, float pPartialTick) {
+        pMatrixStack.scale(0.9375F, 0.9375F, 0.9375F);
+    }
+
+    @Override
     public ResourceLocation getTextureLocation(BodycamDummyEntity entity) {
         if (entity.getOwnerUUID() != null) {
             net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
