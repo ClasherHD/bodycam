@@ -4,7 +4,7 @@ license="GPL-3.0"
 
 [[mods]]
 modId="bodycam"
-version="1.3"
+version="2.0"
 displayName="Bodycam"
 authors="Clasher"
 description="Allows players to observe their friends"

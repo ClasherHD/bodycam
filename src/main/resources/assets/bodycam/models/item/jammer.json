@@ -1,0 +1,10 @@
+{
+    "parent": "item/generated",
+    "textures": {
+        "layer0": "bodycam:item/jammer_off"
+    },
+    "overrides": [
+        { "predicate": { "bodycam:mode": 1.0 }, "model": "bodycam:item/jammer_on" },
+        { "predicate": { "bodycam:mode": 2.0 }, "model": "bodycam:item/jammer_limited" }
+    ]
+}

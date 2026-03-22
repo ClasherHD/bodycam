@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " C ",
+    "PKE",
+    " S "
+  ],
+  "key": {
+    "C": {
+      "item": "bodycam:observation_crystal"
+    },
+    "P": {
+      "item": "minecraft:ender_pearl"
+    },
+    "K": {
+      "item": "minecraft:compass"
+    },
+    "E": {
+      "item": "minecraft:ender_eye"
+    },
+    "S": {
+      "item": "minecraft:echo_shard"
+    }
+  },
+  "result": {
+    "item": "bodycam:dimension_locator",
+    "count": 1
+  }
+}

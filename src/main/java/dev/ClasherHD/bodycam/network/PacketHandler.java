@@ -34,5 +34,25 @@ public class PacketHandler {
                 BodycamForceClosePacket::encode,
                 BodycamForceClosePacket::decode,
                 BodycamForceClosePacket::handle);
+
+        INSTANCE.registerMessage(id(), DimensionLocatorResponsePacket.class,
+                DimensionLocatorResponsePacket::encode,
+                DimensionLocatorResponsePacket::decode,
+                DimensionLocatorResponsePacket::handle);
+
+        INSTANCE.registerMessage(id(), CrossObservationSyncPacket.class,
+                CrossObservationSyncPacket::encode,
+                CrossObservationSyncPacket::decode,
+                CrossObservationSyncPacket::handle);
+
+        INSTANCE.registerMessage(id(), SyncBodycamRequestC2SPacket.class,
+                SyncBodycamRequestC2SPacket::encode,
+                SyncBodycamRequestC2SPacket::decode,
+                SyncBodycamRequestC2SPacket::handle);
+
+        INSTANCE.registerMessage(id(), SyncBodycamStatesS2CPacket.class,
+                SyncBodycamStatesS2CPacket::encode,
+                SyncBodycamStatesS2CPacket::decode,
+                SyncBodycamStatesS2CPacket::handle);
     }
 }

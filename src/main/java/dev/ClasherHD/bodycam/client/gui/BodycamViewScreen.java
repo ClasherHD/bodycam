@@ -11,21 +11,25 @@ public class BodycamViewScreen extends Screen {
     private final java.util.UUID targetId;
     private final String targetName;
     private final boolean hasReach;
+    private final boolean isOnHologram;
     public static boolean isMonitoring = false;
     public static java.util.UUID targetUuid;
     public static String targetNameStatic;
     public static boolean lastHasReach = false;
+    public static boolean lastIsOnHologram = false;
 
-    public BodycamViewScreen(java.util.UUID targetId, String targetName, boolean hasReach) {
+    public BodycamViewScreen(java.util.UUID targetId, String targetName, boolean hasReach, boolean isOnHologram) {
         super(Component.translatable("item.bodycam.bodycam_monitor"));
         this.targetId = targetId;
         this.targetName = targetName;
         BodycamViewScreen.targetUuid = targetId;
         BodycamViewScreen.targetNameStatic = targetName;
         this.hasReach = hasReach;
+        this.isOnHologram = isOnHologram;
         BodycamViewScreen.lastHasReach = hasReach;
+        BodycamViewScreen.lastIsOnHologram = isOnHologram;
 
-        this.cachedTargetText = "CAM: " + this.targetName;
+        this.cachedTargetText = "REC: " + this.targetName;
         this.cachedExitText = Component.translatable("gui.bodycam.exit_message").getString();
     }
 
@@ -50,17 +54,34 @@ public class BodycamViewScreen extends Screen {
         }
         BodycamViewScreen.isMonitoring = true;
         dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE
-                .sendToServer(new dev.ClasherHD.bodycam.network.BodycamSetCameraPacket(this.targetId));
+                .sendToServer(new dev.ClasherHD.bodycam.network.BodycamSetCameraPacket(this.targetId, this.hasReach, this.isOnHologram));
         if (mc.level != null) {
             Player targetPlayer = mc.level.getPlayerByUUID(this.targetId);
             if (targetPlayer != null && targetPlayer.isAlive()) {
                 mc.setCameraEntity(targetPlayer);
             }
         }
+        if (this.minecraft != null) {
+            org.lwjgl.glfw.GLFW.glfwSetInputMode(this.minecraft.getWindow().getWindow(), org.lwjgl.glfw.GLFW.GLFW_CURSOR, org.lwjgl.glfw.GLFW.GLFW_CURSOR_HIDDEN);
+        }
+    }
+
+    @Override
+    public void removed() {
+        super.removed();
+        if (this.minecraft != null) {
+            org.lwjgl.glfw.GLFW.glfwSetInputMode(this.minecraft.getWindow().getWindow(), org.lwjgl.glfw.GLFW.GLFW_CURSOR, org.lwjgl.glfw.GLFW.GLFW_CURSOR_NORMAL);
+        }
     }
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_F3 || keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_F5) {
+            return true;
+        }
+        if (this.minecraft != null && this.minecraft.options.keyTogglePerspective.matches(keyCode, scanCode)) {
+            return true;
+        }
         if (this.minecraft != null && this.minecraft.options.keyShift.matches(keyCode, scanCode)) {
             if (BodycamViewScreen.isMonitoring) {
                 dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE
@@ -86,11 +107,13 @@ public class BodycamViewScreen extends Screen {
         graphics.drawString(this.font, this.cachedExitText, this.width - this.font.width(this.cachedExitText) - 10, 10, 0xFFFFFFFF, true);
     }
 
+    private static final net.minecraft.resources.ResourceLocation VIGNETTE_LOCATION = new net.minecraft.resources.ResourceLocation("minecraft", "textures/misc/vignette.png");
+
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.render(graphics, mouseX, mouseY, partialTick);
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null) {
+        if (mc.player == null || mc.level == null) {
             return;
         }
         if (this.minecraft != null && this.minecraft.options.hideGui) {
@@ -98,11 +121,36 @@ public class BodycamViewScreen extends Screen {
         }
 
         try {
-            graphics.drawString(this.font, this.cachedTargetText, 10, 10, 0xFFFFFF, false);
+            int frameThickX = (int)(this.width * 0.1);
+            int frameThickY = (int)(this.height * 0.1);
 
-            this.renderExitText(graphics);
+            com.mojang.blaze3d.systems.RenderSystem.enableBlend();
+            com.mojang.blaze3d.systems.RenderSystem.defaultBlendFunc();
+            
+            // Top
+            graphics.fill(0, 0, this.width, frameThickY, 0x99000000);
+            // Bottom
+            graphics.fill(0, this.height - frameThickY, this.width, this.height, 0x99000000);
+            // Left
+            graphics.fill(0, frameThickY, frameThickX, this.height - frameThickY, 0x99000000);
+            // Right
+            graphics.fill(this.width - frameThickX, frameThickY, this.width, this.height - frameThickY, 0x99000000);
 
-            if (mc.player != null) {
+            com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+
+            if (dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_NAME_OVERLAY.get()) {
+                Component recComp = Component.translatable("gui.bodycam.rec", this.targetName);
+                if ((System.currentTimeMillis() % 1000L) >= 500L) {
+                    graphics.drawString(this.font, "\u25cf", 10, 10, 0xFFFF0000, true);
+                }
+                graphics.drawString(this.font, recComp, 10 + this.font.width("\u25cf "), 10, 0xFFFFFFFF, true);
+            }
+
+            if (dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_SHIFT_OVERLAY.get()) {
+                this.renderExitText(graphics);
+            }
+
+            if (mc.player != null && dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_HEALTH_OVERLAY.get()) {
                 float health = mc.player.getHealth();
                 float maxHealth = mc.player.getMaxHealth();
                 float absorption = mc.player.getAbsorptionAmount();
@@ -110,8 +158,8 @@ public class BodycamViewScreen extends Screen {
                 int maxHealthHearts = net.minecraft.util.Mth.ceil(maxHealth / 2.0F);
                 int absorbHearts = net.minecraft.util.Mth.ceil(absorption / 2.0F);
 
-                int xBase = this.width / 2 - 91;
-                int yBase = this.height - 39;
+                int xBase = this.width / 2 - (maxHealthHearts * 4);
+                int yBase = this.height - 20;
 
                 for (int i = maxHealthHearts - 1; i >= 0; --i) {
                     int heartX = xBase + i * 8;
@@ -162,17 +210,14 @@ public class BodycamViewScreen extends Screen {
         }
 
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || !mc.player.isAlive()) {
-            if (BodycamViewScreen.isMonitoring && this.hasReach) {
-                dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE
-                        .sendToServer(new dev.ClasherHD.bodycam.network.BodycamResetCameraPacket());
+        if (mc != null) {
+            if (mc.options.renderDebug) {
+                mc.options.renderDebug = false;
             }
-            BodycamViewScreen.isMonitoring = false;
-            mc.setScreen(null);
-            return;
+            while (mc.options.keyTogglePerspective.consumeClick()) {}
         }
-
-        if (mc.level != null) {
+        
+        if (mc.level != null && mc.player != null) {
             net.minecraft.world.entity.player.Player targetPlayer = mc.level.getPlayerByUUID(this.targetId);
             if (targetPlayer != null) {
                 if (mc.getCameraEntity() != targetPlayer) {

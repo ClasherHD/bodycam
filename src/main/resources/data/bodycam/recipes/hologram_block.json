@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "CGC",
+    "GLG",
+    "CGC"
+  ],
+  "key": {
+    "L": {
+      "item": "minecraft:lodestone"
+    },
+    "G": {
+      "item": "minecraft:glass"
+    },
+    "C": {
+      "item": "bodycam:observation_crystal"
+    }
+  },
+  "result": {
+    "item": "bodycam:hologram_block",
+    "count": 1
+  }
+}

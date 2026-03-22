@@ -56,6 +56,24 @@ public class BodycamDummyEntity extends LivingEntity {
     }
 
     @Override
+    public void die(DamageSource source) {
+        if (!this.level().isClientSide() && this.getOwnerUUID() != null) {
+            net.minecraft.server.MinecraftServer server = this.getServer();
+            if (server != null) {
+                net.minecraft.server.level.ServerPlayer owner = server.getPlayerList().getPlayer(this.getOwnerUUID());
+                if (owner != null && owner.getPersistentData().getBoolean("bodycam_active")) {
+                    dev.ClasherHD.bodycam.network.BodycamResetCameraPacket.executeReset(owner);
+                    dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
+                            net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> owner),
+                            new dev.ClasherHD.bodycam.network.BodycamForceClosePacket()
+                    );
+                }
+            }
+        }
+        super.die(source);
+    }
+
+    @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(OWNER_UUID, Optional.empty());
@@ -102,35 +120,50 @@ public class BodycamDummyEntity extends LivingEntity {
     }
 
     @Override
+    protected void hurtArmor(DamageSource source, float damage) {
+        if (damage <= 0.0F) return;
+        damage /= 4.0F;
+        if (damage < 1.0F) damage = 1.0F;
+        for (int i = 0; i < this.armorItems.size(); i++) {
+            net.minecraft.world.item.ItemStack stack = this.armorItems.get(i);
+            if (stack.isEmpty()) continue;
+            if (source.is(net.minecraft.tags.DamageTypeTags.IS_FIRE) && stack.getItem().isFireResistant()) continue;
+            int finalI = i;
+            stack.hurtAndBreak((int) damage, this, (entity) -> {
+                entity.broadcastBreakEvent(net.minecraft.world.entity.EquipmentSlot.byTypeAndIndex(
+                        net.minecraft.world.entity.EquipmentSlot.Type.ARMOR, finalI));
+            });
+        }
+    }
+
+    @Override
     public boolean hurt(DamageSource source, float amount) {
         if (!this.level().isClientSide() && this.getOwnerUUID() != null) {
             net.minecraft.server.MinecraftServer server = this.getServer();
             if (server != null) {
                 net.minecraft.server.level.ServerPlayer player = server.getPlayerList().getPlayer(this.getOwnerUUID());
                 if (player != null) {
-                    net.minecraft.world.entity.Entity camera = player.getCamera();
-
-                    player.teleportTo((net.minecraft.server.level.ServerLevel) this.level(), this.getX(),
-                            this.getY(), this.getZ(), this.getYRot(), this.getXRot());
-                    player.teleportTo((net.minecraft.server.level.ServerLevel) this.level(), this.getX(),
-                            this.getY(), this.getZ(), this.getYRot(), this.getXRot());
-                    player.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
-
-                    boolean success = player.hurt(source, amount);
-
-                    if (player.isDeadOrDying()) {
-                        player.getPersistentData().putBoolean("bodycam_active", false);
-                        this.discard();
-                        return true;
-                    } else {
-                        super.hurt(source, 0.0F);
-                        player.setGameMode(net.minecraft.world.level.GameType.SPECTATOR);
-                        if (player.getCamera() != camera) {
-                            player.setCamera(camera);
+                    boolean result = super.hurt(source, amount);
+                    for (net.minecraft.world.entity.EquipmentSlot slot : net.minecraft.world.entity.EquipmentSlot.values()) {
+                        if (slot.getType() == net.minecraft.world.entity.EquipmentSlot.Type.ARMOR) {
+                            net.minecraft.world.item.ItemStack dummyPiece = this.getItemBySlot(slot);
+                            net.minecraft.world.item.ItemStack playerPiece = player.getItemBySlot(slot);
+                            if (!playerPiece.isEmpty() && !dummyPiece.isEmpty()) {
+                                playerPiece.setDamageValue(dummyPiece.getDamageValue());
+                            } else if (!playerPiece.isEmpty() && dummyPiece.isEmpty()) {
+                                playerPiece.setDamageValue(playerPiece.getMaxDamage());
+                            }
                         }
-                        this.setHealth(player.getHealth());
-                        return success;
                     }
+                    if (this.isDeadOrDying()) {
+                        player.getCombatTracker().recordDamage(source, amount);
+                        player.setHealth(0);
+                        player.die(source);
+                        return result;
+                    }
+                    player.setHealth(this.getHealth());
+                    player.setAbsorptionAmount(this.getAbsorptionAmount());
+                    return result;
                 }
             }
         }
@@ -139,71 +172,22 @@ public class BodycamDummyEntity extends LivingEntity {
 
     @Override
     public void heal(float amount) {
+        super.heal(amount);
         if (!this.level().isClientSide() && this.getOwnerUUID() != null) {
             net.minecraft.server.MinecraftServer server = this.getServer();
             if (server != null) {
                 net.minecraft.server.level.ServerPlayer player = server.getPlayerList().getPlayer(this.getOwnerUUID());
                 if (player != null) {
-                    net.minecraft.world.entity.Entity camera = player.getCamera();
-                    net.minecraft.server.level.ServerLevel camLevel = (net.minecraft.server.level.ServerLevel) camera
-                            .level();
-                    net.minecraft.server.level.ServerLevel dummyLevel = (net.minecraft.server.level.ServerLevel) this
-                            .level();
-                    player.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
-                    player.teleportTo(dummyLevel, this.getX(), this.getY(),
-                            this.getZ(), this.getYRot(), this.getXRot());
-                    player.teleportTo(dummyLevel, this.getX(), this.getY(),
-                            this.getZ(), this.getYRot(), this.getXRot());
-                    player.heal(amount);
-                    player.setGameMode(net.minecraft.world.level.GameType.SPECTATOR);
-                    player.teleportTo(camLevel, camera.getX(),
-                            camera.getY(),
-                            camera.getZ(), camera.getYRot(), camera.getXRot());
-                    player.teleportTo(camLevel, camera.getX(),
-                            camera.getY(),
-                            camera.getZ(), camera.getYRot(), camera.getXRot());
-                    player.setCamera(camera);
-                    super.heal(amount);
-                    this.setHealth(player.getHealth());
-                    return;
+                    player.setHealth(this.getHealth());
+                    player.setAbsorptionAmount(this.getAbsorptionAmount());
                 }
             }
         }
-        super.heal(amount);
     }
 
     @Override
     public boolean addEffect(net.minecraft.world.effect.MobEffectInstance effectInstance,
             @javax.annotation.Nullable net.minecraft.world.entity.Entity entity) {
-        if (!this.level().isClientSide() && this.getOwnerUUID() != null) {
-            net.minecraft.server.MinecraftServer server = this.getServer();
-            if (server != null) {
-                net.minecraft.server.level.ServerPlayer player = server.getPlayerList().getPlayer(this.getOwnerUUID());
-                if (player != null) {
-                    net.minecraft.world.entity.Entity camera = player.getCamera();
-                    net.minecraft.server.level.ServerLevel camLevel = (net.minecraft.server.level.ServerLevel) camera
-                            .level();
-                    net.minecraft.server.level.ServerLevel dummyLevel = (net.minecraft.server.level.ServerLevel) this
-                            .level();
-
-                    player.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
-                    player.teleportTo(dummyLevel, this.getX(), this.getY(),
-                            this.getZ(), this.getYRot(), this.getXRot());
-                    player.teleportTo(dummyLevel, this.getX(), this.getY(),
-                            this.getZ(), this.getYRot(), this.getXRot());
-                    boolean success = player.addEffect(effectInstance, entity);
-                    player.setGameMode(net.minecraft.world.level.GameType.SPECTATOR);
-                    player.teleportTo(camLevel, camera.getX(),
-                            camera.getY(),
-                            camera.getZ(), camera.getYRot(), camera.getXRot());
-                    player.teleportTo(camLevel, camera.getX(),
-                            camera.getY(),
-                            camera.getZ(), camera.getYRot(), camera.getXRot());
-                    player.setCamera(camera);
-                    return success;
-                }
-            }
-        }
         return super.addEffect(effectInstance, entity);
     }
 
@@ -238,22 +222,7 @@ public class BodycamDummyEntity extends LivingEntity {
                 this.isChunkForced = true;
             }
 
-            boolean hasReach = false;
-            net.minecraft.world.item.ItemStack mainHand = owner.getMainHandItem();
-            net.minecraft.world.item.ItemStack offHand = owner.getOffhandItem();
-            if (mainHand.getItem() instanceof dev.ClasherHD.bodycam.item.BodycamMonitorItem
-                    && mainHand.getEnchantmentLevel(dev.ClasherHD.bodycam.bodycam.REACH_ENCHANTMENT.get()) > 0) {
-                hasReach = true;
-            } else if (offHand.getItem() instanceof dev.ClasherHD.bodycam.item.BodycamMonitorItem
-                    && offHand.getEnchantmentLevel(dev.ClasherHD.bodycam.bodycam.REACH_ENCHANTMENT.get()) > 0) {
-                hasReach = true;
-            }
-            if (!hasReach) {
-                if (owner.level() != this.level() || owner.distanceTo(this) > 500.0D) {
-                    dev.ClasherHD.bodycam.network.BodycamResetCameraPacket.executeReset(owner);
-                    return;
-                }
-            }
+
 
             DUMMY_POS.put(this.getOwnerUUID(), this.position());
             DUMMY_FALL.put(this.getOwnerUUID(), this.fallDistance);

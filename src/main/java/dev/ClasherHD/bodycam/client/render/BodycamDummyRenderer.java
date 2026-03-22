@@ -11,7 +11,7 @@ import net.minecraft.client.renderer.entity.layers.ItemInHandLayer;
 import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.resources.ResourceLocation;
 
-public class BodycamDummyRenderer extends LivingEntityRenderer<BodycamDummyEntity, PlayerModel<BodycamDummyEntity>> {
+public class BodycamDummyRenderer<T extends BodycamDummyEntity> extends LivingEntityRenderer<T, PlayerModel<T>> {
 
     public BodycamDummyRenderer(EntityRendererProvider.Context context) {
         super(context, new PlayerModel<>(context.bakeLayer(ModelLayers.PLAYER), false), 0.5f);
@@ -24,12 +24,12 @@ public class BodycamDummyRenderer extends LivingEntityRenderer<BodycamDummyEntit
     }
 
     @Override
-    protected void scale(BodycamDummyEntity pLivingEntity, com.mojang.blaze3d.vertex.PoseStack pMatrixStack, float pPartialTick) {
+    protected void scale(T pLivingEntity, com.mojang.blaze3d.vertex.PoseStack pMatrixStack, float pPartialTick) {
         pMatrixStack.scale(0.9375F, 0.9375F, 0.9375F);
     }
 
     @Override
-    public ResourceLocation getTextureLocation(BodycamDummyEntity entity) {
+    public ResourceLocation getTextureLocation(T entity) {
         if (entity.getOwnerUUID() != null) {
             net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
             if (mc.getConnection() != null) {

@@ -1,16 +1,16 @@
 {
     "type": "minecraft:crafting_shaped",
     "pattern": [
-        "SMS",
-        "MBM",
-        "SMS"
+        "SOS",
+        "OBO",
+        "SOS"
     ],
     "key": {
         "S": {
             "item": "minecraft:spyglass"
         },
-        "M": {
-            "item": "bodycam:bodycam_monitor"
+        "O": {
+            "item": "bodycam:observation_crystal"
         },
         "B": {
             "item": "minecraft:book"
