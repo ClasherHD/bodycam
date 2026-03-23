@@ -1,6 +1,6 @@
 {
     "item.bodycam.bodycam_monitor": "Monitor Kompass",
-    "gui.bodycam.exit_message": "Beenden mit: Shift",
+    "gui.bodycam.exit_message": "Beenden mit: %s",
     "enchantment.bodycam.reach": "Reichweite",
     "message.bodycam.signal_weak": "Signal zu schwach! Ziel ist zu weit entfernt oder in einer anderen Dimension.",
     "item.bodycam.observation_crystal": "Beobachtungs-Kristall",

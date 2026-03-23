@@ -50,7 +50,8 @@ public class BodycamSetCameraPacket {
             }
 
             if (target.getPersistentData().getBoolean("bodycam_active") && target.getPersistentData().contains("bodycam_target_uuid")) {
-                if (target.getPersistentData().getUUID("bodycam_target_uuid").equals(player.getUUID())) {
+                java.util.UUID targetUuid = target.getPersistentData().getUUID("bodycam_target_uuid");
+                if (targetUuid != null && targetUuid.equals(player.getUUID())) {
                     player.sendSystemMessage(net.minecraft.network.chat.Component.translatable(
                             "message.bodycam.signal_weak").withStyle(net.minecraft.ChatFormatting.RED));
                     dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
@@ -135,8 +136,8 @@ public class BodycamSetCameraPacket {
             dummy.getEntityData().set(dev.ClasherHD.bodycam.entity.BodycamDummyEntity.OWNER_UUID,
                     java.util.Optional.of(player.getUUID()));
             dummy.getEntityData().set(dev.ClasherHD.bodycam.entity.BodycamDummyEntity.OWNER_NAME,
-                    player.getGameProfile().getName());
-            dummy.setCustomName(net.minecraft.network.chat.Component.literal(player.getGameProfile().getName()));
+                    player.getName().getString());
+            dummy.setCustomName(net.minecraft.network.chat.Component.literal(player.getName().getString()));
             dummy.setCustomNameVisible(true);
 
             if (player.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR) != null
@@ -173,7 +174,7 @@ public class BodycamSetCameraPacket {
 
             if (player.getPersistentData().contains("bodycam_target_uuid")) {
                 java.util.UUID oldTargetId = player.getPersistentData().getUUID("bodycam_target_uuid");
-                if (!oldTargetId.equals(msg.targetId)) {
+                if (oldTargetId != null && !oldTargetId.equals(msg.targetId)) {
                     net.minecraft.server.level.ServerPlayer oldTarget = player.server.getPlayerList().getPlayer(oldTargetId);
                     if (oldTarget != null) {
                         dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
@@ -200,9 +201,8 @@ public class BodycamSetCameraPacket {
             } else {
                 player.teleportTo(target.serverLevel(), target.getX(), target.getY(), target.getZ(), target.getYRot(),
                         target.getXRot());
+                player.setCamera(target);
             }
-
-            player.setCamera(target);
         });
         ctx.get().setPacketHandled(true);
     }

@@ -30,7 +30,7 @@ public class BodycamViewScreen extends Screen {
         BodycamViewScreen.lastIsOnHologram = isOnHologram;
 
         this.cachedTargetText = "REC: " + this.targetName;
-        this.cachedExitText = Component.translatable("gui.bodycam.exit_message").getString();
+        this.cachedExitText = Component.translatable("gui.bodycam.exit_message", Minecraft.getInstance().options.keyShift.getTranslatedKeyMessage()).getString();
     }
 
     public java.util.UUID getTargetId() {
@@ -127,13 +127,9 @@ public class BodycamViewScreen extends Screen {
             com.mojang.blaze3d.systems.RenderSystem.enableBlend();
             com.mojang.blaze3d.systems.RenderSystem.defaultBlendFunc();
             
-            // Top
             graphics.fill(0, 0, this.width, frameThickY, 0x99000000);
-            // Bottom
             graphics.fill(0, this.height - frameThickY, this.width, this.height, 0x99000000);
-            // Left
             graphics.fill(0, frameThickY, frameThickX, this.height - frameThickY, 0x99000000);
-            // Right
             graphics.fill(this.width - frameThickX, frameThickY, this.width, this.height - frameThickY, 0x99000000);
 
             com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);

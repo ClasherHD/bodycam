@@ -28,12 +28,14 @@ public class BodycamResetCameraPacket {
 
                 if (sender.getPersistentData().contains("bodycam_target_uuid")) {
                     java.util.UUID oldTargetId = sender.getPersistentData().getUUID("bodycam_target_uuid");
-                    net.minecraft.server.level.ServerPlayer oldTarget = sender.server.getPlayerList().getPlayer(oldTargetId);
-                    if (oldTarget != null) {
-                        dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
-                                net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> oldTarget),
-                                new dev.ClasherHD.bodycam.network.CrossObservationSyncPacket(sender.getUUID(), false)
-                        );
+                    if (oldTargetId != null) {
+                        net.minecraft.server.level.ServerPlayer oldTarget = sender.server.getPlayerList().getPlayer(oldTargetId);
+                        if (oldTarget != null) {
+                            dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
+                                    net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> oldTarget),
+                                    new dev.ClasherHD.bodycam.network.CrossObservationSyncPacket(sender.getUUID(), false)
+                            );
+                        }
                     }
                 }
 
@@ -126,12 +128,14 @@ public class BodycamResetCameraPacket {
 
             if (sender.getPersistentData().contains("bodycam_target_uuid")) {
                 java.util.UUID oldTargetId = sender.getPersistentData().getUUID("bodycam_target_uuid");
-                net.minecraft.server.level.ServerPlayer oldTarget = sender.server.getPlayerList().getPlayer(oldTargetId);
-                if (oldTarget != null) {
-                    dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
-                            net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> oldTarget),
-                            new dev.ClasherHD.bodycam.network.CrossObservationSyncPacket(sender.getUUID(), false)
-                    );
+                if (oldTargetId != null) {
+                    net.minecraft.server.level.ServerPlayer oldTarget = sender.server.getPlayerList().getPlayer(oldTargetId);
+                    if (oldTarget != null) {
+                        dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
+                                net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> oldTarget),
+                                new dev.ClasherHD.bodycam.network.CrossObservationSyncPacket(sender.getUUID(), false)
+                        );
+                    }
                 }
             }
 
