@@ -43,6 +43,7 @@ public class BodycamResetCameraPacket {
                 sender.getPersistentData().remove("bodycam_target_uuid");
                 sender.getPersistentData().remove("bodycam_disconnect_ticks");
                 sender.getPersistentData().remove("bodycam_has_reach");
+                sender.getPersistentData().remove("bodycam_original_dimension");
                 dev.ClasherHD.bodycam.network.BodycamSetCameraPacket.ORIGINAL_GAMEMODE.remove(sender.getUUID());
                 dev.ClasherHD.bodycam.network.BodycamSetCameraPacket.ORIGINAL_DIM.remove(sender.getUUID());
                 dev.ClasherHD.bodycam.network.BodycamSetCameraPacket.ORIGINAL_POS.remove(sender.getUUID());
@@ -143,6 +144,7 @@ public class BodycamResetCameraPacket {
             sender.getPersistentData().remove("bodycam_target_uuid");
             sender.getPersistentData().remove("bodycam_disconnect_ticks");
             sender.getPersistentData().remove("bodycam_has_reach");
+            sender.getPersistentData().remove("bodycam_original_dimension");
             
             dev.ClasherHD.bodycam.network.BodycamSetCameraPacket.ORIGINAL_GAMEMODE.remove(sender.getUUID());
 

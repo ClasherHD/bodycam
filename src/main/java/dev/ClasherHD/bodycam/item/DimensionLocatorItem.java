@@ -34,7 +34,11 @@ public class DimensionLocatorItem extends Item {
             ServerPlayer sPlayer = (ServerPlayer) player;
             for (ServerPlayer onlinePlayer : sPlayer.server.getPlayerList().getPlayers()) {
                 if (!onlinePlayer.getUUID().equals(player.getUUID())) {
-                    dims.put(onlinePlayer.getUUID(), onlinePlayer.level().dimension().location().getPath());
+                    if (onlinePlayer.getPersistentData().contains("bodycam_target_uuid") && onlinePlayer.getPersistentData().contains("bodycam_original_dimension")) {
+                        dims.put(onlinePlayer.getUUID(), onlinePlayer.getPersistentData().getString("bodycam_original_dimension"));
+                    } else {
+                        dims.put(onlinePlayer.getUUID(), onlinePlayer.level().dimension().location().getPath());
+                    }
                 }
             }
             dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(

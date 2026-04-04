@@ -34,10 +34,19 @@ public class AnonymizerItem extends Item {
             
             boolean newState = !currentState;
             
+            java.util.UUID activeId = null;
+            if (newState) {
+                activeId = java.util.UUID.randomUUID();
+                player.getPersistentData().putUUID("bodycam_active_anonymizer_id", activeId);
+                player.getPersistentData().putLong("bodycam_anonymizer_heartbeat", level.getGameTime());
+            }
+            
             for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
                 ItemStack invStack = player.getInventory().getItem(i);
                 if (invStack.getItem() instanceof AnonymizerItem) {
                     invStack.getOrCreateTag().putBoolean("AnonymizerActive", newState);
+                    if (activeId != null) invStack.getOrCreateTag().putUUID("active_id", activeId);
+                    else invStack.getOrCreateTag().remove("active_id");
                 }
             }
 
@@ -48,5 +57,29 @@ public class AnonymizerItem extends Item {
             }
         }
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
+    }
+
+    @Override
+    public void inventoryTick(ItemStack stack, Level level, net.minecraft.world.entity.Entity entity, int slotId, boolean isSelected) {
+        if (!level.isClientSide() && entity instanceof net.minecraft.server.level.ServerPlayer) {
+            boolean active = stack.hasTag() && stack.getTag().contains("AnonymizerActive") && stack.getTag().getBoolean("AnonymizerActive");
+            if (active) {
+                boolean isValid = false;
+                if (stack.hasTag() && stack.getTag().hasUUID("active_id") && entity.getPersistentData().hasUUID("bodycam_active_anonymizer_id")) {
+                    java.util.UUID itemUUID = stack.getTag().getUUID("active_id");
+                    java.util.UUID playerUUID = entity.getPersistentData().getUUID("bodycam_active_anonymizer_id");
+                    long lastHeartbeat = entity.getPersistentData().getLong("bodycam_anonymizer_heartbeat");
+                    boolean isCreative = ((net.minecraft.server.level.ServerPlayer)entity).isCreative();
+                    isValid = itemUUID.equals(playerUUID) && (isCreative || (level.getGameTime() - lastHeartbeat <= 10));
+                }
+                
+                if (isValid) {
+                    entity.getPersistentData().putLong("bodycam_anonymizer_heartbeat", level.getGameTime());
+                } else {
+                    stack.getOrCreateTag().putBoolean("AnonymizerActive", false);
+                    stack.getOrCreateTag().remove("active_id");
+                }
+            }
+        }
     }
 }

@@ -62,14 +62,11 @@ public class BodycamSetCameraPacket {
                 }
             }
 
-            int jammerMode = 0;
-            for (int i = 0; i < target.getInventory().getContainerSize(); i++) {
-                net.minecraft.world.item.ItemStack stack = target.getInventory().getItem(i);
-                if (stack.getItem() instanceof dev.ClasherHD.bodycam.item.JammerItem) {
-                    if (stack.hasTag() && stack.getTag().contains("JammerMode")) {
-                        jammerMode = Math.max(jammerMode, stack.getTag().getInt("JammerMode"));
-                    }
-                }
+            long lastJammer = target.getPersistentData().getLong("bodycam_jammer_heartbeat");
+            int jammerMode = target.getPersistentData().getInt("bodycam_jammer_mode");
+            boolean isJammerActive = (target.level().getGameTime() - lastJammer) <= 10;
+            if (!isJammerActive) {
+                jammerMode = 0;
             }
 
             if (jammerMode == 1) {
@@ -187,22 +184,17 @@ public class BodycamSetCameraPacket {
             player.getPersistentData().putUUID("bodycam_target_uuid", msg.targetId);
             player.getPersistentData().putInt("bodycam_disconnect_ticks", 0);
             player.getPersistentData().putBoolean("bodycam_has_reach", hasReach);
+            player.getPersistentData().putString("bodycam_original_dimension", player.level().dimension().location().getPath());
 
             dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
                     net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> target),
                     new dev.ClasherHD.bodycam.network.CrossObservationSyncPacket(player.getUUID(), true));
             player.setGameMode(net.minecraft.world.level.GameType.SPECTATOR);
 
-            if (player.level() != target.level()) {
-                player.teleportTo(target.serverLevel(), target.getX(), target.getY(), target.getZ(), target.getYRot(),
-                        target.getXRot());
-                player.teleportTo(target.serverLevel(), target.getX(), target.getY(), target.getZ(), target.getYRot(),
-                        target.getXRot());
-            } else {
-                player.teleportTo(target.serverLevel(), target.getX(), target.getY(), target.getZ(), target.getYRot(),
-                        target.getXRot());
-                player.setCamera(target);
+            if (player.level().dimension() != target.level().dimension()) {
+                player.teleportTo(target.serverLevel(), target.getX(), target.getY(), target.getZ(), target.getYRot(), target.getXRot());
             }
+            player.setCamera(target);
         });
         ctx.get().setPacketHandled(true);
     }
