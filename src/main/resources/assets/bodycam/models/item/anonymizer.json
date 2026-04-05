@@ -1,9 +1,14 @@
 {
-    "parent": "item/generated",
-    "textures": {
-        "layer0": "bodycam:item/anonymizer_off"
-    },
-    "overrides": [
-        { "predicate": { "bodycam:active": 1.0 }, "model": "bodycam:item/anonymizer_on" }
-    ]
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "bodycam:item/anonymizer_off"
+  },
+  "overrides": [
+    {
+      "predicate": {
+        "bodycam:mode": 1.0
+      },
+      "model": "bodycam:item/anonymizer_on"
+    }
+  ]
 }

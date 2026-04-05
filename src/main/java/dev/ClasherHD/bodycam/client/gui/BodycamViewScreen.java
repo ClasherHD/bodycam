@@ -29,7 +29,6 @@ public class BodycamViewScreen extends Screen {
         BodycamViewScreen.lastHasReach = hasReach;
         BodycamViewScreen.lastIsOnHologram = isOnHologram;
 
-        this.cachedTargetText = "REC: " + this.targetName;
         this.cachedExitText = Component.translatable("gui.bodycam.exit_message", Minecraft.getInstance().options.keyShift.getTranslatedKeyMessage()).getString();
     }
 
@@ -39,7 +38,6 @@ public class BodycamViewScreen extends Screen {
 
     private static final net.minecraft.resources.ResourceLocation GUI_ICONS_LOCATION = new net.minecraft.resources.ResourceLocation(
             "minecraft", "textures/gui/icons.png");
-    private String cachedTargetText;
     private String cachedExitText;
     private int textTickTimer = 60;
 
@@ -53,8 +51,12 @@ public class BodycamViewScreen extends Screen {
             return;
         }
         BodycamViewScreen.isMonitoring = true;
-        dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE
-                .sendToServer(new dev.ClasherHD.bodycam.network.BodycamSetCameraPacket(this.targetId, this.hasReach, this.isOnHologram));
+        net.minecraft.network.FriendlyByteBuf buf = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
+        buf.writeInt(1);
+        buf.writeUUID(this.targetId);
+        buf.writeBoolean(this.hasReach);
+        buf.writeBoolean(this.isOnHologram);
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(dev.ClasherHD.bodycam.network.BodycamPacketIDs.REQUEST_CAMERA_PACKET_ID, buf);
         if (mc.level != null) {
             Player targetPlayer = mc.level.getPlayerByUUID(this.targetId);
             if (targetPlayer != null && targetPlayer.isAlive()) {
@@ -84,8 +86,7 @@ public class BodycamViewScreen extends Screen {
         }
         if (this.minecraft != null && this.minecraft.options.keyShift.matches(keyCode, scanCode)) {
             if (BodycamViewScreen.isMonitoring) {
-                dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE
-                        .sendToServer(new dev.ClasherHD.bodycam.network.BodycamResetCameraPacket());
+                net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(dev.ClasherHD.bodycam.network.BodycamPacketIDs.RESET_CAMERA_PACKET_ID, net.fabricmc.fabric.api.networking.v1.PacketByteBufs.empty());
             }
             return true;
         }
@@ -107,7 +108,6 @@ public class BodycamViewScreen extends Screen {
         graphics.drawString(this.font, this.cachedExitText, this.width - this.font.width(this.cachedExitText) - 10, 10, 0xFFFFFFFF, true);
     }
 
-    private static final net.minecraft.resources.ResourceLocation VIGNETTE_LOCATION = new net.minecraft.resources.ResourceLocation("minecraft", "textures/misc/vignette.png");
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {

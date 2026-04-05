@@ -1,0 +1,19 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.ClasherHD.bodycam.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [
+    "EntityPersistentDataMixin",
+    "ItemEntityMixin",
+    "ServerPlayerMixin",
+    "ServerPlayerTeleportMixin"
+  ],
+  "client": [
+    "InGameHudMixin",
+    "ItemInHandRendererMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

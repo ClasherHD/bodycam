@@ -1,14 +1,13 @@
 package dev.ClasherHD.bodycam.item;
 
-import net.minecraft.client.Minecraft;
+
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
+
 
 public class BodycamMonitorItem extends Item {
     public BodycamMonitorItem(Properties properties) {
@@ -19,10 +18,12 @@ public class BodycamMonitorItem extends Item {
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         if (level.isClientSide()) {
             boolean hasReach = net.minecraft.world.item.enchantment.EnchantmentHelper.getItemEnchantmentLevel(
-                    dev.ClasherHD.bodycam.bodycam.REACH_ENCHANTMENT.get(), player.getItemInHand(hand)) > 0;
-            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-                dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.sendToServer(new dev.ClasherHD.bodycam.network.SyncBodycamRequestC2SPacket(hasReach, false));
-            });
+                    dev.ClasherHD.bodycam.BodycamFabric.REACH_ENCHANTMENT, player.getItemInHand(hand)) > 0;
+            net.minecraft.network.FriendlyByteBuf buf = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
+            buf.writeInt(0);
+            buf.writeBoolean(hasReach);
+            buf.writeBoolean(false);
+            net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(dev.ClasherHD.bodycam.network.BodycamPacketIDs.REQUEST_CAMERA_PACKET_ID, buf);
         }
         return InteractionResultHolder.sidedSuccess(player.getItemInHand(hand), level.isClientSide());
     }

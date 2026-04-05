@@ -12,6 +12,8 @@ crash-reports/
 usercache.json
 usernamecache.json
 *.log
+*.txt
+run2/
 
 # IntelliJ IDEA
 .idea/

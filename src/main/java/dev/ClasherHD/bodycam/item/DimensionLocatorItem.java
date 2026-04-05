@@ -7,7 +7,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.network.PacketDistributor;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,12 +33,16 @@ public class DimensionLocatorItem extends Item {
             ServerPlayer sPlayer = (ServerPlayer) player;
             for (ServerPlayer onlinePlayer : sPlayer.server.getPlayerList().getPlayers()) {
                 if (!onlinePlayer.getUUID().equals(player.getUUID())) {
-                    dims.put(onlinePlayer.getUUID(), onlinePlayer.level().dimension().location().getPath());
+                    if (dev.ClasherHD.bodycam.BodycamHelper.getPersistentData(onlinePlayer).contains("bodycam_target_uuid") && dev.ClasherHD.bodycam.BodycamHelper.getPersistentData(onlinePlayer).contains("bodycam_original_dimension")) {
+                        dims.put(onlinePlayer.getUUID(), dev.ClasherHD.bodycam.BodycamHelper.getPersistentData(onlinePlayer).getString("bodycam_original_dimension"));
+                    } else {
+                        dims.put(onlinePlayer.getUUID(), onlinePlayer.level().dimension().location().getPath());
+                    }
                 }
             }
-            dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
-                    PacketDistributor.PLAYER.with(() -> (ServerPlayer) player),
-                    new dev.ClasherHD.bodycam.network.DimensionLocatorResponsePacket(dims));
+            net.minecraft.network.FriendlyByteBuf outBuf = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
+            dev.ClasherHD.bodycam.network.DimensionLocatorResponsePacket.encode(new dev.ClasherHD.bodycam.network.DimensionLocatorResponsePacket(dims), outBuf);
+            net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(sPlayer, dev.ClasherHD.bodycam.network.BodycamPacketIDs.DIMENSION_LOCATOR_PACKET_ID, outBuf);
         }
         return InteractionResultHolder.sidedSuccess(player.getItemInHand(hand), level.isClientSide());
     }

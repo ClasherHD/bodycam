@@ -1,67 +1,53 @@
 package dev.ClasherHD.bodycam.client.event;
 
-import dev.ClasherHD.bodycam.client.gui.BodycamViewScreen;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 
-@Mod.EventBusSubscriber(modid = "bodycam", bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.event.player.UseBlockCallback;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.client.Minecraft;
+
 public class BodycamClientEvents {
 
-    @SubscribeEvent
-    public static void onClientTick(net.minecraftforge.event.TickEvent.ClientTickEvent event) {
-        if (event.phase == net.minecraftforge.event.TickEvent.Phase.END) {
-            net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
-            if (mc.player != null) {
-                if (dev.ClasherHD.bodycam.client.gui.BodycamViewScreen.isMonitoring && mc.screen == null) {
-                    mc.setScreen(new dev.ClasherHD.bodycam.client.gui.BodycamViewScreen(
+    public static void register() {
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (client.player != null) {
+                if (dev.ClasherHD.bodycam.client.gui.BodycamViewScreen.isMonitoring && client.screen == null) {
+                    client.setScreen(new dev.ClasherHD.bodycam.client.gui.BodycamViewScreen(
                             dev.ClasherHD.bodycam.client.gui.BodycamViewScreen.targetUuid,
                             dev.ClasherHD.bodycam.client.gui.BodycamViewScreen.targetNameStatic, 
                             dev.ClasherHD.bodycam.client.gui.BodycamViewScreen.lastHasReach,
                             dev.ClasherHD.bodycam.client.gui.BodycamViewScreen.lastIsOnHologram));
                 }
             }
-        }
+        });
+
+
+
+
+        UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
+            if (handleHologramInteraction(player, world)) {
+                return InteractionResult.SUCCESS;
+            }
+            return InteractionResult.PASS;
+        });
     }
 
-    @SubscribeEvent
-    public static void onRenderGuiOverlay(net.minecraftforge.client.event.RenderGuiOverlayEvent.Pre event) {
-        if (dev.ClasherHD.bodycam.client.gui.BodycamViewScreen.isMonitoring) {
-            net.minecraft.resources.ResourceLocation id = event.getOverlay().id();
-            if (id.equals(net.minecraftforge.client.gui.overlay.VanillaGuiOverlay.PLAYER_HEALTH.id()) ||
-                id.equals(net.minecraftforge.client.gui.overlay.VanillaGuiOverlay.FOOD_LEVEL.id()) ||
-                id.equals(net.minecraftforge.client.gui.overlay.VanillaGuiOverlay.ARMOR_LEVEL.id()) ||
-                id.equals(net.minecraftforge.client.gui.overlay.VanillaGuiOverlay.EXPERIENCE_BAR.id()) ||
-                id.equals(net.minecraftforge.client.gui.overlay.VanillaGuiOverlay.HOTBAR.id()) ||
-                id.equals(net.minecraftforge.client.gui.overlay.VanillaGuiOverlay.CROSSHAIR.id())) {
-                event.setCanceled(true);
+    private static boolean handleHologramInteraction(Player player, net.minecraft.world.level.Level level) {
+        if (!player.isCrouching()) return false;
+        boolean onHologram = level.getBlockState(player.blockPosition().below()).is(dev.ClasherHD.bodycam.BodycamFabric.HOLOGRAM_BLOCK) ||
+                             level.getBlockState(player.blockPosition()).is(dev.ClasherHD.bodycam.BodycamFabric.HOLOGRAM_BLOCK);
+        if (!onHologram) return false;
+        
+        if (level.isClientSide()) {
+            if (Minecraft.getInstance().screen == null) {
+                net.minecraft.network.FriendlyByteBuf buf = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
+                buf.writeInt(0);
+                buf.writeBoolean(true);
+                buf.writeBoolean(true);
+                net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(dev.ClasherHD.bodycam.network.BodycamPacketIDs.REQUEST_CAMERA_PACKET_ID, buf);
             }
         }
-    }
-
-    @SubscribeEvent
-    public static void onRightClickItem(net.minecraftforge.event.entity.player.PlayerInteractEvent.RightClickItem event) {
-        handleHologramInteraction(event);
-    }
-
-    @SubscribeEvent
-    public static void onRightClickEmpty(net.minecraftforge.event.entity.player.PlayerInteractEvent.RightClickEmpty event) {
-        handleHologramInteraction(event);
-    }
-
-    private static void handleHologramInteraction(net.minecraftforge.event.entity.player.PlayerInteractEvent event) {
-        if (!event.getEntity().isCrouching()) return;
-        boolean onHologram = event.getLevel().getBlockState(event.getEntity().blockPosition().below()).is(dev.ClasherHD.bodycam.bodycam.HOLOGRAM_BLOCK.get()) ||
-                             event.getLevel().getBlockState(event.getEntity().blockPosition()).is(dev.ClasherHD.bodycam.bodycam.HOLOGRAM_BLOCK.get());
-        if (!onHologram) return;
-        if (event.isCancelable()) {
-            event.setCanceled(true);
-        }
-        if (event.getLevel().isClientSide()) {
-            if (net.minecraft.client.Minecraft.getInstance().screen == null) {
-                dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.sendToServer(new dev.ClasherHD.bodycam.network.SyncBodycamRequestC2SPacket(true, true));
-            }
-        }
+        return true;
     }
 }

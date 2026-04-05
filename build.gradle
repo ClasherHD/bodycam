@@ -1,74 +1,59 @@
 plugins {
-    id 'eclipse'
-    id 'java'
-    id 'net.minecraftforge.gradle' version '[6.0,6.2)'
+	id 'fabric-loom' version '1.7.4'
+	id 'maven-publish'
 }
 
-group = "dev.ClasherHD"
-version = "2.0"
-base.archivesName = "bodycam-forge-1.20.1"
+version = project.mod_version
+group = project.maven_group
 
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
-        vendor = JvmVendorSpec.ADOPTIUM
-    }
-}
-
-minecraft {
-    mappings channel: 'official', version: '1.20.1'
-
-    runs {
-        client {
-            workingDirectory project.file('run')
-            property 'forge.logging.markers', 'REGISTRIES'
-            property 'forge.logging.console.level', 'debug'
-            mods {
-                bodycam {
-                    source sourceSets.main
-                }
-            }
-        }
-
-        server {
-            workingDirectory project.file('run')
-            property 'forge.logging.markers', 'REGISTRIES'
-            property 'forge.logging.console.level', 'debug'
-            mods {
-                bodycam {
-                    source sourceSets.main
-                }
-            }
-        }
-    }
+base {
+	archivesName = project.archives_base_name
 }
 
 repositories {
-    mavenCentral()
-    maven {
-        name = 'MinecraftForge'
-        url = 'https://maven.minecraftforge.net/'
-    }
-    maven {
-        url = "https://maven.maxhenkel.de/repository/public"
-    }
+	maven { url = "https://maven.maxhenkel.de/repository/public" }
 }
 
 dependencies {
-    minecraft 'net.minecraftforge:forge:1.20.1-47.3.0'
-    compileOnly "de.maxhenkel.voicechat:voicechat-api:2.5.0"
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	mappings loom.officialMojangMappings()
+	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+	
+	modCompileOnly "de.maxhenkel.voicechat:voicechat-api:2.5.0"
+}
+
+processResources {
+	inputs.property "version", project.version
+	filesMatching("fabric.mod.json") {
+		expand "version": project.version
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 17
+}
+
+java {
+	withSourcesJar()
+	sourceCompatibility = JavaVersion.VERSION_17
+	targetCompatibility = JavaVersion.VERSION_17
 }
 
 jar {
-    manifest {
-        attributes([
-            "Specification-Title"     : "bodycam",
-            "Specification-Vendor"    : "Clasher",
-            "Specification-Version"   : "1",
-            "Implementation-Title"    : project.name,
-            "Implementation-Version"  : project.jar.archiveVersion,
-            "Implementation-Vendor"   : "Sebastian",
-            "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
-        ])
+	from("LICENSE") {
+		rename { "${it}_${project.base.archivesName.get()}"}
+	}
+}
+loom {
+    runs {
+        client {
+            programArgs "--username", "Dev1"
+        }
+        client2 {
+            client()
+            runDir "run2"
+            programArgs "--username", "Dev2"
+        }
     }
 }

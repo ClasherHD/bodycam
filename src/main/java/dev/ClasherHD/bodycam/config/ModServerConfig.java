@@ -1,36 +1,86 @@
 package dev.ClasherHD.bodycam.config;
 
-import net.minecraftforge.common.ForgeConfigSpec;
-
 public class ModServerConfig {
-    public static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
-    public static final ForgeConfigSpec SPEC;
+    public static final ConfigValue<Integer> MAX_MONITOR_DISTANCE = new ConfigValue<>(500);
+    public static final ConfigValue<Boolean> ENABLE_REACH_ENCHANTMENT = new ConfigValue<>(true);
+    public static final ConfigValue<Boolean> ENABLE_JAMMER = new ConfigValue<>(true);
+    public static final ConfigValue<Boolean> ENABLE_DIMENSION_LOCATOR = new ConfigValue<>(true);
+    public static final ConfigValue<Boolean> ENABLE_HOLOGRAM_BLOCK = new ConfigValue<>(true);
+    public static final ConfigValue<Boolean> ENABLE_ANONYMIZER = new ConfigValue<>(true);
+    public static final ConfigValue<Boolean> OP_ONLY_MODE = new ConfigValue<>(false);
 
-    public static final ForgeConfigSpec.IntValue MAX_MONITOR_DISTANCE;
-    public static final ForgeConfigSpec.BooleanValue ENABLE_REACH_ENCHANTMENT;
-    public static final ForgeConfigSpec.BooleanValue ENABLE_JAMMER;
-    public static final ForgeConfigSpec.BooleanValue ENABLE_DIMENSION_LOCATOR;
-    public static final ForgeConfigSpec.BooleanValue ENABLE_HOLOGRAM_BLOCK;
-    public static final ForgeConfigSpec.BooleanValue ENABLE_ANONYMIZER;
-    public static final ForgeConfigSpec.BooleanValue OP_ONLY_MODE;
+    public static void load() {
+        java.io.File file = new java.io.File(net.fabricmc.loader.api.FabricLoader.getInstance().getConfigDir().toFile(),
+                "bodycam-server.json");
+        com.google.gson.Gson gson = new com.google.gson.GsonBuilder().setPrettyPrinting().create();
+        try {
+            if (file.exists()) {
+                com.google.gson.JsonObject json = gson.fromJson(new java.io.FileReader(file),
+                        com.google.gson.JsonObject.class);
+                if (json.has("maxMonitorDistance"))
+                    MAX_MONITOR_DISTANCE.set(json.get("maxMonitorDistance").getAsInt());
+                if (json.has("enableReachEnchantment"))
+                    ENABLE_REACH_ENCHANTMENT.set(json.get("enableReachEnchantment").getAsBoolean());
+                if (json.has("enableJammer"))
+                    ENABLE_JAMMER.set(json.get("enableJammer").getAsBoolean());
+                if (json.has("enableDimensionLocator"))
+                    ENABLE_DIMENSION_LOCATOR.set(json.get("enableDimensionLocator").getAsBoolean());
+                if (json.has("enableHologramBlock"))
+                    ENABLE_HOLOGRAM_BLOCK.set(json.get("enableHologramBlock").getAsBoolean());
+                if (json.has("enableAnonymizer"))
+                    ENABLE_ANONYMIZER.set(json.get("enableAnonymizer").getAsBoolean());
+                if (json.has("opOnlyMode"))
+                    OP_ONLY_MODE.set(json.get("opOnlyMode").getAsBoolean());
+            } else {
+                com.google.gson.JsonObject obj = new com.google.gson.JsonObject();
+                obj.addProperty("maxMonitorDistance", MAX_MONITOR_DISTANCE.get());
+                obj.addProperty("enableReachEnchantment", ENABLE_REACH_ENCHANTMENT.get());
+                obj.addProperty("enableJammer", ENABLE_JAMMER.get());
+                obj.addProperty("enableDimensionLocator", ENABLE_DIMENSION_LOCATOR.get());
+                obj.addProperty("enableHologramBlock", ENABLE_HOLOGRAM_BLOCK.get());
+                obj.addProperty("enableAnonymizer", ENABLE_ANONYMIZER.get());
+                obj.addProperty("opOnlyMode", OP_ONLY_MODE.get());
+                java.io.FileWriter writer = new java.io.FileWriter(file);
+                gson.toJson(obj, writer);
+                writer.close();
+            }
+        } catch (Exception e) {
+        }
+    }
 
-    static {
-        BUILDER.push("Distance Limits");
-        MAX_MONITOR_DISTANCE = BUILDER.comment("Max observation distance without reach enchantment").defineInRange("maxMonitorDistance", 500, 1, 1000000);
-        BUILDER.pop();
+    public static void save() {
+        java.io.File file = new java.io.File(net.fabricmc.loader.api.FabricLoader.getInstance().getConfigDir().toFile(),
+                "bodycam-server.json");
+        com.google.gson.Gson gson = new com.google.gson.GsonBuilder().setPrettyPrinting().create();
+        try {
+            com.google.gson.JsonObject obj = new com.google.gson.JsonObject();
+            obj.addProperty("maxMonitorDistance", MAX_MONITOR_DISTANCE.get());
+            obj.addProperty("enableReachEnchantment", ENABLE_REACH_ENCHANTMENT.get());
+            obj.addProperty("enableJammer", ENABLE_JAMMER.get());
+            obj.addProperty("enableDimensionLocator", ENABLE_DIMENSION_LOCATOR.get());
+            obj.addProperty("enableHologramBlock", ENABLE_HOLOGRAM_BLOCK.get());
+            obj.addProperty("enableAnonymizer", ENABLE_ANONYMIZER.get());
+            obj.addProperty("opOnlyMode", OP_ONLY_MODE.get());
+            java.io.FileWriter writer = new java.io.FileWriter(file);
+            gson.toJson(obj, writer);
+            writer.close();
+        } catch (Exception e) {
+        }
+    }
 
-        BUILDER.push("Module Toggles");
-        ENABLE_REACH_ENCHANTMENT = BUILDER.comment("Enable or Disable the Reach enchant capability").define("enableReachEnchantment", true);
-        ENABLE_JAMMER = BUILDER.comment("Enable or Disable the Jammer block").define("enableJammer", true);
-        ENABLE_DIMENSION_LOCATOR = BUILDER.comment("Enable or Disable the Dimension Locator GUI item").define("enableDimensionLocator", true);
-        ENABLE_HOLOGRAM_BLOCK = BUILDER.comment("Enable or Disable the Hologram Cross-Dimension Spawner Block").define("enableHologramBlock", true);
-        ENABLE_ANONYMIZER = BUILDER.comment("Enable or Disable the Anonymizer").define("enableAnonymizer", true);
-        BUILDER.pop();
+    public static class ConfigValue<T> {
+        private T value;
 
-        BUILDER.push("Security");
-        OP_ONLY_MODE = BUILDER.comment("Require Operator (Level 2) permissions to use ANY bodycam item/block mechanics").define("opOnlyMode", false);
-        BUILDER.pop();
+        public ConfigValue(T def) {
+            this.value = def;
+        }
 
-        SPEC = BUILDER.build();
+        public T get() {
+            return value;
+        }
+
+        public void set(T val) {
+            this.value = val;
+        }
     }
 }

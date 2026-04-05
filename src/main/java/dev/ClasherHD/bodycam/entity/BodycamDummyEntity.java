@@ -1,7 +1,6 @@
 package dev.ClasherHD.bodycam.entity;
 
 import net.minecraft.core.NonNullList;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -19,8 +18,6 @@ import java.util.UUID;
 public class BodycamDummyEntity extends LivingEntity {
     public static final EntityDataAccessor<Optional<UUID>> OWNER_UUID = SynchedEntityData
             .defineId(BodycamDummyEntity.class, EntityDataSerializers.OPTIONAL_UUID);
-    public static final EntityDataAccessor<String> OWNER_NAME = SynchedEntityData.defineId(BodycamDummyEntity.class,
-            EntityDataSerializers.STRING);
 
     public static final java.util.Map<java.util.UUID, net.minecraft.world.phys.Vec3> DUMMY_POS = new java.util.concurrent.ConcurrentHashMap<>();
     public static final java.util.Map<java.util.UUID, Float> DUMMY_FALL = new java.util.concurrent.ConcurrentHashMap<>();
@@ -31,12 +28,10 @@ public class BodycamDummyEntity extends LivingEntity {
     private boolean isChunkForced = false;
 
     public static net.minecraft.world.entity.ai.attributes.AttributeSupplier.Builder createAttributes() {
-        return net.minecraft.world.entity.Mob.createMobAttributes()
-                .add(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH)
-                .add(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR)
-                .add(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR_TOUGHNESS)
-                .add(net.minecraft.world.entity.ai.attributes.Attributes.KNOCKBACK_RESISTANCE)
-                .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE);
+        return net.minecraft.world.entity.LivingEntity.createLivingAttributes()
+                .add(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH, 20.0D)
+                .add(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR, 0.0D)
+                .add(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR_TOUGHNESS, 0.0D);
     }
 
     private final NonNullList<ItemStack> handItems = NonNullList.withSize(2, ItemStack.EMPTY);
@@ -49,7 +44,6 @@ public class BodycamDummyEntity extends LivingEntity {
     @Override
     public void remove(net.minecraft.world.entity.Entity.RemovalReason reason) {
         if (!this.level().isClientSide() && this.isChunkForced && this.level() instanceof net.minecraft.server.level.ServerLevel) {
-            net.minecraftforge.common.world.ForgeChunkManager.forceChunk((net.minecraft.server.level.ServerLevel) this.level(), "bodycam", this, this.currentLoadedChunkX, this.currentLoadedChunkZ, false, false);
             this.isChunkForced = false;
         }
         super.remove(reason);
@@ -61,12 +55,9 @@ public class BodycamDummyEntity extends LivingEntity {
             net.minecraft.server.MinecraftServer server = this.getServer();
             if (server != null) {
                 net.minecraft.server.level.ServerPlayer owner = server.getPlayerList().getPlayer(this.getOwnerUUID());
-                if (owner != null && owner.getPersistentData().getBoolean("bodycam_active")) {
+                if (owner != null && dev.ClasherHD.bodycam.BodycamHelper.getPersistentData(owner).getBoolean("bodycam_active")) {
                     dev.ClasherHD.bodycam.network.BodycamResetCameraPacket.executeReset(owner);
-                    dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
-                            net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> owner),
-                            new dev.ClasherHD.bodycam.network.BodycamForceClosePacket()
-                    );
+                    net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(owner, dev.ClasherHD.bodycam.network.BodycamPacketIDs.RESET_CAMERA_PACKET_ID, net.fabricmc.fabric.api.networking.v1.PacketByteBufs.empty());
                 }
             }
         }
@@ -77,7 +68,6 @@ public class BodycamDummyEntity extends LivingEntity {
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(OWNER_UUID, Optional.empty());
-        this.entityData.define(OWNER_NAME, "");
     }
 
     public UUID getOwnerUUID() {
@@ -119,8 +109,7 @@ public class BodycamDummyEntity extends LivingEntity {
         return HumanoidArm.RIGHT;
     }
 
-    @Override
-    protected void hurtArmor(DamageSource source, float damage) {
+    private void damageArmorItems(DamageSource source, float damage) {
         if (damage <= 0.0F) return;
         damage /= 4.0F;
         if (damage < 1.0F) damage = 1.0F;
@@ -144,6 +133,7 @@ public class BodycamDummyEntity extends LivingEntity {
                 net.minecraft.server.level.ServerPlayer player = server.getPlayerList().getPlayer(this.getOwnerUUID());
                 if (player != null) {
                     boolean result = super.hurt(source, amount);
+                    damageArmorItems(source, amount);
                     for (net.minecraft.world.entity.EquipmentSlot slot : net.minecraft.world.entity.EquipmentSlot.values()) {
                         if (slot.getType() == net.minecraft.world.entity.EquipmentSlot.Type.ARMOR) {
                             net.minecraft.world.item.ItemStack dummyPiece = this.getItemBySlot(slot);
@@ -186,12 +176,6 @@ public class BodycamDummyEntity extends LivingEntity {
     }
 
     @Override
-    public boolean addEffect(net.minecraft.world.effect.MobEffectInstance effectInstance,
-            @javax.annotation.Nullable net.minecraft.world.entity.Entity entity) {
-        return super.addEffect(effectInstance, entity);
-    }
-
-    @Override
     public void tick() {
         super.tick();
         if (!this.level().isClientSide()) {
@@ -201,28 +185,20 @@ public class BodycamDummyEntity extends LivingEntity {
             }
             net.minecraft.server.level.ServerPlayer owner = this.level().getServer().getPlayerList()
                     .getPlayer(this.getOwnerUUID());
-            if (owner == null || !owner.getPersistentData().getBoolean("bodycam_active")
-                    || !this.getUUID().equals(owner.getPersistentData().getUUID("bodycam_dummy_uuid"))) {
+            if (owner == null || !dev.ClasherHD.bodycam.BodycamHelper.getPersistentData(owner).getBoolean("bodycam_active")
+                    || !this.getUUID().equals(dev.ClasherHD.bodycam.BodycamHelper.getPersistentData(owner).getUUID("bodycam_dummy_uuid"))) {
                 this.discard();
                 return;
             }
-
-
 
             int currentChunkX = this.blockPosition().getX() >> 4;
             int currentChunkZ = this.blockPosition().getZ() >> 4;
 
             if (currentChunkX != this.currentLoadedChunkX || currentChunkZ != this.currentLoadedChunkZ) {
-                if (this.isChunkForced && this.currentLoadedChunkX != Integer.MAX_VALUE && this.currentLoadedChunkZ != Integer.MAX_VALUE) {
-                    net.minecraftforge.common.world.ForgeChunkManager.forceChunk((net.minecraft.server.level.ServerLevel) this.level(), "bodycam", this, this.currentLoadedChunkX, this.currentLoadedChunkZ, false, false);
-                }
-                net.minecraftforge.common.world.ForgeChunkManager.forceChunk((net.minecraft.server.level.ServerLevel) this.level(), "bodycam", this, currentChunkX, currentChunkZ, true, true);
                 this.currentLoadedChunkX = currentChunkX;
                 this.currentLoadedChunkZ = currentChunkZ;
                 this.isChunkForced = true;
             }
-
-
 
             DUMMY_POS.put(this.getOwnerUUID(), this.position());
             DUMMY_FALL.put(this.getOwnerUUID(), this.fallDistance);

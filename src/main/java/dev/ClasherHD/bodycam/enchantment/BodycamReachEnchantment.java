@@ -29,9 +29,4 @@ public class BodycamReachEnchantment extends Enchantment {
     public boolean canEnchant(net.minecraft.world.item.ItemStack stack) {
         return stack.getItem() instanceof dev.ClasherHD.bodycam.item.BodycamMonitorItem;
     }
-
-    @Override
-    public boolean canApplyAtEnchantingTable(net.minecraft.world.item.ItemStack stack) {
-        return stack.getItem() instanceof dev.ClasherHD.bodycam.item.BodycamMonitorItem;
-    }
 }

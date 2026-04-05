@@ -29,54 +29,86 @@ public class ClientConfigScreen extends Screen {
     protected void init() {
         this.scrollY = 0;
 
-        this.btnName = Button.builder(Component.translatable("gui.bodycam.config.name_overlay").append(Component.literal(": " + dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_NAME_OVERLAY.get())), btn -> {
-            dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_NAME_OVERLAY.set(!dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_NAME_OVERLAY.get());
-            btn.setMessage(Component.translatable("gui.bodycam.config.name_overlay").append(Component.literal(": " + dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_NAME_OVERLAY.get())));
-        }).bounds(this.width / 2 - 100, 0, 200, 20).build();
+        this.btnName = Button
+                .builder(
+                        Component.translatable("gui.bodycam.config.name_overlay")
+                                .append(Component.literal(
+                                        ": " + dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_NAME_OVERLAY.get())),
+                        btn -> {
+                            dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_NAME_OVERLAY
+                                    .set(!dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_NAME_OVERLAY.get());
+                            btn.setMessage(Component.translatable("gui.bodycam.config.name_overlay")
+                                    .append(Component.literal(": "
+                                            + dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_NAME_OVERLAY.get())));
+                        })
+                .bounds(this.width / 2 - 100, 0, 200, 20).build();
         this.addRenderableWidget(this.btnName);
 
-        this.btnHealth = Button.builder(Component.translatable("gui.bodycam.config.health_overlay").append(Component.literal(": " + dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_HEALTH_OVERLAY.get())), btn -> {
-            dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_HEALTH_OVERLAY.set(!dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_HEALTH_OVERLAY.get());
-            btn.setMessage(Component.translatable("gui.bodycam.config.health_overlay").append(Component.literal(": " + dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_HEALTH_OVERLAY.get())));
-        }).bounds(this.width / 2 - 100, 0, 200, 20).build();
+        this.btnHealth = Button.builder(
+                Component.translatable("gui.bodycam.config.health_overlay")
+                        .append(Component.literal(
+                                ": " + dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_HEALTH_OVERLAY.get())),
+                btn -> {
+                    dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_HEALTH_OVERLAY
+                            .set(!dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_HEALTH_OVERLAY.get());
+                    btn.setMessage(Component.translatable("gui.bodycam.config.health_overlay").append(Component
+                            .literal(": " + dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_HEALTH_OVERLAY.get())));
+                }).bounds(this.width / 2 - 100, 0, 200, 20).build();
         this.addRenderableWidget(this.btnHealth);
 
-        this.btnShift = Button.builder(Component.translatable("gui.bodycam.config.shift_overlay").append(Component.literal(": " + dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_SHIFT_OVERLAY.get())), btn -> {
-            dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_SHIFT_OVERLAY.set(!dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_SHIFT_OVERLAY.get());
-            btn.setMessage(Component.translatable("gui.bodycam.config.shift_overlay").append(Component.literal(": " + dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_SHIFT_OVERLAY.get())));
-        }).bounds(this.width / 2 - 100, 0, 200, 20).build();
+        this.btnShift = Button
+                .builder(
+                        Component.translatable("gui.bodycam.config.shift_overlay")
+                                .append(Component.literal(
+                                        ": " + dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_SHIFT_OVERLAY.get())),
+                        btn -> {
+                            dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_SHIFT_OVERLAY
+                                    .set(!dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_SHIFT_OVERLAY.get());
+                            btn.setMessage(Component.translatable("gui.bodycam.config.shift_overlay")
+                                    .append(Component.literal(": "
+                                            + dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_SHIFT_OVERLAY.get())));
+                        })
+                .bounds(this.width / 2 - 100, 0, 200, 20).build();
         this.addRenderableWidget(this.btnShift);
 
-        this.colorStandard = new EditBox(this.font, this.width / 2 - 100, 0, 200, 20, Component.translatable("gui.bodycam.config.standard_color"));
+        this.colorStandard = new EditBox(this.font, this.width / 2 - 100, 0, 200, 20,
+                Component.translatable("gui.bodycam.config.standard_color"));
         this.colorStandard.setMaxLength(6);
         this.colorStandard.setValue(dev.ClasherHD.bodycam.config.ModClientConfig.COLOR_STANDARD.get());
         this.addRenderableWidget(this.colorStandard);
 
-        this.btnPreviewStd = Button.builder(Component.literal("\u25A0"), btn -> applyColorPreview(this.colorStandard)).bounds(this.width / 2 + 105, 0, 20, 20).build();
+        this.btnPreviewStd = Button.builder(Component.literal("\u25A0"), btn -> applyColorPreview(this.colorStandard))
+                .bounds(this.width / 2 + 105, 0, 20, 20).build();
         this.addRenderableWidget(this.btnPreviewStd);
 
-        this.colorBlocked = new EditBox(this.font, this.width / 2 - 100, 0, 200, 20, Component.translatable("gui.bodycam.config.blocked_color"));
+        this.colorBlocked = new EditBox(this.font, this.width / 2 - 100, 0, 200, 20,
+                Component.translatable("gui.bodycam.config.blocked_color"));
         this.colorBlocked.setMaxLength(6);
         this.colorBlocked.setValue(dev.ClasherHD.bodycam.config.ModClientConfig.COLOR_BLOCKED.get());
         this.addRenderableWidget(this.colorBlocked);
 
-        this.btnPreviewBlk = Button.builder(Component.literal("\u25A0"), btn -> applyColorPreview(this.colorBlocked)).bounds(this.width / 2 + 105, 0, 20, 20).build();
+        this.btnPreviewBlk = Button.builder(Component.literal("\u25A0"), btn -> applyColorPreview(this.colorBlocked))
+                .bounds(this.width / 2 + 105, 0, 20, 20).build();
         this.addRenderableWidget(this.btnPreviewBlk);
 
-        this.colorObserving = new EditBox(this.font, this.width / 2 - 100, 0, 200, 20, Component.translatable("gui.bodycam.config.observing_color"));
+        this.colorObserving = new EditBox(this.font, this.width / 2 - 100, 0, 200, 20,
+                Component.translatable("gui.bodycam.config.observing_color"));
         this.colorObserving.setMaxLength(6);
         this.colorObserving.setValue(dev.ClasherHD.bodycam.config.ModClientConfig.COLOR_OBSERVING.get());
         this.addRenderableWidget(this.colorObserving);
 
-        this.btnPreviewObs = Button.builder(Component.literal("\u25A0"), btn -> applyColorPreview(this.colorObserving)).bounds(this.width / 2 + 105, 0, 20, 20).build();
+        this.btnPreviewObs = Button.builder(Component.literal("\u25A0"), btn -> applyColorPreview(this.colorObserving))
+                .bounds(this.width / 2 + 105, 0, 20, 20).build();
         this.addRenderableWidget(this.btnPreviewObs);
 
-        this.colorDimension = new EditBox(this.font, this.width / 2 - 100, 0, 200, 20, Component.translatable("gui.bodycam.config.dimension_color"));
+        this.colorDimension = new EditBox(this.font, this.width / 2 - 100, 0, 200, 20,
+                Component.translatable("gui.bodycam.config.dimension_color"));
         this.colorDimension.setMaxLength(6);
         this.colorDimension.setValue(dev.ClasherHD.bodycam.config.ModClientConfig.COLOR_DIMENSION.get());
         this.addRenderableWidget(this.colorDimension);
 
-        this.btnPreviewDim = Button.builder(Component.literal("\u25A0"), btn -> applyColorPreview(this.colorDimension)).bounds(this.width / 2 + 105, 0, 20, 20).build();
+        this.btnPreviewDim = Button.builder(Component.literal("\u25A0"), btn -> applyColorPreview(this.colorDimension))
+                .bounds(this.width / 2 + 105, 0, 20, 20).build();
         this.addRenderableWidget(this.btnPreviewDim);
 
         this.btnReset = Button.builder(Component.translatable("gui.bodycam.config.reset"), btn -> {
@@ -84,9 +116,12 @@ public class ClientConfigScreen extends Screen {
             dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_HEALTH_OVERLAY.set(true);
             dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_SHIFT_OVERLAY.set(true);
 
-            this.btnName.setMessage(Component.translatable("gui.bodycam.config.name_overlay").append(Component.literal(": true")));
-            this.btnHealth.setMessage(Component.translatable("gui.bodycam.config.health_overlay").append(Component.literal(": true")));
-            this.btnShift.setMessage(Component.translatable("gui.bodycam.config.shift_overlay").append(Component.literal(": true")));
+            this.btnName.setMessage(
+                    Component.translatable("gui.bodycam.config.name_overlay").append(Component.literal(": true")));
+            this.btnHealth.setMessage(
+                    Component.translatable("gui.bodycam.config.health_overlay").append(Component.literal(": true")));
+            this.btnShift.setMessage(
+                    Component.translatable("gui.bodycam.config.shift_overlay").append(Component.literal(": true")));
 
             this.colorStandard.setValue("FFFFFF");
             this.colorStandard.setTextColor(0xFFFFFFFF);
@@ -104,11 +139,12 @@ public class ClientConfigScreen extends Screen {
             this.colorDimension.setTextColor(0xFF55FF55);
             dev.ClasherHD.bodycam.config.ModClientConfig.COLOR_DIMENSION.set("55FF55");
 
-            dev.ClasherHD.bodycam.config.ModClientConfig.SPEC.save();
+            dev.ClasherHD.bodycam.config.ModClientConfig.save();
         }).bounds(this.width / 2 - 100, 0, 200, 20).build();
         this.addRenderableWidget(this.btnReset);
 
-        this.btnDone = Button.builder(Component.translatable("gui.done"), btn -> this.onClose()).bounds(this.width / 2 - 100, 0, 200, 20).build();
+        this.btnDone = Button.builder(Component.translatable("gui.done"), btn -> this.onClose())
+                .bounds(this.width / 2 - 100, 0, 200, 20).build();
         this.addRenderableWidget(this.btnDone);
 
         this.updateLayout();
@@ -169,13 +205,17 @@ public class ClientConfigScreen extends Screen {
         pGuiGraphics.drawCenteredString(this.font, this.title, this.width / 2, 10 + (int) this.scrollY, 16777215);
 
         int y = 115 + (int) this.scrollY;
-        pGuiGraphics.drawString(this.font, Component.translatable("gui.bodycam.config.standard_color"), this.width / 2 - 100, y - 10, 10526880);
+        pGuiGraphics.drawString(this.font, Component.translatable("gui.bodycam.config.standard_color"),
+                this.width / 2 - 100, y - 10, 10526880);
         y += 35;
-        pGuiGraphics.drawString(this.font, Component.translatable("gui.bodycam.config.blocked_color"), this.width / 2 - 100, y - 10, 10526880);
+        pGuiGraphics.drawString(this.font, Component.translatable("gui.bodycam.config.blocked_color"),
+                this.width / 2 - 100, y - 10, 10526880);
         y += 35;
-        pGuiGraphics.drawString(this.font, Component.translatable("gui.bodycam.config.observing_color"), this.width / 2 - 100, y - 10, 10526880);
+        pGuiGraphics.drawString(this.font, Component.translatable("gui.bodycam.config.observing_color"),
+                this.width / 2 - 100, y - 10, 10526880);
         y += 35;
-        pGuiGraphics.drawString(this.font, Component.translatable("gui.bodycam.config.dimension_color"), this.width / 2 - 100, y - 10, 10526880);
+        pGuiGraphics.drawString(this.font, Component.translatable("gui.bodycam.config.dimension_color"),
+                this.width / 2 - 100, y - 10, 10526880);
 
         super.render(pGuiGraphics, pMouseX, pMouseY, pPartialTick);
     }
@@ -186,7 +226,7 @@ public class ClientConfigScreen extends Screen {
         dev.ClasherHD.bodycam.config.ModClientConfig.COLOR_BLOCKED.set(this.colorBlocked.getValue());
         dev.ClasherHD.bodycam.config.ModClientConfig.COLOR_OBSERVING.set(this.colorObserving.getValue());
         dev.ClasherHD.bodycam.config.ModClientConfig.COLOR_DIMENSION.set(this.colorDimension.getValue());
-        dev.ClasherHD.bodycam.config.ModClientConfig.SPEC.save();
+        dev.ClasherHD.bodycam.config.ModClientConfig.save();
         if (this.minecraft != null) {
             this.minecraft.setScreen(this.previous);
         }

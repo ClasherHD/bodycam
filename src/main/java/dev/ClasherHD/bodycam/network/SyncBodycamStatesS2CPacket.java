@@ -1,13 +1,11 @@
 package dev.ClasherHD.bodycam.network;
 
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
 import net.minecraft.core.BlockPos;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.Supplier;
-import net.minecraft.client.Minecraft;
+
 
 public class SyncBodycamStatesS2CPacket {
     public final Map<UUID, Integer> jammers;
@@ -87,11 +85,5 @@ public class SyncBodycamStatesS2CPacket {
         return new SyncBodycamStatesS2CPacket(jammers, targets, dimensions, positions, anonymizers, buf.readBoolean(), buf.readBoolean());
     }
 
-    public static void handle(SyncBodycamStatesS2CPacket msg, Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> {
-            dev.ClasherHD.bodycam.client.ClientBodycamCache.update(msg.jammers, msg.targets, msg.dimensions, msg.positions, msg.anonymizers);
-            Minecraft.getInstance().setScreen(new dev.ClasherHD.bodycam.client.gui.PlayerSelectionScreen(msg.hasReach, msg.isOnHologram));
-        });
-        ctx.get().setPacketHandled(true);
-    }
+
 }
