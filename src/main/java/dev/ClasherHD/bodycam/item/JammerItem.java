@@ -15,6 +15,7 @@ public class JammerItem extends Item {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
+
         if (!level.isClientSide()) {
             if (dev.ClasherHD.bodycam.config.ModServerConfig.OP_ONLY_MODE.get() && !player.hasPermissions(2)) {
                 player.sendSystemMessage(
@@ -27,46 +28,21 @@ public class JammerItem extends Item {
                         .literal("The Jammer is disabled on this server.").withStyle(net.minecraft.ChatFormatting.RED));
                 return InteractionResultHolder.fail(stack);
             }
-            int mode = stack.hasTag() ? stack.getTag().getInt("JammerMode") : 0;
-            mode = (mode + 1) % 3;
-            stack.getOrCreateTag().putInt("JammerMode", mode);
+        }
 
-            java.util.UUID activeId = null;
-            if (mode > 0) {
-                activeId = java.util.UUID.randomUUID();
-                dev.ClasherHD.bodycam.BodycamHelper.getPersistentData(player).putUUID("bodycam_active_jammer_id",
-                        activeId);
-                dev.ClasherHD.bodycam.BodycamHelper.getPersistentData(player).putLong("bodycam_jammer_heartbeat",
-                        level.getGameTime());
-            }
+        int mode = stack.hasTag() ? stack.getTag().getInt("JammerMode") : 0;
+        mode = (mode + 1) % 3;
 
-            for (net.minecraft.world.item.ItemStack invStack : player.getInventory().items) {
-                if (invStack.getItem() instanceof JammerItem) {
-                    invStack.getOrCreateTag().putInt("JammerMode", mode);
-                    if (activeId != null)
-                        invStack.getOrCreateTag().putUUID("active_id", activeId);
-                    else
-                        invStack.getOrCreateTag().remove("active_id");
-                }
+        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+            ItemStack invStack = player.getInventory().getItem(i);
+            if (invStack.getItem() instanceof JammerItem) {
+                invStack.getOrCreateTag().putInt("JammerMode", mode);
+                invStack.getOrCreateTag().putBoolean("IsMaster", invStack == stack);
             }
-            for (net.minecraft.world.item.ItemStack invStack : player.getInventory().armor) {
-                if (invStack.getItem() instanceof JammerItem) {
-                    invStack.getOrCreateTag().putInt("JammerMode", mode);
-                    if (activeId != null)
-                        invStack.getOrCreateTag().putUUID("active_id", activeId);
-                    else
-                        invStack.getOrCreateTag().remove("active_id");
-                }
-            }
-            for (net.minecraft.world.item.ItemStack invStack : player.getInventory().offhand) {
-                if (invStack.getItem() instanceof JammerItem) {
-                    invStack.getOrCreateTag().putInt("JammerMode", mode);
-                    if (activeId != null)
-                        invStack.getOrCreateTag().putUUID("active_id", activeId);
-                    else
-                        invStack.getOrCreateTag().remove("active_id");
-                }
-            }
+        }
+
+        if (!level.isClientSide()) {
+            dev.ClasherHD.bodycam.BodycamHelper.getPersistentData(player).putInt("bodycam_jammer_mode", mode);
 
             String key = mode == 0 ? "message.bodycam.jammer.off"
                     : (mode == 1 ? "message.bodycam.jammer.on" : "message.bodycam.jammer.limited");
@@ -99,30 +75,40 @@ public class JammerItem extends Item {
     @Override
     public void inventoryTick(ItemStack stack, Level level, net.minecraft.world.entity.Entity entity, int slotId,
             boolean isSelected) {
-        if (!level.isClientSide() && entity instanceof net.minecraft.server.level.ServerPlayer) {
-            int mode = stack.hasTag() && stack.getTag().contains("JammerMode") ? stack.getTag().getInt("JammerMode")
-                    : 0;
-            if (mode > 0) {
-                boolean isValid = false;
-                if (stack.hasTag() && stack.getTag().hasUUID("active_id") && dev.ClasherHD.bodycam.BodycamHelper
-                        .getPersistentData(entity).hasUUID("bodycam_active_jammer_id")) {
-                    java.util.UUID itemUUID = stack.getTag().getUUID("active_id");
-                    java.util.UUID playerUUID = dev.ClasherHD.bodycam.BodycamHelper.getPersistentData(entity)
-                            .getUUID("bodycam_active_jammer_id");
-                    long lastHeartbeat = dev.ClasherHD.bodycam.BodycamHelper.getPersistentData(entity)
-                            .getLong("bodycam_jammer_heartbeat");
-                    boolean isCreative = ((net.minecraft.server.level.ServerPlayer) entity).isCreative();
-                    isValid = itemUUID.equals(playerUUID)
-                            && (isCreative || (level.getGameTime() - lastHeartbeat <= 10));
-                }
+        if (entity instanceof Player player) {
+            ItemStack masterStack = null;
+            ItemStack firstFound = null;
 
-                if (isValid) {
-                    dev.ClasherHD.bodycam.BodycamHelper.getPersistentData(entity).putLong("bodycam_jammer_heartbeat",
+            for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+                ItemStack invStack = player.getInventory().getItem(i);
+                if (invStack.getItem() instanceof JammerItem) {
+                    if (firstFound == null)
+                        firstFound = invStack;
+                    if (invStack.hasTag() && invStack.getTag().getBoolean("IsMaster")) {
+                        masterStack = invStack;
+                        break;
+                    }
+                }
+            }
+
+            if (masterStack == null && firstFound != null) {
+                masterStack = firstFound;
+                masterStack.getOrCreateTag().putBoolean("IsMaster", true);
+            }
+
+            if (masterStack != null && stack != masterStack) {
+                int masterMode = masterStack.hasTag() ? masterStack.getTag().getInt("JammerMode") : 0;
+                stack.getOrCreateTag().putInt("JammerMode", masterMode);
+                stack.getOrCreateTag().putBoolean("IsMaster", false);
+            }
+
+            if (!level.isClientSide() && stack == masterStack) {
+                int currentMode = stack.hasTag() ? stack.getTag().getInt("JammerMode") : 0;
+                dev.ClasherHD.bodycam.BodycamHelper.getPersistentData(player).putInt("bodycam_jammer_mode",
+                        currentMode);
+                if (currentMode > 0) {
+                    dev.ClasherHD.bodycam.BodycamHelper.getPersistentData(player).putLong("bodycam_jammer_heartbeat",
                             level.getGameTime());
-                    dev.ClasherHD.bodycam.BodycamHelper.getPersistentData(entity).putInt("bodycam_jammer_mode", mode);
-                } else {
-                    stack.getOrCreateTag().putInt("JammerMode", 0);
-                    stack.getOrCreateTag().remove("active_id");
                 }
             }
         }
