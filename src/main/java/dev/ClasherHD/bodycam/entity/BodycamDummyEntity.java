@@ -48,9 +48,19 @@ public class BodycamDummyEntity extends LivingEntity {
 
     @Override
     public void remove(net.minecraft.world.entity.Entity.RemovalReason reason) {
-        if (!this.level().isClientSide() && this.isChunkForced && this.level() instanceof net.minecraft.server.level.ServerLevel) {
-            net.minecraftforge.common.world.ForgeChunkManager.forceChunk((net.minecraft.server.level.ServerLevel) this.level(), "bodycam", this, this.currentLoadedChunkX, this.currentLoadedChunkZ, false, false);
-            this.isChunkForced = false;
+        if (!this.level().isClientSide()) {
+            if (this.isChunkForced && this.level() instanceof net.minecraft.server.level.ServerLevel) {
+                net.minecraftforge.common.world.ForgeChunkManager.forceChunk((net.minecraft.server.level.ServerLevel) this.level(), "bodycam", this, this.currentLoadedChunkX, this.currentLoadedChunkZ, false, false);
+                this.isChunkForced = false;
+            }
+            java.util.List<net.minecraft.world.entity.Mob> mobs = this.level().getEntitiesOfClass(
+                    net.minecraft.world.entity.Mob.class,
+                    this.getBoundingBox().inflate(32.0D),
+                    m -> m.getTarget() == this);
+            for (net.minecraft.world.entity.Mob mob : mobs) {
+                mob.setTarget(null);
+                mob.getNavigation().stop();
+            }
         }
         super.remove(reason);
     }

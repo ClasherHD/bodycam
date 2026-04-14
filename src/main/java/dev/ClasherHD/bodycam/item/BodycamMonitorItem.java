@@ -1,6 +1,5 @@
 package dev.ClasherHD.bodycam.item;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
@@ -21,7 +20,8 @@ public class BodycamMonitorItem extends Item {
             boolean hasReach = net.minecraft.world.item.enchantment.EnchantmentHelper.getItemEnchantmentLevel(
                     dev.ClasherHD.bodycam.bodycam.REACH_ENCHANTMENT.get(), player.getItemInHand(hand)) > 0;
             DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-                dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.sendToServer(new dev.ClasherHD.bodycam.network.SyncBodycamRequestC2SPacket(hasReach, false));
+                dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE
+                        .sendToServer(new dev.ClasherHD.bodycam.network.SyncBodycamRequestC2SPacket(hasReach, false));
             });
         }
         return InteractionResultHolder.sidedSuccess(player.getItemInHand(hand), level.isClientSide());

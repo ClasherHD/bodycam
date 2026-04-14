@@ -7,9 +7,11 @@ import de.maxhenkel.voicechat.api.events.EventRegistration;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraft.client.Minecraft;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import dev.ClasherHD.bodycam.client.gui.BodycamViewScreen;
 
+@OnlyIn(Dist.CLIENT)
 @ForgeVoicechatPlugin
 public class BodycamVoicechatPlugin implements VoicechatPlugin {
 
@@ -33,7 +35,7 @@ public class BodycamVoicechatPlugin implements VoicechatPlugin {
     @SubscribeEvent
     public void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase == TickEvent.Phase.END) {
-            Minecraft mc = Minecraft.getInstance();
+            net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
             if (mc.screen instanceof BodycamViewScreen viewScreen) {
                 java.util.UUID targetId = viewScreen.getTargetId();
                 if (targetId != null && mc.level != null) {

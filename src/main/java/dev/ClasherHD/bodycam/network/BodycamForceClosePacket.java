@@ -4,6 +4,8 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.DistExecutor;
 
 public class BodycamForceClosePacket {
 
@@ -19,15 +21,7 @@ public class BodycamForceClosePacket {
 
     public static void handle(BodycamForceClosePacket msg, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            try {
-                dev.ClasherHD.bodycam.client.gui.BodycamViewScreen.isMonitoring = false;
-                net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
-                if (mc.player != null) {
-                    mc.setCameraEntity(mc.player);
-                }
-                mc.setScreen(null);
-            } catch (Exception e) {
-            }
+            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> dev.ClasherHD.bodycam.client.ClientPacketHandler.handleForceClose(msg));
         });
         ctx.get().setPacketHandled(true);
     }

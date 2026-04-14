@@ -2,12 +2,13 @@ package dev.ClasherHD.bodycam.network;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
-import net.minecraft.client.Minecraft;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Supplier;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.DistExecutor;
 
 public class DimensionLocatorResponsePacket {
 
@@ -36,7 +37,7 @@ public class DimensionLocatorResponsePacket {
 
     public static void handle(DimensionLocatorResponsePacket msg, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            Minecraft.getInstance().setScreen(new dev.ClasherHD.bodycam.client.gui.DimensionLocatorScreen(msg.dimensions));
+            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> dev.ClasherHD.bodycam.client.ClientPacketHandler.handleDimensionResponse(msg));
         });
         ctx.get().setPacketHandled(true);
     }
