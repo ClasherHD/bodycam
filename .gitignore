@@ -36,3 +36,6 @@ bin/main/
 # OS spezifisch
 .DS_Store
 Thumbs.db
+
+run3/
+run4/

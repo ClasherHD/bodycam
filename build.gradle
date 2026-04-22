@@ -55,5 +55,15 @@ loom {
             runDir "run2"
             programArgs "--username", "Dev2"
         }
+		client3 {
+            client()
+            runDir "run3"
+            programArgs "--username", "Dev3"
+        }
+		client4 {
+            client()
+            runDir "run4"
+            programArgs "--username", "Dev4"
+        }
     }
 }

@@ -28,10 +28,12 @@ public class BodycamDummyEntity extends LivingEntity {
     private boolean isChunkForced = false;
 
     public static net.minecraft.world.entity.ai.attributes.AttributeSupplier.Builder createAttributes() {
-        return net.minecraft.world.entity.LivingEntity.createLivingAttributes()
-                .add(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH, 20.0D)
-                .add(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR, 0.0D)
-                .add(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR_TOUGHNESS, 0.0D);
+        return net.minecraft.world.entity.Mob.createMobAttributes()
+                .add(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH)
+                .add(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR)
+                .add(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR_TOUGHNESS)
+                .add(net.minecraft.world.entity.ai.attributes.Attributes.KNOCKBACK_RESISTANCE)
+                .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE);
     }
 
     private final NonNullList<ItemStack> handItems = NonNullList.withSize(2, ItemStack.EMPTY);

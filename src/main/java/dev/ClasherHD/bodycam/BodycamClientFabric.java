@@ -11,6 +11,11 @@ public class BodycamClientFabric implements ClientModInitializer {
         dev.ClasherHD.bodycam.client.event.BodycamClientEvents.register();
 
         dev.ClasherHD.bodycam.network.ClientNetworking.register();
+
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+            dev.ClasherHD.bodycam.client.gui.BodycamViewScreen.isMonitoring = false;
+            dev.ClasherHD.bodycam.client.gui.BodycamViewScreen.targetUuid = null;
+        });
         net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry.register(
                 dev.ClasherHD.bodycam.entity.EntityRegistryFabric.COMPASS_DUMMY,
                 dev.ClasherHD.bodycam.client.render.BodycamDummyRenderer::new);
