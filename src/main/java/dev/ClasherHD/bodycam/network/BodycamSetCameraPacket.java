@@ -113,6 +113,13 @@ public class BodycamSetCameraPacket {
             ORIGINAL_POS.put(player.getUUID(), player.position());
             ORIGINAL_ROT.put(player.getUUID(), new net.minecraft.world.phys.Vec2(player.getXRot(), player.getYRot()));
             ORIGINAL_GAMEMODE.put(player.getUUID(), player.gameMode.getGameModeForPlayer().getId());
+            player.getPersistentData().putInt("bodycam_original_gamemode", player.gameMode.getGameModeForPlayer().getId());
+            player.getPersistentData().putString("bodycam_orig_dim", player.level().dimension().location().toString());
+            player.getPersistentData().putDouble("bodycam_orig_x", player.getX());
+            player.getPersistentData().putDouble("bodycam_orig_y", player.getY());
+            player.getPersistentData().putDouble("bodycam_orig_z", player.getZ());
+            player.getPersistentData().putFloat("bodycam_orig_yrot", player.getYRot());
+            player.getPersistentData().putFloat("bodycam_orig_xrot", player.getXRot());
 
             boolean isOnHologram = msg.isOnHologram;
             dev.ClasherHD.bodycam.entity.BodycamDummyEntity dummy;

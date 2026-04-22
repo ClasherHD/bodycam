@@ -26,6 +26,12 @@ public class BodycamClientEvents {
     }
 
     @SubscribeEvent
+    public static void onClientLogout(net.minecraftforge.client.event.ClientPlayerNetworkEvent.LoggingOut event) {
+        dev.ClasherHD.bodycam.client.gui.BodycamViewScreen.isMonitoring = false;
+        dev.ClasherHD.bodycam.client.gui.BodycamViewScreen.targetUuid = null;
+    }
+
+    @SubscribeEvent
     public static void onRenderGuiOverlay(net.minecraftforge.client.event.RenderGuiOverlayEvent.Pre event) {
         if (dev.ClasherHD.bodycam.client.gui.BodycamViewScreen.isMonitoring) {
             net.minecraft.resources.ResourceLocation id = event.getOverlay().id();

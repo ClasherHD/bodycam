@@ -34,3 +34,5 @@ bin/main/
 # OS spezifisch
 .DS_Store
 Thumbs.db
+
+run_client2/
