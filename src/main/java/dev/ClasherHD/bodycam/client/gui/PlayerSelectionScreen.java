@@ -1,17 +1,16 @@
 package dev.ClasherHD.bodycam.client.gui;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.ObjectSelectionList;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.player.Player;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+@SuppressWarnings("null")
 public class PlayerSelectionScreen extends Screen {
 
     public static final Set<UUID> observingMe = ConcurrentHashMap.newKeySet();
@@ -178,7 +177,6 @@ public class PlayerSelectionScreen extends Screen {
         @Override
         public void render(GuiGraphics graphics, int index, int top, int left, int width, int height, int mouseX, int mouseY, boolean isMouseOver, float partialTick) {
             ResourceLocation skin = this.playerInfo.getSkinLocation();
-            RenderSystem.setShaderTexture(0, skin);
             graphics.blit(skin, left, top + 4, 32, 32, 8.0F, 8.0F, 8, 8, 64, 64);
             graphics.blit(skin, left, top + 4, 32, 32, 40.0F, 8.0F, 8, 8, 64, 64);
             boolean hasAnonymizer = dev.ClasherHD.bodycam.client.ClientBodycamCache.anonymizers.getOrDefault(this.playerInfo.getProfile().getId(), false);

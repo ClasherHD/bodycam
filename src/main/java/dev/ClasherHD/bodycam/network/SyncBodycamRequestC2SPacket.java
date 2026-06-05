@@ -11,6 +11,7 @@ import java.util.UUID;
 import java.util.function.Supplier;
 import net.minecraft.world.item.ItemStack;
 
+@SuppressWarnings("null")
 public class SyncBodycamRequestC2SPacket {
     public final boolean hasReach;
     public final boolean isOnHologram;
@@ -35,11 +36,11 @@ public class SyncBodycamRequestC2SPacket {
             if (sender == null) return;
 
             if (dev.ClasherHD.bodycam.config.ModServerConfig.OP_ONLY_MODE.get() && !sender.hasPermissions(2)) {
-                sender.sendSystemMessage(net.minecraft.network.chat.Component.literal("This feature is restricted to Server Operators.").withStyle(net.minecraft.ChatFormatting.RED));
+                sender.sendSystemMessage(net.minecraft.network.chat.Component.translatable("message.bodycam.op_only").withStyle(net.minecraft.ChatFormatting.RED));
                 return;
             }
             if (msg.isOnHologram && !dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_HOLOGRAM_BLOCK.get()) {
-                sender.sendSystemMessage(net.minecraft.network.chat.Component.literal("Hologram cross-dimension projection is disabled on this server.").withStyle(net.minecraft.ChatFormatting.RED));
+                sender.sendSystemMessage(net.minecraft.network.chat.Component.translatable("message.bodycam.hologram_disabled").withStyle(net.minecraft.ChatFormatting.RED));
                 return;
             }
 

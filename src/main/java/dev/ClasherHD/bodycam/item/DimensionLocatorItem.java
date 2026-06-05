@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+@SuppressWarnings("null")
 public class DimensionLocatorItem extends Item {
 
     public DimensionLocatorItem(Properties properties) {
@@ -23,11 +24,11 @@ public class DimensionLocatorItem extends Item {
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         if (!level.isClientSide() && player instanceof ServerPlayer) {
             if (dev.ClasherHD.bodycam.config.ModServerConfig.OP_ONLY_MODE.get() && !player.hasPermissions(2)) {
-                player.sendSystemMessage(net.minecraft.network.chat.Component.literal("This feature is restricted to Server Operators.").withStyle(net.minecraft.ChatFormatting.RED));
+                player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("message.bodycam.op_only").withStyle(net.minecraft.ChatFormatting.RED));
                 return InteractionResultHolder.fail(player.getItemInHand(hand));
             }
             if (!dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_DIMENSION_LOCATOR.get()) {
-                player.sendSystemMessage(net.minecraft.network.chat.Component.literal("The Dimension Locator is disabled on this server.").withStyle(net.minecraft.ChatFormatting.RED));
+                player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("message.bodycam.locator_disabled").withStyle(net.minecraft.ChatFormatting.RED));
                 return InteractionResultHolder.fail(player.getItemInHand(hand));
             }
             Map<UUID, String> dims = new HashMap<>();
@@ -37,7 +38,7 @@ public class DimensionLocatorItem extends Item {
                     if (onlinePlayer.getPersistentData().contains("bodycam_target_uuid") && onlinePlayer.getPersistentData().contains("bodycam_original_dimension")) {
                         dims.put(onlinePlayer.getUUID(), onlinePlayer.getPersistentData().getString("bodycam_original_dimension"));
                     } else {
-                        dims.put(onlinePlayer.getUUID(), onlinePlayer.level().dimension().location().getPath());
+                        dims.put(onlinePlayer.getUUID(), onlinePlayer.level().dimension().location().toString());
                     }
                 }
             }

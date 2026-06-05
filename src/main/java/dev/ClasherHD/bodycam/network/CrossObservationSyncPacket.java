@@ -7,6 +7,7 @@ import java.util.function.Supplier;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 
+@SuppressWarnings("null")
 public class CrossObservationSyncPacket {
     public final UUID observerId;
     public final boolean isObserving;

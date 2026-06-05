@@ -6,6 +6,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 
+@SuppressWarnings("null")
 public class BodycamViewScreen extends Screen {
 
     private final java.util.UUID targetId;
@@ -29,7 +30,6 @@ public class BodycamViewScreen extends Screen {
         BodycamViewScreen.lastHasReach = hasReach;
         BodycamViewScreen.lastIsOnHologram = isOnHologram;
 
-        this.cachedTargetText = "REC: " + this.targetName;
         this.cachedExitText = Component.translatable("gui.bodycam.exit_message", Minecraft.getInstance().options.keyShift.getTranslatedKeyMessage()).getString();
     }
 
@@ -39,7 +39,6 @@ public class BodycamViewScreen extends Screen {
 
     private static final net.minecraft.resources.ResourceLocation GUI_ICONS_LOCATION = new net.minecraft.resources.ResourceLocation(
             "minecraft", "textures/gui/icons.png");
-    private String cachedTargetText;
     private String cachedExitText;
     private int textTickTimer = 60;
 
@@ -106,8 +105,6 @@ public class BodycamViewScreen extends Screen {
         if (this.textTickTimer <= 0) return;
         graphics.drawString(this.font, this.cachedExitText, this.width - this.font.width(this.cachedExitText) - 10, 10, 0xFFFFFFFF, true);
     }
-
-    private static final net.minecraft.resources.ResourceLocation VIGNETTE_LOCATION = new net.minecraft.resources.ResourceLocation("minecraft", "textures/misc/vignette.png");
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {

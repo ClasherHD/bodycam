@@ -7,7 +7,9 @@ modId="bodycam"
 version="2.1.2"
 displayName="Bodycam"
 authors="Clasher"
-description="Allows players to observe their friends"
+description="Allows players to observe others"
+logoFile="bodycam_compass_icon.png"
+displayURL="https://modrinth.com/project/11M48eGM"
 
 [[dependencies.bodycam]]
     modId="forge"

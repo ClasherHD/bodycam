@@ -7,6 +7,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
+@SuppressWarnings("null")
 public class JammerItem extends Item {
     public JammerItem(Properties properties) {
         super(properties);
@@ -17,11 +18,11 @@ public class JammerItem extends Item {
         ItemStack stackInHand = player.getItemInHand(hand);
         if (!level.isClientSide()) {
             if (dev.ClasherHD.bodycam.config.ModServerConfig.OP_ONLY_MODE.get() && !player.hasPermissions(2)) {
-                player.sendSystemMessage(net.minecraft.network.chat.Component.literal("This feature is restricted to Server Operators.").withStyle(net.minecraft.ChatFormatting.RED));
+                player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("message.bodycam.op_only").withStyle(net.minecraft.ChatFormatting.RED));
                 return InteractionResultHolder.fail(stackInHand);
             }
             if (!dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_JAMMER.get()) {
-                player.sendSystemMessage(net.minecraft.network.chat.Component.literal("The Jammer is disabled on this server.").withStyle(net.minecraft.ChatFormatting.RED));
+                player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("message.bodycam.jammer_disabled").withStyle(net.minecraft.ChatFormatting.RED));
                 return InteractionResultHolder.fail(stackInHand);
             }
             int currentMode = stackInHand.getOrCreateTag().getInt("JammerMode");
@@ -32,6 +33,10 @@ public class JammerItem extends Item {
                 activeId = java.util.UUID.randomUUID();
                 player.getPersistentData().putUUID("bodycam_active_jammer_id", activeId);
                 player.getPersistentData().putLong("bodycam_jammer_heartbeat", level.getGameTime());
+                player.getPersistentData().putInt("bodycam_jammer_mode", nextMode);
+            } else {
+                player.getPersistentData().remove("bodycam_active_jammer_id");
+                player.getPersistentData().remove("bodycam_jammer_mode");
             }
 
             for (net.minecraft.world.item.ItemStack stack : player.getInventory().items) {
@@ -66,21 +71,32 @@ public class JammerItem extends Item {
     @Override
     public void inventoryTick(ItemStack stack, Level level, net.minecraft.world.entity.Entity entity, int slotId, boolean isSelected) {
         if (!level.isClientSide() && entity instanceof net.minecraft.server.level.ServerPlayer) {
-            int mode = stack.hasTag() && stack.getTag().contains("JammerMode") ? stack.getTag().getInt("JammerMode") : 0;
-            if (mode > 0) {
-                boolean isValid = false;
-                if (stack.hasTag() && stack.getTag().hasUUID("active_id") && entity.getPersistentData().hasUUID("bodycam_active_jammer_id")) {
-                    java.util.UUID itemUUID = stack.getTag().getUUID("active_id");
-                    java.util.UUID playerUUID = entity.getPersistentData().getUUID("bodycam_active_jammer_id");
-                    long lastHeartbeat = entity.getPersistentData().getLong("bodycam_jammer_heartbeat");
-                    boolean isCreative = ((net.minecraft.server.level.ServerPlayer)entity).isCreative();
-                    isValid = itemUUID.equals(playerUUID) && (isCreative || (level.getGameTime() - lastHeartbeat <= 10));
+            boolean hasActivePlayerJammer = false;
+            java.util.UUID playerActiveId = null;
+            int playerActiveMode = 0;
+            if (entity.getPersistentData().hasUUID("bodycam_active_jammer_id")) {
+                long lastHeartbeat = entity.getPersistentData().getLong("bodycam_jammer_heartbeat");
+                boolean isCreative = ((net.minecraft.server.level.ServerPlayer)entity).isCreative();
+                if (isCreative || (level.getGameTime() - lastHeartbeat <= 10)) {
+                    hasActivePlayerJammer = true;
+                    playerActiveId = entity.getPersistentData().getUUID("bodycam_active_jammer_id");
+                    playerActiveMode = entity.getPersistentData().getInt("bodycam_jammer_mode");
                 }
+            }
 
-                if (isValid) {
-                    entity.getPersistentData().putLong("bodycam_jammer_heartbeat", level.getGameTime());
-                    entity.getPersistentData().putInt("bodycam_jammer_mode", mode);
+            int itemMode = stack.hasTag() && stack.getTag().contains("JammerMode") ? stack.getTag().getInt("JammerMode") : 0;
+            java.util.UUID itemActiveId = stack.hasTag() && stack.getTag().hasUUID("active_id") ? stack.getTag().getUUID("active_id") : null;
+
+            if (hasActivePlayerJammer) {
+                if (!playerActiveId.equals(itemActiveId)) {
+                    stack.getOrCreateTag().putInt("JammerMode", playerActiveMode);
+                    stack.getOrCreateTag().putUUID("active_id", playerActiveId);
                 } else {
+                    entity.getPersistentData().putInt("bodycam_jammer_mode", itemMode);
+                }
+                entity.getPersistentData().putLong("bodycam_jammer_heartbeat", level.getGameTime());
+            } else {
+                if (itemMode > 0) {
                     stack.getOrCreateTag().putInt("JammerMode", 0);
                     stack.getOrCreateTag().remove("active_id");
                 }

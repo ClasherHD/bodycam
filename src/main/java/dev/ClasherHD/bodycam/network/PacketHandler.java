@@ -54,5 +54,15 @@ public class PacketHandler {
                 SyncBodycamStatesS2CPacket::encode,
                 SyncBodycamStatesS2CPacket::decode,
                 SyncBodycamStatesS2CPacket::handle);
+
+        INSTANCE.registerMessage(id(), OpenServerConfigS2CPacket.class,
+                OpenServerConfigS2CPacket::encode,
+                OpenServerConfigS2CPacket::decode,
+                OpenServerConfigS2CPacket::handle);
+
+        INSTANCE.registerMessage(id(), SaveServerConfigC2SPacket.class,
+                SaveServerConfigC2SPacket::encode,
+                SaveServerConfigC2SPacket::decode,
+                SaveServerConfigC2SPacket::handle);
     }
 }

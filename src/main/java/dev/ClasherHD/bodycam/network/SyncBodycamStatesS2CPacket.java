@@ -10,6 +10,7 @@ import java.util.function.Supplier;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 
+@SuppressWarnings("null")
 public class SyncBodycamStatesS2CPacket {
     public final Map<UUID, Integer> jammers;
     public final Map<UUID, UUID> targets;

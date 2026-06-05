@@ -11,6 +11,7 @@ import net.minecraft.client.renderer.entity.layers.ItemInHandLayer;
 import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.resources.ResourceLocation;
 
+@SuppressWarnings("null")
 public class BodycamDummyRenderer<T extends BodycamDummyEntity> extends LivingEntityRenderer<T, PlayerModel<T>> {
 
     public BodycamDummyRenderer(EntityRendererProvider.Context context) {
@@ -41,6 +42,6 @@ public class BodycamDummyRenderer<T extends BodycamDummyEntity> extends LivingEn
             }
             return DefaultPlayerSkin.getDefaultSkin(entity.getOwnerUUID());
         }
-        return DefaultPlayerSkin.getDefaultSkin(java.util.UUID.randomUUID());
+        return DefaultPlayerSkin.getDefaultSkin(net.minecraft.Util.NIL_UUID);
     }
 }

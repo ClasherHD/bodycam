@@ -6,6 +6,7 @@ import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
+@SuppressWarnings("null")
 public class BodycamResetCameraPacket {
 
     public BodycamResetCameraPacket() {
@@ -53,7 +54,6 @@ public class BodycamResetCameraPacket {
                 dev.ClasherHD.bodycam.entity.BodycamDummyEntity.DUMMY_MOTION.remove(sender.getUUID());
                 return;
             }
-            net.minecraft.nbt.CompoundTag tag = sender.getPersistentData();
 
             double x = sender.getX();
             double y = sender.getY();
@@ -61,31 +61,66 @@ public class BodycamResetCameraPacket {
             float xRot = sender.getXRot();
             float yRot = sender.getYRot();
 
-            net.minecraft.server.level.ServerLevel originalLevel = sender.serverLevel();
-            String dimStr = dev.ClasherHD.bodycam.network.BodycamSetCameraPacket.ORIGINAL_DIM
-                    .getOrDefault(sender.getUUID(), "");
-            if (!dimStr.isEmpty()) {
-                net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> dimKey = net.minecraft.resources.ResourceKey
-                        .create(net.minecraft.core.registries.Registries.DIMENSION,
-                                new net.minecraft.resources.ResourceLocation(dimStr));
-                originalLevel = sender.server.getLevel(dimKey);
-                if (originalLevel == null) {
-                    originalLevel = sender.server.overworld();
+            dev.ClasherHD.bodycam.entity.BodycamDummyEntity dummy = null;
+            try {
+                if (sender.getPersistentData().contains("bodycam_dummy_uuid")) {
+                    java.util.UUID dummyId = sender.getPersistentData().getUUID("bodycam_dummy_uuid");
+                    for (net.minecraft.server.level.ServerLevel lvl : sender.server.getAllLevels()) {
+                        net.minecraft.world.entity.Entity e = lvl.getEntity(dummyId);
+                        if (e instanceof dev.ClasherHD.bodycam.entity.BodycamDummyEntity d) {
+                            dummy = d;
+                            break;
+                        }
+                    }
                 }
+            } catch (Exception e) {
             }
 
-            net.minecraft.world.phys.Vec3 origPos = dev.ClasherHD.bodycam.network.BodycamSetCameraPacket.ORIGINAL_POS
-                    .get(sender.getUUID());
-            if (origPos != null) {
-                x = origPos.x;
-                y = origPos.y;
-                z = origPos.z;
-            }
-            net.minecraft.world.phys.Vec2 origRot = dev.ClasherHD.bodycam.network.BodycamSetCameraPacket.ORIGINAL_ROT
-                    .get(sender.getUUID());
-            if (origRot != null) {
-                xRot = origRot.x;
-                yRot = origRot.y;
+            net.minecraft.server.level.ServerLevel originalLevel = sender.serverLevel();
+            net.minecraft.world.phys.Vec3 lastPos;
+            float lastFall;
+            net.minecraft.world.phys.Vec3 motion;
+
+            if (dummy != null) {
+                originalLevel = (net.minecraft.server.level.ServerLevel) dummy.level();
+                lastPos = dummy.position();
+                lastFall = dummy.fallDistance;
+                motion = dummy.getDeltaMovement();
+                yRot = dummy.getYRot();
+                xRot = dummy.getXRot();
+                dummy.discard();
+            } else {
+                String dimStr = dev.ClasherHD.bodycam.network.BodycamSetCameraPacket.ORIGINAL_DIM
+                        .getOrDefault(sender.getUUID(), "");
+                if (!dimStr.isEmpty()) {
+                    net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> dimKey = net.minecraft.resources.ResourceKey
+                            .create(net.minecraft.core.registries.Registries.DIMENSION,
+                                    new net.minecraft.resources.ResourceLocation(dimStr));
+                    originalLevel = sender.server.getLevel(dimKey);
+                    if (originalLevel == null) {
+                        originalLevel = sender.server.overworld();
+                    }
+                }
+
+                net.minecraft.world.phys.Vec3 origPos = dev.ClasherHD.bodycam.network.BodycamSetCameraPacket.ORIGINAL_POS
+                        .get(sender.getUUID());
+                if (origPos != null) {
+                    x = origPos.x;
+                    y = origPos.y;
+                    z = origPos.z;
+                }
+                net.minecraft.world.phys.Vec2 origRot = dev.ClasherHD.bodycam.network.BodycamSetCameraPacket.ORIGINAL_ROT
+                        .get(sender.getUUID());
+                if (origRot != null) {
+                    xRot = origRot.x;
+                    yRot = origRot.y;
+                }
+                lastPos = dev.ClasherHD.bodycam.entity.BodycamDummyEntity.DUMMY_POS
+                        .getOrDefault(sender.getUUID(), new net.minecraft.world.phys.Vec3(x, y, z));
+                lastFall = dev.ClasherHD.bodycam.entity.BodycamDummyEntity.DUMMY_FALL
+                        .getOrDefault(sender.getUUID(), 0.0F);
+                motion = dev.ClasherHD.bodycam.entity.BodycamDummyEntity.DUMMY_MOTION
+                        .getOrDefault(sender.getUUID(), net.minecraft.world.phys.Vec3.ZERO);
             }
 
             final float finalXRot = xRot;
@@ -94,13 +129,6 @@ public class BodycamResetCameraPacket {
             dev.ClasherHD.bodycam.network.BodycamSetCameraPacket.ORIGINAL_DIM.remove(sender.getUUID());
             dev.ClasherHD.bodycam.network.BodycamSetCameraPacket.ORIGINAL_POS.remove(sender.getUUID());
             dev.ClasherHD.bodycam.network.BodycamSetCameraPacket.ORIGINAL_ROT.remove(sender.getUUID());
-
-            final net.minecraft.world.phys.Vec3 lastPos = dev.ClasherHD.bodycam.entity.BodycamDummyEntity.DUMMY_POS
-                    .getOrDefault(sender.getUUID(), new net.minecraft.world.phys.Vec3(x, y, z));
-            float lastFall = dev.ClasherHD.bodycam.entity.BodycamDummyEntity.DUMMY_FALL
-                    .getOrDefault(sender.getUUID(), 0.0F);
-            net.minecraft.world.phys.Vec3 motion = dev.ClasherHD.bodycam.entity.BodycamDummyEntity.DUMMY_MOTION
-                    .getOrDefault(sender.getUUID(), net.minecraft.world.phys.Vec3.ZERO);
 
             boolean crossDim = !originalLevel.dimension().equals(sender.level().dimension());
             boolean involvesCustDim = !originalLevel.dimension().location().getNamespace().equals("minecraft")
@@ -148,14 +176,6 @@ public class BodycamResetCameraPacket {
             
             dev.ClasherHD.bodycam.network.BodycamSetCameraPacket.ORIGINAL_GAMEMODE.remove(sender.getUUID());
 
-            try {
-                java.util.UUID dummyId = sender.getPersistentData().getUUID("bodycam_dummy_uuid");
-                net.minecraft.world.entity.Entity dummy = originalLevel.getEntity(dummyId);
-                if (dummy != null) {
-                    dummy.discard();
-                }
-            } catch (Exception e) {
-            }
             dev.ClasherHD.bodycam.entity.BodycamDummyEntity.DUMMY_POS.remove(sender.getUUID());
             dev.ClasherHD.bodycam.entity.BodycamDummyEntity.DUMMY_FALL.remove(sender.getUUID());
             dev.ClasherHD.bodycam.entity.BodycamDummyEntity.DUMMY_MOTION.remove(sender.getUUID());

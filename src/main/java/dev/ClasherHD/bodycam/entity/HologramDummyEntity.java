@@ -5,6 +5,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 
+@SuppressWarnings("null")
 public class HologramDummyEntity extends BodycamDummyEntity {
     public HologramDummyEntity(EntityType<? extends LivingEntity> type, Level level) {
         super(type, level);

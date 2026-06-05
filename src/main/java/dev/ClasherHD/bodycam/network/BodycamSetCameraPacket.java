@@ -8,6 +8,7 @@ import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.concurrent.ConcurrentHashMap;
 
+@SuppressWarnings("null")
 public class BodycamSetCameraPacket {
 
     public static final ConcurrentHashMap<UUID, net.minecraft.world.phys.Vec3> ORIGINAL_POS = new ConcurrentHashMap<>();
@@ -191,7 +192,7 @@ public class BodycamSetCameraPacket {
             player.getPersistentData().putUUID("bodycam_target_uuid", msg.targetId);
             player.getPersistentData().putInt("bodycam_disconnect_ticks", 0);
             player.getPersistentData().putBoolean("bodycam_has_reach", hasReach);
-            player.getPersistentData().putString("bodycam_original_dimension", player.level().dimension().location().getPath());
+            player.getPersistentData().putString("bodycam_original_dimension", player.level().dimension().location().toString());
 
             dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
                     net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> target),

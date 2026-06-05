@@ -1,12 +1,11 @@
 package dev.ClasherHD.bodycam.client.event;
 
-import dev.ClasherHD.bodycam.client.gui.BodycamViewScreen;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = "bodycam", bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
+@SuppressWarnings("null")
 public class BodycamClientEvents {
 
     @SubscribeEvent
@@ -57,6 +56,7 @@ public class BodycamClientEvents {
     }
 
     private static void handleHologramInteraction(net.minecraftforge.event.entity.player.PlayerInteractEvent event) {
+        if (event.getHand() != net.minecraft.world.InteractionHand.MAIN_HAND) return;
         if (!event.getEntity().isCrouching()) return;
         boolean onHologram = event.getLevel().getBlockState(event.getEntity().blockPosition().below()).is(dev.ClasherHD.bodycam.bodycam.HOLOGRAM_BLOCK.get()) ||
                              event.getLevel().getBlockState(event.getEntity().blockPosition()).is(dev.ClasherHD.bodycam.bodycam.HOLOGRAM_BLOCK.get());

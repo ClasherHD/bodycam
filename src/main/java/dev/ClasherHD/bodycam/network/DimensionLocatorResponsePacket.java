@@ -10,6 +10,7 @@ import java.util.function.Supplier;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 
+@SuppressWarnings("null")
 public class DimensionLocatorResponsePacket {
 
     public final Map<UUID, String> dimensions;

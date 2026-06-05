@@ -16,6 +16,7 @@ import net.minecraft.world.level.Level;
 import java.util.Optional;
 import java.util.UUID;
 
+@SuppressWarnings("null")
 public class BodycamDummyEntity extends LivingEntity {
     public static final EntityDataAccessor<Optional<UUID>> OWNER_UUID = SynchedEntityData
             .defineId(BodycamDummyEntity.class, EntityDataSerializers.OPTIONAL_UUID);
@@ -134,15 +135,22 @@ public class BodycamDummyEntity extends LivingEntity {
         if (damage <= 0.0F) return;
         damage /= 4.0F;
         if (damage < 1.0F) damage = 1.0F;
-        for (int i = 0; i < this.armorItems.size(); i++) {
-            net.minecraft.world.item.ItemStack stack = this.armorItems.get(i);
-            if (stack.isEmpty()) continue;
-            if (source.is(net.minecraft.tags.DamageTypeTags.IS_FIRE) && stack.getItem().isFireResistant()) continue;
-            int finalI = i;
-            stack.hurtAndBreak((int) damage, this, (entity) -> {
-                entity.broadcastBreakEvent(net.minecraft.world.entity.EquipmentSlot.byTypeAndIndex(
-                        net.minecraft.world.entity.EquipmentSlot.Type.ARMOR, finalI));
-            });
+        for (EquipmentSlot slot : EquipmentSlot.values()) {
+            if (slot.getType() == net.minecraft.world.entity.EquipmentSlot.Type.ARMOR) {
+                net.minecraft.world.item.ItemStack stack = this.getItemBySlot(slot);
+                if (!stack.isEmpty()) {
+                    if (source.is(net.minecraft.tags.DamageTypeTags.IS_FIRE) && stack.getItem().isFireResistant()) continue;
+                    if (stack.isDamageableItem()) {
+                        int newDamage = stack.getDamageValue() + (int) damage;
+                        if (newDamage >= stack.getMaxDamage()) {
+                            this.setItemSlot(slot, ItemStack.EMPTY);
+                        } else {
+                            stack.setDamageValue(newDamage);
+                            this.setItemSlot(slot, stack);
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -160,8 +168,9 @@ public class BodycamDummyEntity extends LivingEntity {
                             net.minecraft.world.item.ItemStack playerPiece = player.getItemBySlot(slot);
                             if (!playerPiece.isEmpty() && !dummyPiece.isEmpty()) {
                                 playerPiece.setDamageValue(dummyPiece.getDamageValue());
+                                player.setItemSlot(slot, playerPiece);
                             } else if (!playerPiece.isEmpty() && dummyPiece.isEmpty()) {
-                                playerPiece.setDamageValue(playerPiece.getMaxDamage());
+                                player.setItemSlot(slot, ItemStack.EMPTY);
                             }
                         }
                     }
@@ -249,6 +258,56 @@ public class BodycamDummyEntity extends LivingEntity {
                 if (mob.getTarget() == null) {
                     mob.setTarget(this);
                 }
+            }
+        }
+    }
+
+    @Override
+    public void addAdditionalSaveData(CompoundTag tag) {
+        super.addAdditionalSaveData(tag);
+        if (this.getOwnerUUID() != null) {
+            tag.putUUID("OwnerUUID", this.getOwnerUUID());
+        }
+        tag.putString("OwnerName", this.entityData.get(OWNER_NAME));
+
+        net.minecraft.nbt.ListTag armorList = new net.minecraft.nbt.ListTag();
+        for (ItemStack stack : this.armorItems) {
+            CompoundTag itemTag = new CompoundTag();
+            stack.save(itemTag);
+            armorList.add(itemTag);
+        }
+        tag.put("ArmorItems", armorList);
+
+        net.minecraft.nbt.ListTag handList = new net.minecraft.nbt.ListTag();
+        for (ItemStack stack : this.handItems) {
+            CompoundTag itemTag = new CompoundTag();
+            stack.save(itemTag);
+            handList.add(itemTag);
+        }
+        tag.put("HandItems", handList);
+    }
+
+    @Override
+    public void readAdditionalSaveData(CompoundTag tag) {
+        super.readAdditionalSaveData(tag);
+        if (tag.hasUUID("OwnerUUID")) {
+            this.entityData.set(OWNER_UUID, Optional.of(tag.getUUID("OwnerUUID")));
+        }
+        if (tag.contains("OwnerName")) {
+            this.entityData.set(OWNER_NAME, tag.getString("OwnerName"));
+        }
+
+        if (tag.contains("ArmorItems", 9)) {
+            net.minecraft.nbt.ListTag armorList = tag.getList("ArmorItems", 10);
+            for (int i = 0; i < this.armorItems.size() && i < armorList.size(); i++) {
+                this.armorItems.set(i, ItemStack.of(armorList.getCompound(i)));
+            }
+        }
+
+        if (tag.contains("HandItems", 9)) {
+            net.minecraft.nbt.ListTag handList = tag.getList("HandItems", 10);
+            for (int i = 0; i < this.handItems.size() && i < handList.size(); i++) {
+                this.handItems.set(i, ItemStack.of(handList.getCompound(i)));
             }
         }
     }

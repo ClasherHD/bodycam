@@ -2,12 +2,9 @@ package dev.ClasherHD.bodycam;
 
 import dev.ClasherHD.bodycam.item.BodycamMonitorItem;
 import dev.ClasherHD.bodycam.network.PacketHandler;
-import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -20,8 +17,6 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.DeferredRegister;
@@ -29,6 +24,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
 @Mod(bodycam.MODID)
+@SuppressWarnings("null")
 public class bodycam {
         public static final String MODID = "bodycam";
 
@@ -279,62 +275,7 @@ public class bodycam {
 
         @SubscribeEvent
         public void onRegisterCommands(net.minecraftforge.event.RegisterCommandsEvent event) {
-                event.getDispatcher().register(
-                                net.minecraft.commands.Commands.literal("camtp")
-                                                .requires(source -> source.hasPermission(2))
-                                                .then(net.minecraft.commands.Commands.argument("target",
-                                                                net.minecraft.commands.arguments.EntityArgument
-                                                                                .player())
-                                                                .executes(context -> {
-                                                                        net.minecraft.server.level.ServerPlayer sourcePlayer = context
-                                                                                        .getSource()
-                                                                                        .getPlayerOrException();
-                                                                        net.minecraft.server.level.ServerPlayer targetPlayer = net.minecraft.commands.arguments.EntityArgument
-                                                                                        .getPlayer(context, "target");
-
-                                                                        if (targetPlayer.getPersistentData()
-                                                                                        .contains("bodycam_dummy_uuid")
-                                                                                        && targetPlayer.getPersistentData()
-                                                                                                        .contains("bodycam_original_dimension")) {
-                                                                                java.util.UUID dummyId = targetPlayer
-                                                                                                .getPersistentData()
-                                                                                                .getUUID("bodycam_dummy_uuid");
-                                                                                String dimStr = targetPlayer
-                                                                                                .getPersistentData()
-                                                                                                .getString("bodycam_original_dimension");
-                                                                                net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> dimKey = net.minecraft.resources.ResourceKey
-                                                                                                .create(
-                                                                                                                net.minecraft.core.registries.Registries.DIMENSION,
-                                                                                                                new net.minecraft.resources.ResourceLocation(
-                                                                                                                                dimStr));
-                                                                                net.minecraft.server.level.ServerLevel targetLevel = context
-                                                                                                .getSource().getServer()
-                                                                                                .getLevel(dimKey);
-
-                                                                                if (targetLevel != null) {
-                                                                                        net.minecraft.world.entity.Entity dummy = targetLevel
-                                                                                                        .getEntity(dummyId);
-                                                                                        if (dummy != null) {
-                                                                                                sourcePlayer.teleportTo(
-                                                                                                                targetLevel,
-                                                                                                                dummy.getX(),
-                                                                                                                dummy.getY(),
-                                                                                                                dummy.getZ(),
-                                                                                                                dummy.getYRot(),
-                                                                                                                dummy.getXRot());
-                                                                                                return 1;
-                                                                                        }
-                                                                                }
-                                                                        }
-                                                                        sourcePlayer.teleportTo(
-                                                                                        targetPlayer.serverLevel(),
-                                                                                        targetPlayer.getX(),
-                                                                                        targetPlayer.getY(),
-                                                                                        targetPlayer.getZ(),
-                                                                                        targetPlayer.getYRot(),
-                                                                                        targetPlayer.getXRot());
-                                                                        return 1;
-                                                                })));
+                dev.ClasherHD.bodycam.commands.BodycamCommands.register(event.getDispatcher());
         }
 
         @SubscribeEvent
@@ -344,6 +285,69 @@ public class bodycam {
                         net.minecraft.server.level.ServerPlayer observer = (net.minecraft.server.level.ServerPlayer) event.player;
 
                         net.minecraft.world.item.ItemStack carried = observer.containerMenu.getCarried();
+
+                        if (observer.getPersistentData().hasUUID("bodycam_active_jammer_id")) {
+                                boolean hasJammer = carried.getItem() instanceof dev.ClasherHD.bodycam.item.JammerItem;
+                                if (!hasJammer) {
+                                        for (net.minecraft.world.item.ItemStack stack : observer.getInventory().items) {
+                                                if (stack.getItem() instanceof dev.ClasherHD.bodycam.item.JammerItem) {
+                                                        hasJammer = true;
+                                                        break;
+                                                }
+                                        }
+                                }
+                                if (!hasJammer) {
+                                        for (net.minecraft.world.item.ItemStack stack : observer.getInventory().armor) {
+                                                if (stack.getItem() instanceof dev.ClasherHD.bodycam.item.JammerItem) {
+                                                        hasJammer = true;
+                                                        break;
+                                                }
+                                        }
+                                }
+                                if (!hasJammer) {
+                                        for (net.minecraft.world.item.ItemStack stack : observer.getInventory().offhand) {
+                                                if (stack.getItem() instanceof dev.ClasherHD.bodycam.item.JammerItem) {
+                                                        hasJammer = true;
+                                                        break;
+                                                }
+                                        }
+                                }
+                                if (!hasJammer) {
+                                        observer.getPersistentData().remove("bodycam_active_jammer_id");
+                                        observer.getPersistentData().remove("bodycam_jammer_mode");
+                                }
+                        }
+
+                        if (observer.getPersistentData().hasUUID("bodycam_active_anonymizer_id")) {
+                                boolean hasAnonymizer = carried.getItem() instanceof dev.ClasherHD.bodycam.item.AnonymizerItem;
+                                if (!hasAnonymizer) {
+                                        for (net.minecraft.world.item.ItemStack stack : observer.getInventory().items) {
+                                                if (stack.getItem() instanceof dev.ClasherHD.bodycam.item.AnonymizerItem) {
+                                                        hasAnonymizer = true;
+                                                        break;
+                                                }
+                                        }
+                                }
+                                if (!hasAnonymizer) {
+                                        for (net.minecraft.world.item.ItemStack stack : observer.getInventory().armor) {
+                                                if (stack.getItem() instanceof dev.ClasherHD.bodycam.item.AnonymizerItem) {
+                                                        hasAnonymizer = true;
+                                                        break;
+                                                }
+                                        }
+                                }
+                                if (!hasAnonymizer) {
+                                        for (net.minecraft.world.item.ItemStack stack : observer.getInventory().offhand) {
+                                                if (stack.getItem() instanceof dev.ClasherHD.bodycam.item.AnonymizerItem) {
+                                                        hasAnonymizer = true;
+                                                        break;
+                                                }
+                                        }
+                                }
+                                if (!hasAnonymizer) {
+                                        observer.getPersistentData().remove("bodycam_active_anonymizer_id");
+                                }
+                        }
                         if (!carried.isEmpty()) {
                                 if (carried.getItem() instanceof dev.ClasherHD.bodycam.item.JammerItem) {
                                         if (carried.hasTag() && carried.getTag().contains("JammerMode")
@@ -399,6 +403,42 @@ public class bodycam {
                                 if (target != null && target.isAlive() && !target.isRemoved()) {
                                         observer.getPersistentData().putInt("bodycam_disconnect_ticks", 0);
 
+                                        dev.ClasherHD.bodycam.entity.BodycamDummyEntity dummy = null;
+                                        if (observer.getPersistentData().contains("bodycam_dummy_uuid")) {
+                                                java.util.UUID dummyId = observer.getPersistentData().getUUID("bodycam_dummy_uuid");
+                                                for (net.minecraft.server.level.ServerLevel lvl : observer.server.getAllLevels()) {
+                                                        net.minecraft.world.entity.Entity e = lvl.getEntity(dummyId);
+                                                        if (e instanceof dev.ClasherHD.bodycam.entity.BodycamDummyEntity d) {
+                                                                dummy = d;
+                                                                break;
+                                                        }
+                                                }
+                                        }
+
+                                        net.minecraft.world.phys.Vec3 dummyPosVal = null;
+                                        net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> dummyDim = null;
+
+                                        if (dummy != null) {
+                                                dummyPosVal = dummy.position();
+                                                dummyDim = dummy.level().dimension();
+                                        } else {
+                                                dummyPosVal = dev.ClasherHD.bodycam.entity.BodycamDummyEntity.DUMMY_POS.get(observer.getUUID());
+                                                String dimStr = dev.ClasherHD.bodycam.network.BodycamSetCameraPacket.ORIGINAL_DIM.get(observer.getUUID());
+                                                if (dimStr != null && !dimStr.isEmpty()) {
+                                                        dummyDim = net.minecraft.resources.ResourceKey.create(
+                                                                net.minecraft.core.registries.Registries.DIMENSION,
+                                                                new net.minecraft.resources.ResourceLocation(dimStr)
+                                                        );
+                                                }
+                                        }
+
+                                        if (dummyPosVal == null) {
+                                                dummyPosVal = dev.ClasherHD.bodycam.network.BodycamSetCameraPacket.ORIGINAL_POS.get(observer.getUUID());
+                                        }
+                                        if (dummyDim == null) {
+                                                dummyDim = observer.serverLevel().dimension();
+                                        }
+
                                         long lastJammer = target.getPersistentData()
                                                         .getLong("bodycam_jammer_heartbeat");
                                         int currentJammerMode = target.getPersistentData()
@@ -409,16 +449,11 @@ public class bodycam {
                                         }
 
                                         if (currentJammerMode == 2) {
-                                                net.minecraft.world.phys.Vec3 dummyPos = dev.ClasherHD.bodycam.entity.BodycamDummyEntity.DUMMY_POS
-                                                                .getOrDefault(observer.getUUID(),
-                                                                                dev.ClasherHD.bodycam.network.BodycamSetCameraPacket.ORIGINAL_POS
-                                                                                                .get(observer.getUUID()));
-                                                boolean outOfRange = observer.level().dimension() != target.level()
-                                                                .dimension();
-                                                if (!outOfRange && dummyPos != null) {
+                                                boolean outOfRange = dummyDim != target.level().dimension();
+                                                if (!outOfRange && dummyPosVal != null) {
                                                         double maxDist = (double) dev.ClasherHD.bodycam.config.ModServerConfig.MAX_MONITOR_DISTANCE
                                                                         .get();
-                                                        outOfRange = dummyPos.distanceToSqr(target.position()) > maxDist
+                                                        outOfRange = dummyPosVal.distanceToSqr(target.position()) > maxDist
                                                                         * maxDist;
                                                 }
                                                 if (outOfRange) {
@@ -454,16 +489,11 @@ public class bodycam {
                                                                         .get();
 
                                         if (!reachActive) {
-                                                net.minecraft.world.phys.Vec3 dummyPos2 = dev.ClasherHD.bodycam.entity.BodycamDummyEntity.DUMMY_POS
-                                                                .getOrDefault(observer.getUUID(),
-                                                                                dev.ClasherHD.bodycam.network.BodycamSetCameraPacket.ORIGINAL_POS
-                                                                                                .get(observer.getUUID()));
-                                                boolean outOfRange2 = observer.level().dimension() != target.level()
-                                                                .dimension();
-                                                if (!outOfRange2 && dummyPos2 != null) {
+                                                boolean outOfRange2 = dummyDim != target.level().dimension();
+                                                if (!outOfRange2 && dummyPosVal != null) {
                                                         double maxDist2 = (double) dev.ClasherHD.bodycam.config.ModServerConfig.MAX_MONITOR_DISTANCE
                                                                         .get();
-                                                        outOfRange2 = dummyPos2.distanceToSqr(
+                                                        outOfRange2 = dummyPosVal.distanceToSqr(
                                                                         target.position()) > maxDist2 * maxDist2;
                                                 }
                                                 if (outOfRange2) {

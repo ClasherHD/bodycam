@@ -1,6 +1,5 @@
 package dev.ClasherHD.bodycam.client.gui;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.ObjectSelectionList;
@@ -11,6 +10,7 @@ import net.minecraft.resources.ResourceLocation;
 import java.util.Map;
 import java.util.UUID;
 
+@SuppressWarnings("null")
 public class DimensionLocatorScreen extends Screen {
 
     private static final ResourceLocation WINDOW_TEXTURE = new ResourceLocation("bodycam", "textures/gui/gui_window.png");
@@ -22,7 +22,7 @@ public class DimensionLocatorScreen extends Screen {
     private final Map<UUID, String> dimensions;
 
     public DimensionLocatorScreen(Map<UUID, String> dimensions) {
-        super(Component.literal("Dimension Locator"));
+        super(Component.translatable("gui.bodycam.dimension_locator"));
         this.dimensions = dimensions;
     }
 
@@ -121,7 +121,6 @@ public class DimensionLocatorScreen extends Screen {
         @Override
         public void render(GuiGraphics graphics, int index, int top, int left, int width, int height, int mouseX, int mouseY, boolean isMouseOver, float partialTick) {
             ResourceLocation skin = this.playerInfo.getSkinLocation();
-            RenderSystem.setShaderTexture(0, skin);
             graphics.blit(skin, left, top + 4, 32, 32, 8.0F, 8.0F, 8, 8, 64, 64);
             graphics.blit(skin, left, top + 4, 32, 32, 40.0F, 8.0F, 8, 8, 64, 64);
             graphics.drawString(DimensionLocatorScreen.this.font, this.displayName, left + 40, top + 16, 0xFFFFFFFF);

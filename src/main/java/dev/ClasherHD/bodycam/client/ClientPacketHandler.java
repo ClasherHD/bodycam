@@ -32,4 +32,8 @@ public class ClientPacketHandler {
             dev.ClasherHD.bodycam.client.gui.PlayerSelectionScreen.observingMe.remove(msg.observerId);
         }
     }
+
+    public static void handleOpenServerConfig(dev.ClasherHD.bodycam.network.OpenServerConfigS2CPacket msg) {
+        Minecraft.getInstance().setScreen(new dev.ClasherHD.bodycam.client.gui.ServerConfigScreen(null, msg));
+    }
 }

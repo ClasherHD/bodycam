@@ -9,6 +9,7 @@ import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 
+@SuppressWarnings({"null", "deprecation"})
 public class BodycamMonitorItem extends Item {
     public BodycamMonitorItem(Properties properties) {
         super(properties);
