@@ -136,7 +136,7 @@ public class BodycamResetCameraPacket {
             boolean needsWorkaround = crossDim && involvesCustDim;
 
             if (needsWorkaround) {
-                dev.ClasherHD.bodycam.bodycam.POSITION_LOCKS.put(sender.getUUID(), new dev.ClasherHD.bodycam.bodycam.LockData(
+                dev.ClasherHD.bodycam.event.ServerEvents.POSITION_LOCKS.put(sender.getUUID(), new dev.ClasherHD.bodycam.event.ServerEvents.LockData(
                         originalLevel.dimension(),
                         lastPos.x, lastPos.y, lastPos.z,
                         finalYRot, finalXRot

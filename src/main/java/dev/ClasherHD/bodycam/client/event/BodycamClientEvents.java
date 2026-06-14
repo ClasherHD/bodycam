@@ -58,8 +58,8 @@ public class BodycamClientEvents {
     private static void handleHologramInteraction(net.minecraftforge.event.entity.player.PlayerInteractEvent event) {
         if (event.getHand() != net.minecraft.world.InteractionHand.MAIN_HAND) return;
         if (!event.getEntity().isCrouching()) return;
-        boolean onHologram = event.getLevel().getBlockState(event.getEntity().blockPosition().below()).is(dev.ClasherHD.bodycam.bodycam.HOLOGRAM_BLOCK.get()) ||
-                             event.getLevel().getBlockState(event.getEntity().blockPosition()).is(dev.ClasherHD.bodycam.bodycam.HOLOGRAM_BLOCK.get());
+        boolean onHologram = event.getLevel().getBlockState(event.getEntity().blockPosition().below()).is(dev.ClasherHD.bodycam.registry.ModBlocks.HOLOGRAM_BLOCK.get()) ||
+                             event.getLevel().getBlockState(event.getEntity().blockPosition()).is(dev.ClasherHD.bodycam.registry.ModBlocks.HOLOGRAM_BLOCK.get());
         if (!onHologram) return;
         if (event.isCancelable()) {
             event.setCanceled(true);

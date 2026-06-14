@@ -14,7 +14,7 @@ public class ClientSetupHandler {
     @SubscribeEvent
     public static void clientSetup(final FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
-            net.minecraft.client.renderer.item.ItemProperties.register(bodycam.JAMMER.get(),
+            net.minecraft.client.renderer.item.ItemProperties.register(dev.ClasherHD.bodycam.registry.ModItems.JAMMER.get(),
                     new net.minecraft.resources.ResourceLocation("bodycam", "mode"),
                     (stack, level, entity, seed) -> {
                         if (stack.hasTag() && stack.getTag().contains("JammerMode")) {
@@ -22,7 +22,7 @@ public class ClientSetupHandler {
                         }
                         return 0.0F;
                     });
-            net.minecraft.client.renderer.item.ItemProperties.register(bodycam.ANONYMIZER.get(),
+            net.minecraft.client.renderer.item.ItemProperties.register(dev.ClasherHD.bodycam.registry.ModItems.ANONYMIZER.get(),
                     new net.minecraft.resources.ResourceLocation("bodycam", "active"),
                     (stack, level, entity, seed) -> {
                         if (stack.hasTag() && stack.getTag().contains("AnonymizerActive")
@@ -37,9 +37,9 @@ public class ClientSetupHandler {
 
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
-        event.registerEntityRenderer(bodycam.COMPASS_DUMMY.get(),
+        event.registerEntityRenderer(dev.ClasherHD.bodycam.registry.ModEntityTypes.COMPASS_DUMMY.get(),
                 dev.ClasherHD.bodycam.client.render.BodycamDummyRenderer::new);
-        event.registerEntityRenderer(bodycam.HOLOGRAM_DUMMY.get(),
+        event.registerEntityRenderer(dev.ClasherHD.bodycam.registry.ModEntityTypes.HOLOGRAM_DUMMY.get(),
                 dev.ClasherHD.bodycam.client.render.BodycamDummyRenderer::new);
     }
 

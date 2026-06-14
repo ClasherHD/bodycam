@@ -19,7 +19,7 @@ public class BodycamMonitorItem extends Item {
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         if (level.isClientSide()) {
             boolean hasReach = net.minecraft.world.item.enchantment.EnchantmentHelper.getItemEnchantmentLevel(
-                    dev.ClasherHD.bodycam.bodycam.REACH_ENCHANTMENT.get(), player.getItemInHand(hand)) > 0;
+                    dev.ClasherHD.bodycam.registry.ModEnchantments.REACH_ENCHANTMENT.get(), player.getItemInHand(hand)) > 0;
             DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
                 dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE
                         .sendToServer(new dev.ClasherHD.bodycam.network.SyncBodycamRequestC2SPacket(hasReach, false));

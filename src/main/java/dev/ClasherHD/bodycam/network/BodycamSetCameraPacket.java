@@ -126,11 +126,11 @@ public class BodycamSetCameraPacket {
             dev.ClasherHD.bodycam.entity.BodycamDummyEntity dummy;
             if (isOnHologram) {
                 dummy = new dev.ClasherHD.bodycam.entity.HologramDummyEntity(
-                        dev.ClasherHD.bodycam.bodycam.HOLOGRAM_DUMMY.get(), player.serverLevel());
+                        dev.ClasherHD.bodycam.registry.ModEntityTypes.HOLOGRAM_DUMMY.get(), player.serverLevel());
                 dummy.setInvulnerable(true);
             } else {
                 dummy = new dev.ClasherHD.bodycam.entity.CompassDummyEntity(
-                        dev.ClasherHD.bodycam.bodycam.COMPASS_DUMMY.get(), player.serverLevel());
+                        dev.ClasherHD.bodycam.registry.ModEntityTypes.COMPASS_DUMMY.get(), player.serverLevel());
             }
 
             dummy.setPos(player.getX(), player.getY(), player.getZ());

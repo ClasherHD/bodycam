@@ -212,22 +212,22 @@ public class BodycamCommands {
         Item item = null;
         switch (itemName) {
             case "bodycam_monitor":
-                item = dev.ClasherHD.bodycam.bodycam.BODYCAM_MONITOR.get();
+                item = dev.ClasherHD.bodycam.registry.ModItems.BODYCAM_MONITOR.get();
                 break;
             case "observation_crystal":
-                item = dev.ClasherHD.bodycam.bodycam.OBSERVATION_CRYSTAL.get();
+                item = dev.ClasherHD.bodycam.registry.ModItems.OBSERVATION_CRYSTAL.get();
                 break;
             case "jammer":
-                item = dev.ClasherHD.bodycam.bodycam.JAMMER.get();
+                item = dev.ClasherHD.bodycam.registry.ModItems.JAMMER.get();
                 break;
             case "dimension_locator":
-                item = dev.ClasherHD.bodycam.bodycam.DIMENSION_LOCATOR.get();
+                item = dev.ClasherHD.bodycam.registry.ModItems.DIMENSION_LOCATOR.get();
                 break;
             case "anonymizer":
-                item = dev.ClasherHD.bodycam.bodycam.ANONYMIZER.get();
+                item = dev.ClasherHD.bodycam.registry.ModItems.ANONYMIZER.get();
                 break;
             case "hologram_block":
-                item = dev.ClasherHD.bodycam.bodycam.HOLOGRAM_BLOCK_ITEM.get();
+                item = dev.ClasherHD.bodycam.registry.ModItems.HOLOGRAM_BLOCK_ITEM.get();
                 break;
         }
 
