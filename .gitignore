@@ -36,3 +36,4 @@ bin/main/
 Thumbs.db
 
 run_client2/
+.agents/
