@@ -29,37 +29,11 @@ public class GlowingArmorTrimLayer<T extends LivingEntity, M extends HumanoidMod
     private final A outerModel;
     private final TextureAtlas armorTrimAtlas;
 
-    @SuppressWarnings("unchecked")
     public GlowingArmorTrimLayer(RenderLayerParent<T, M> parent, HumanoidArmorLayer<T, M, A> parentArmorLayer) {
         super(parent);
-        
-        A inner = null;
-        A outer = null;
-        TextureAtlas atlas = null;
-        try {
-            for (Field field : HumanoidArmorLayer.class.getDeclaredFields()) {
-                field.setAccessible(true);
-                if (java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
-                    continue;
-                }
-                
-                if (field.getType() == TextureAtlas.class) {
-                    atlas = (TextureAtlas) field.get(parentArmorLayer);
-                } else if (HumanoidModel.class.isAssignableFrom(field.getType())) {
-                    if (inner == null) {
-                        inner = (A) field.get(parentArmorLayer);
-                    } else if (outer == null) {
-                        outer = (A) field.get(parentArmorLayer);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        
-        this.innerModel = inner;
-        this.outerModel = outer;
-        this.armorTrimAtlas = atlas;
+        this.innerModel = parentArmorLayer.innerModel;
+        this.outerModel = parentArmorLayer.outerModel;
+        this.armorTrimAtlas = parentArmorLayer.armorTrimAtlas;
     }
 
     @Override

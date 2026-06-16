@@ -85,18 +85,9 @@ public class ClientSetupHandler {
         for (String skinType : new String[]{"default", "slim"}) {
             net.minecraft.client.renderer.entity.player.PlayerRenderer renderer = event.getSkin(skinType);
             if (renderer != null) {
-                try {
-                    java.lang.reflect.Field layersField = net.minecraft.client.renderer.entity.LivingEntityRenderer.class.getDeclaredField("layers");
-                    layersField.setAccessible(true);
-                    @SuppressWarnings("unchecked")
-                    java.util.List<net.minecraft.client.renderer.entity.layers.RenderLayer<?, ?>> layers =
-                            (java.util.List<net.minecraft.client.renderer.entity.layers.RenderLayer<?, ?>>) layersField.get(renderer);
-                    layers.removeIf(layer -> layer instanceof net.minecraft.client.renderer.entity.layers.PlayerItemInHandLayer);
-                    renderer.addLayer(new dev.ClasherHD.bodycam.client.render.BodycamItemInHandLayer<>(renderer, net.minecraft.client.Minecraft.getInstance().getEntityRenderDispatcher().getItemInHandRenderer()));
-                    
-                    tryAddGlowingTrimLayer(renderer);
-                } catch (Exception e) {
-                }
+                renderer.layers.removeIf(layer -> layer instanceof net.minecraft.client.renderer.entity.layers.PlayerItemInHandLayer);
+                renderer.addLayer(new dev.ClasherHD.bodycam.client.render.BodycamItemInHandLayer<>(renderer, net.minecraft.client.Minecraft.getInstance().getEntityRenderDispatcher().getItemInHandRenderer()));
+                tryAddGlowingTrimLayer(renderer);
             }
         }
 
@@ -114,33 +105,24 @@ public class ClientSetupHandler {
 
     private static void tryAddGlowingTrimLayer(net.minecraft.client.renderer.entity.LivingEntityRenderer<?, ?> renderer) {
         if (renderer != null) {
-            try {
-                java.lang.reflect.Field layersField = net.minecraft.client.renderer.entity.LivingEntityRenderer.class.getDeclaredField("layers");
-                layersField.setAccessible(true);
-                @SuppressWarnings("unchecked")
-                java.util.List<net.minecraft.client.renderer.entity.layers.RenderLayer<?, ?>> layers =
-                        (java.util.List<net.minecraft.client.renderer.entity.layers.RenderLayer<?, ?>>) layersField.get(renderer);
-                
-                net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer<?, ?, ?> armorLayer = null;
-                for (net.minecraft.client.renderer.entity.layers.RenderLayer<?, ?> layer : layers) {
-                    if (layer instanceof net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer) {
-                        armorLayer = (net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer<?, ?, ?>) layer;
+            net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer<?, ?, ?> armorLayer = null;
+            for (net.minecraft.client.renderer.entity.layers.RenderLayer<?, ?> layer : renderer.layers) {
+                if (layer instanceof net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer) {
+                    armorLayer = (net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer<?, ?, ?>) layer;
+                    break;
+                }
+            }
+            if (armorLayer != null) {
+                boolean alreadyHas = false;
+                for (net.minecraft.client.renderer.entity.layers.RenderLayer<?, ?> layer : renderer.layers) {
+                    if (layer instanceof dev.ClasherHD.bodycam.client.render.GlowingArmorTrimLayer) {
+                        alreadyHas = true;
                         break;
                     }
                 }
-                if (armorLayer != null) {
-                    boolean alreadyHas = false;
-                    for (net.minecraft.client.renderer.entity.layers.RenderLayer<?, ?> layer : layers) {
-                        if (layer instanceof dev.ClasherHD.bodycam.client.render.GlowingArmorTrimLayer) {
-                            alreadyHas = true;
-                            break;
-                        }
-                    }
-                    if (!alreadyHas) {
-                        addLayerHelper(renderer, armorLayer);
-                    }
+                if (!alreadyHas) {
+                    addLayerHelper(renderer, armorLayer);
                 }
-            } catch (Exception e) {
             }
         }
     }
