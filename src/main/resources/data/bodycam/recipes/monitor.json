@@ -1,16 +1,19 @@
 {
   "type": "minecraft:crafting_shaped",
   "pattern": [
-    " Q ",
-    "QCQ",
-    " Q "
+    " QX",
+    " WQ",
+    "Q  "
   ],
   "key": {
-    "C": {
-      "item": "bodycam:observation_crystal"
-    },
     "Q": {
       "item": "minecraft:quartz"
+    },
+    "X": {
+      "item": "bodycam:observation_crystal"
+    },
+    "W": {
+      "item": "minecraft:green_wool"
     }
   },
   "result": {

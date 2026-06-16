@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " Q ",
+    "QCQ",
+    " Q "
+  ],
+  "key": {
+    "C": {
+      "item": "bodycam:observation_crystal"
+    },
+    "Q": {
+      "item": "minecraft:quartz"
+    }
+  },
+  "result": {
+    "item": "bodycam:player_locator_compass",
+    "count": 1
+  }
+}
