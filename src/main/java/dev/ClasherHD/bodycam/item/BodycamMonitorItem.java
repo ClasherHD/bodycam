@@ -17,6 +17,10 @@ public class BodycamMonitorItem extends Item {
 
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+        player.startUsingItem(hand);
+        level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                net.minecraft.sounds.SoundEvents.SPYGLASS_USE,
+                net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.5F);
         if (level.isClientSide()) {
             boolean hasReach = net.minecraft.world.item.enchantment.EnchantmentHelper.getItemEnchantmentLevel(
                     dev.ClasherHD.bodycam.registry.ModEnchantments.REACH_ENCHANTMENT.get(), player.getItemInHand(hand)) > 0;
@@ -25,7 +29,34 @@ public class BodycamMonitorItem extends Item {
                         .sendToServer(new dev.ClasherHD.bodycam.network.SyncBodycamRequestC2SPacket(hasReach, false));
             });
         }
-        return InteractionResultHolder.sidedSuccess(player.getItemInHand(hand), level.isClientSide());
+        return InteractionResultHolder.consume(player.getItemInHand(hand));
+    }
+
+    @Override
+    public net.minecraft.world.item.UseAnim getUseAnimation(ItemStack stack) {
+        return net.minecraft.world.item.UseAnim.SPYGLASS;
+    }
+
+    @Override
+    public int getUseDuration(ItemStack stack) {
+        return 72000;
+    }
+
+    @Override
+    public ItemStack finishUsingItem(ItemStack stack, Level level, net.minecraft.world.entity.LivingEntity entity) {
+        this.stopUsing(entity);
+        return stack;
+    }
+
+    @Override
+    public void releaseUsing(ItemStack stack, Level level, net.minecraft.world.entity.LivingEntity entity, int timeLeft) {
+        this.stopUsing(entity);
+    }
+
+    private void stopUsing(net.minecraft.world.entity.LivingEntity entity) {
+        entity.level().playSound(null, entity.getX(), entity.getY(), entity.getZ(),
+                net.minecraft.sounds.SoundEvents.SPYGLASS_STOP_USING,
+                net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.5F);
     }
 
     @Override

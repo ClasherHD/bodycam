@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "CCC",
+    "CCC",
+    "CCC"
+  ],
+  "key": {
+    "C": {
+      "item": "bodycam:observation_crystal"
+    }
+  },
+  "result": {
+    "item": "bodycam:observation_crystal_block",
+    "count": 1
+  }
+}

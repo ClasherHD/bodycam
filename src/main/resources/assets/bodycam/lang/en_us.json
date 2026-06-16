@@ -1,13 +1,17 @@
 {
   "_comment_1": "Items, Blocks & Enchantments",
-  "item.bodycam.bodycam_monitor": "Monitor Compass",
+  "item.bodycam.bodycam_monitor": "Observation Spyglass",
   "item.bodycam.observation_crystal": "Observation Crystal",
   "item.bodycam.jammer": "Jammer",
   "item.bodycam.dimension_locator": "Dimension Locator",
   "item.bodycam.anonymizer": "Anonymizer",
+  "item.bodycam.player_locator_compass": "Player Locator",
   "block.bodycam.hologram_block": "Hologram Block",
+  "block.bodycam.observation_crystal_block": "Observation Crystal Block",
   "enchantment.bodycam.reach": "Reach",
   "creativetab.bodycam_tab": "Bodycam",
+  "trim_material.bodycam.observation_crystal": "Observation Crystal",
+
 
   "_comment_2": "General Messages",
   "message.bodycam.signal_weak": "Signal too weak! Target is too far away or in another dimension.",
@@ -23,8 +27,16 @@
   "gui.bodycam.exit_message": "Exit with: %s",
   "gui.bodycam.select_player": "Select a Player",
   "gui.bodycam.select_button": "Select",
+  "gui.bodycam.player_locator": "Player Locator",
+  "gui.bodycam.locator_tracking": "Tracking",
+  "gui.bodycam.locator_deselect": "Deselect",
   "gui.bodycam.rec": "REC: %s",
   "gui.bodycam.dimension_locator": "Dimension Locator",
+  "subtitles.bodycam.monitor_select": "Selected player",
+  "subtitles.bodycam.jammer_used": "Jammer used",
+  "subtitles.bodycam.anonymizer_used": "Anonymizer used",
+  "subtitles.bodycam.player_locator_used": "player locator used",
+
 
   "_comment_4": "Server Warnings",
   "message.bodycam.op_only": "This feature is restricted to Server Operators.",
@@ -32,6 +44,7 @@
   "message.bodycam.locator_disabled": "The Dimension Locator is disabled on this server.",
   "message.bodycam.anonymizer_disabled": "The Anonymizer is disabled on this server.",
   "message.bodycam.hologram_disabled": "The Hologram Block is disabled on this server.",
+  "message.bodycam.player_locator_disabled": "The Player Locator is disabled on this server.",
 
   "_comment_5": "Client Configuration",
   "gui.bodycam.config.title": "Bodycam Client Config",
@@ -42,6 +55,7 @@
   "gui.bodycam.config.blocked_color": "Blocked Color",
   "gui.bodycam.config.observing_color": "Observing Color",
   "gui.bodycam.config.dimension_color": "Dimension Color",
+  "gui.bodycam.config.out_of_range_color": "Out of Range Color",
   "gui.bodycam.config.reset": "Reset to Defaults",
 
   "_comment_6": "Server Configuration",
@@ -52,7 +66,10 @@
   "gui.bodycam.server_config.enable_locator": "Enable Dimension Locator",
   "gui.bodycam.server_config.enable_hologram": "Enable Hologram Block",
   "gui.bodycam.server_config.enable_anonymizer": "Enable Anonymizer",
+  "gui.bodycam.server_config.enable_player_locator": "Enable Player Locator",
   "gui.bodycam.server_config.op_only": "OP Only Mode",
+  "gui.bodycam.back": "Back",
+  "gui.bodycam.next": "Next",
 
   "_comment_7": "Colors",
   "color.bodycam.white": "White",

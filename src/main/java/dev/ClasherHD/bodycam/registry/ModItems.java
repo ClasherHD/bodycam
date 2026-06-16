@@ -5,6 +5,7 @@ import dev.ClasherHD.bodycam.item.BodycamMonitorItem;
 import dev.ClasherHD.bodycam.item.JammerItem;
 import dev.ClasherHD.bodycam.item.DimensionLocatorItem;
 import dev.ClasherHD.bodycam.item.AnonymizerItem;
+import dev.ClasherHD.bodycam.item.PlayerLocatorCompassItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.BlockItem;
 import net.minecraftforge.registries.DeferredRegister;
@@ -25,6 +26,10 @@ public class ModItems {
             () -> new DimensionLocatorItem(new Item.Properties().stacksTo(1)));
     public static final RegistryObject<Item> ANONYMIZER = ITEMS.register("anonymizer",
             () -> new AnonymizerItem(new Item.Properties().stacksTo(1)));
+    public static final RegistryObject<Item> PLAYER_LOCATOR_COMPASS = ITEMS.register("player_locator_compass",
+            () -> new PlayerLocatorCompassItem(new Item.Properties().stacksTo(1)));
     public static final RegistryObject<Item> HOLOGRAM_BLOCK_ITEM = ITEMS.register("hologram_block",
             () -> new BlockItem(ModBlocks.HOLOGRAM_BLOCK.get(), new Item.Properties()));
+    public static final RegistryObject<Item> OBSERVATION_CRYSTAL_BLOCK_ITEM = ITEMS.register("observation_crystal_block",
+            () -> new BlockItem(ModBlocks.OBSERVATION_CRYSTAL_BLOCK.get(), new Item.Properties()));
 }

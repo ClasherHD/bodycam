@@ -28,5 +28,6 @@ public class bodycam {
         ModCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus);
         ModEnchantments.ENCHANTMENTS.register(modEventBus);
         ModEntityTypes.ENTITY_TYPES.register(modEventBus);
+        dev.ClasherHD.bodycam.registry.ModSounds.SOUND_EVENTS.register(modEventBus);
     }
 }

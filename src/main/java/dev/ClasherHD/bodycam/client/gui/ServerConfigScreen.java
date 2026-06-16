@@ -17,6 +17,7 @@ public class ServerConfigScreen extends Screen {
     private boolean locatorVal;
     private boolean hologramVal;
     private boolean anonymizerVal;
+    private boolean playerLocatorVal;
     private boolean opOnlyVal;
 
     private Button btnReach;
@@ -24,13 +25,17 @@ public class ServerConfigScreen extends Screen {
     private Button btnLocator;
     private Button btnHologram;
     private Button btnAnonymizer;
+    private Button btnPlayerLocator;
     private Button btnOpOnly;
 
+    private Button btnBack;
+    private Button btnNext;
     private Button btnReset;
     private Button btnSave;
 
     private double scrollY = 0;
-    private int maxScroll = 60;
+    private int maxScroll = 80;
+    private int currentPage = 1;
 
     public ServerConfigScreen(Screen previous, dev.ClasherHD.bodycam.network.OpenServerConfigS2CPacket values) {
         super(Component.translatable("gui.bodycam.server_config.title"));
@@ -42,6 +47,7 @@ public class ServerConfigScreen extends Screen {
         this.locatorVal = values.enableDimensionLocator;
         this.hologramVal = values.enableHologramBlock;
         this.anonymizerVal = values.enableAnonymizer;
+        this.playerLocatorVal = values.enablePlayerLocator;
         this.opOnlyVal = values.opOnlyMode;
     }
 
@@ -92,11 +98,33 @@ public class ServerConfigScreen extends Screen {
         }).bounds(this.width / 2 - 205, 0, 200, 20).build();
         this.addRenderableWidget(this.btnAnonymizer);
 
+        this.btnPlayerLocator = Button.builder(this.getToggleButtonMessage("gui.bodycam.server_config.enable_player_locator", this.playerLocatorVal), btn -> {
+            this.playerLocatorVal = !this.playerLocatorVal;
+            btn.setMessage(this.getToggleButtonMessage("gui.bodycam.server_config.enable_player_locator", this.playerLocatorVal));
+        }).bounds(this.width / 2 + 5, 0, 200, 20).build();
+        this.addRenderableWidget(this.btnPlayerLocator);
+
         this.btnOpOnly = Button.builder(this.getToggleButtonMessage("gui.bodycam.server_config.op_only", this.opOnlyVal), btn -> {
             this.opOnlyVal = !this.opOnlyVal;
             btn.setMessage(this.getToggleButtonMessage("gui.bodycam.server_config.op_only", this.opOnlyVal));
-        }).bounds(this.width / 2 + 5, 0, 200, 20).build();
+        }).bounds(this.width / 2 - 205, 0, 200, 20).build();
         this.addRenderableWidget(this.btnOpOnly);
+
+        this.btnBack = Button.builder(Component.translatable("gui.bodycam.back"), btn -> {
+            if (this.currentPage > 1) {
+                this.currentPage--;
+                this.updateVisibility();
+            }
+        }).bounds(this.width / 2 - 205, 0, 200, 20).build();
+        this.addRenderableWidget(this.btnBack);
+
+        this.btnNext = Button.builder(Component.translatable("gui.bodycam.next"), btn -> {
+            if (this.currentPage < 2) {
+                this.currentPage++;
+                this.updateVisibility();
+            }
+        }).bounds(this.width / 2 + 5, 0, 200, 20).build();
+        this.addRenderableWidget(this.btnNext);
 
         this.btnReset = Button.builder(Component.translatable("gui.bodycam.config.reset"), btn -> {
             this.txtMaxDistance.setValue("500");
@@ -105,6 +133,7 @@ public class ServerConfigScreen extends Screen {
             this.locatorVal = true;
             this.hologramVal = true;
             this.anonymizerVal = true;
+            this.playerLocatorVal = true;
             this.opOnlyVal = false;
 
             this.btnReach.setMessage(this.getToggleButtonMessage("gui.bodycam.server_config.enable_reach", this.reachVal));
@@ -112,6 +141,7 @@ public class ServerConfigScreen extends Screen {
             this.btnLocator.setMessage(this.getToggleButtonMessage("gui.bodycam.server_config.enable_locator", this.locatorVal));
             this.btnHologram.setMessage(this.getToggleButtonMessage("gui.bodycam.server_config.enable_hologram", this.hologramVal));
             this.btnAnonymizer.setMessage(this.getToggleButtonMessage("gui.bodycam.server_config.enable_anonymizer", this.anonymizerVal));
+            this.btnPlayerLocator.setMessage(this.getToggleButtonMessage("gui.bodycam.server_config.enable_player_locator", this.playerLocatorVal));
             this.btnOpOnly.setMessage(this.getToggleButtonMessage("gui.bodycam.server_config.op_only", this.opOnlyVal));
         }).bounds(this.width / 2 - 205, 0, 200, 20).build();
         this.addRenderableWidget(this.btnReset);
@@ -124,7 +154,7 @@ public class ServerConfigScreen extends Screen {
             }
             dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.sendToServer(
                     new dev.ClasherHD.bodycam.network.SaveServerConfigC2SPacket(
-                            maxDist, this.reachVal, this.jammerVal, this.locatorVal, this.hologramVal, this.anonymizerVal, this.opOnlyVal
+                            maxDist, this.reachVal, this.jammerVal, this.locatorVal, this.hologramVal, this.anonymizerVal, this.playerLocatorVal, this.opOnlyVal
                     )
             );
             this.onClose();
@@ -132,6 +162,25 @@ public class ServerConfigScreen extends Screen {
         this.addRenderableWidget(this.btnSave);
 
         this.updateLayout();
+        this.updateVisibility();
+    }
+
+    private void updateVisibility() {
+        boolean page1 = (this.currentPage == 1);
+        boolean page2 = (this.currentPage == 2);
+
+        this.txtMaxDistance.visible = page1;
+        this.btnReach.visible = page1;
+        this.btnJammer.visible = page1;
+        this.btnLocator.visible = page1;
+        this.btnHologram.visible = page1;
+        this.btnAnonymizer.visible = page1;
+        this.btnPlayerLocator.visible = page1;
+
+        this.btnOpOnly.visible = page2;
+
+        this.btnBack.active = page2;
+        this.btnNext.active = page1;
     }
 
     private void updateLayout() {
@@ -146,10 +195,15 @@ public class ServerConfigScreen extends Screen {
         this.btnHologram.setY(yOffset + 73);
 
         this.btnAnonymizer.setY(yOffset + 99);
-        this.btnOpOnly.setY(yOffset + 99);
+        this.btnPlayerLocator.setY(yOffset + 99);
 
-        this.btnReset.setY(yOffset + 131);
-        this.btnSave.setY(yOffset + 131);
+        this.btnOpOnly.setY(yOffset + 47);
+
+        this.btnBack.setY(yOffset + 125);
+        this.btnNext.setY(yOffset + 125);
+
+        this.btnReset.setY(yOffset + 155);
+        this.btnSave.setY(yOffset + 155);
     }
 
     @Override
@@ -173,7 +227,9 @@ public class ServerConfigScreen extends Screen {
         pGuiGraphics.pose().popPose();
 
         int y = 49 + (int) this.scrollY;
-        pGuiGraphics.drawString(this.font, Component.translatable("gui.bodycam.server_config.max_distance"), this.width / 2 - 100, y, 10526880);
+        if (this.currentPage == 1) {
+            pGuiGraphics.drawString(this.font, Component.translatable("gui.bodycam.server_config.max_distance"), this.width / 2 - 100, y, 10526880);
+        }
 
         super.render(pGuiGraphics, pMouseX, pMouseY, pPartialTick);
     }

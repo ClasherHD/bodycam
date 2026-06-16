@@ -54,8 +54,12 @@ public class AnonymizerItem extends Item {
             }
 
             if (newState) {
+                level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                        dev.ClasherHD.bodycam.registry.ModSounds.ANONYMIZER_USED2.get(), net.minecraft.sounds.SoundSource.PLAYERS, 0.25F, 0.25F);
                 player.displayClientMessage(Component.translatable("message.bodycam.anonymizer_on").withStyle(ChatFormatting.GREEN), true);
             } else {
+                level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                        dev.ClasherHD.bodycam.registry.ModSounds.ANONYMIZER_USED1.get(), net.minecraft.sounds.SoundSource.PLAYERS, 0.25F, 0.75F);
                 player.displayClientMessage(Component.translatable("message.bodycam.anonymizer_off").withStyle(ChatFormatting.RED), true);
             }
         }

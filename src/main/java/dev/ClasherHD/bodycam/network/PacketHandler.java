@@ -64,5 +64,25 @@ public class PacketHandler {
                 SaveServerConfigC2SPacket::encode,
                 SaveServerConfigC2SPacket::decode,
                 SaveServerConfigC2SPacket::handle);
+
+        INSTANCE.registerMessage(id(), PlayerLocatorSelectC2SPacket.class,
+                PlayerLocatorSelectC2SPacket::encode,
+                PlayerLocatorSelectC2SPacket::decode,
+                PlayerLocatorSelectC2SPacket::handle);
+
+        INSTANCE.registerMessage(id(), PlayerLocatorSyncS2CPacket.class,
+                PlayerLocatorSyncS2CPacket::encode,
+                PlayerLocatorSyncS2CPacket::decode,
+                PlayerLocatorSyncS2CPacket::handle);
+
+        INSTANCE.registerMessage(id(), PlayerLocatorStructureUpdateS2CPacket.class,
+                PlayerLocatorStructureUpdateS2CPacket::encode,
+                PlayerLocatorStructureUpdateS2CPacket::decode,
+                PlayerLocatorStructureUpdateS2CPacket::handle);
+
+        INSTANCE.registerMessage(id(), PlayerLocatorTargetUpdateS2CPacket.class,
+                PlayerLocatorTargetUpdateS2CPacket::encode,
+                PlayerLocatorTargetUpdateS2CPacket::decode,
+                PlayerLocatorTargetUpdateS2CPacket::handle);
     }
 }

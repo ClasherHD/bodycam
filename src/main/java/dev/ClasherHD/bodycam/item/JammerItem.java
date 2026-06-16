@@ -61,6 +61,14 @@ public class JammerItem extends Item {
                 }
             }
 
+            if (nextMode == 1) {
+                level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                        dev.ClasherHD.bodycam.registry.ModSounds.JAMMER_USED.get(), net.minecraft.sounds.SoundSource.PLAYERS, 0.0625F, 0.5F);
+            } else if (nextMode == 2) {
+                level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                        dev.ClasherHD.bodycam.registry.ModSounds.JAMMER_USED.get(), net.minecraft.sounds.SoundSource.PLAYERS, 0.0625F, 0.75F);
+            }
+
             String key = nextMode == 0 ? "message.bodycam.jammer.off" : (nextMode == 1 ? "message.bodycam.jammer.on" : "message.bodycam.jammer.limited");
             net.minecraft.ChatFormatting color = nextMode == 0 ? net.minecraft.ChatFormatting.RED : (nextMode == 1 ? net.minecraft.ChatFormatting.GREEN : net.minecraft.ChatFormatting.BLUE);
             player.displayClientMessage(net.minecraft.network.chat.Component.translatable(key).withStyle(color), true);

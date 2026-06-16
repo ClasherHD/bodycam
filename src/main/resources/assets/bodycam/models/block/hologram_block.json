@@ -1,8 +1,8 @@
 {
-  "parent": "minecraft:block/cube_column",
-  "render_type": "minecraft:translucent",
-  "textures": {
-    "end": "bodycam:block/hologram_block_top",
-    "side": "bodycam:block/hologram_block_side"
-  }
+    "parent": "minecraft:block/cube_column",
+    "render_type": "minecraft:translucent",
+    "textures": {
+        "end": "bodycam:block/hologram_block/hologram_block_top",
+        "side": "bodycam:block/hologram_block/hologram_block_side"
+    }
 }

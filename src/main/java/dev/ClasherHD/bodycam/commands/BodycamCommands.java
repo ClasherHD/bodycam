@@ -34,12 +34,13 @@ public class BodycamCommands {
                             boolean locator = dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_DIMENSION_LOCATOR.get();
                             boolean hologram = dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_HOLOGRAM_BLOCK.get();
                             boolean anonymizer = dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_ANONYMIZER.get();
+                            boolean playerLocator = dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_PLAYER_LOCATOR.get();
                             boolean opOnly = dev.ClasherHD.bodycam.config.ModServerConfig.OP_ONLY_MODE.get();
 
                             dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
                                 net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
                                 new dev.ClasherHD.bodycam.network.OpenServerConfigS2CPacket(
-                                    maxDist, reach, jammer, locator, hologram, anonymizer, opOnly
+                                    maxDist, reach, jammer, locator, hologram, anonymizer, playerLocator, opOnly
                                 )
                             );
                             return 1;
@@ -59,6 +60,8 @@ public class BodycamCommands {
                             builder.suggest("dimension_locator");
                             builder.suggest("anonymizer");
                             builder.suggest("hologram_block");
+                            builder.suggest("player_locator_compass");
+                            builder.suggest("observation_crystal_block");
                             return builder.buildFuture();
                         })
                         .then(Commands.argument("players", EntityArgument.players())
@@ -228,6 +231,12 @@ public class BodycamCommands {
                 break;
             case "hologram_block":
                 item = dev.ClasherHD.bodycam.registry.ModItems.HOLOGRAM_BLOCK_ITEM.get();
+                break;
+            case "player_locator_compass":
+                item = dev.ClasherHD.bodycam.registry.ModItems.PLAYER_LOCATOR_COMPASS.get();
+                break;
+            case "observation_crystal_block":
+                item = dev.ClasherHD.bodycam.registry.ModItems.OBSERVATION_CRYSTAL_BLOCK_ITEM.get();
                 break;
         }
 

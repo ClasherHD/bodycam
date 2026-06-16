@@ -12,6 +12,7 @@ public class ModServerConfig {
     public static final ForgeConfigSpec.BooleanValue ENABLE_DIMENSION_LOCATOR;
     public static final ForgeConfigSpec.BooleanValue ENABLE_HOLOGRAM_BLOCK;
     public static final ForgeConfigSpec.BooleanValue ENABLE_ANONYMIZER;
+    public static final ForgeConfigSpec.BooleanValue ENABLE_PLAYER_LOCATOR;
     public static final ForgeConfigSpec.BooleanValue OP_ONLY_MODE;
 
     static {
@@ -25,6 +26,7 @@ public class ModServerConfig {
         ENABLE_DIMENSION_LOCATOR = BUILDER.comment("Enable or Disable the Dimension Locator GUI item").define("enableDimensionLocator", true);
         ENABLE_HOLOGRAM_BLOCK = BUILDER.comment("Enable or Disable the Hologram Cross-Dimension Spawner Block").define("enableHologramBlock", true);
         ENABLE_ANONYMIZER = BUILDER.comment("Enable or Disable the Anonymizer").define("enableAnonymizer", true);
+        ENABLE_PLAYER_LOCATOR = BUILDER.comment("Enable or Disable the Player Locator Compass").define("enablePlayerLocator", true);
         BUILDER.pop();
 
         BUILDER.push("Security");

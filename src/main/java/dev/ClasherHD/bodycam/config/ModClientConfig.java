@@ -14,6 +14,7 @@ public class ModClientConfig {
     public static final ForgeConfigSpec.ConfigValue<String> COLOR_BLOCKED;
     public static final ForgeConfigSpec.ConfigValue<String> COLOR_OBSERVING;
     public static final ForgeConfigSpec.ConfigValue<String> COLOR_DIMENSION;
+    public static final ForgeConfigSpec.ConfigValue<String> COLOR_OUT_OF_RANGE;
 
     static {
         BUILDER.push("UI Overlays");
@@ -27,6 +28,7 @@ public class ModClientConfig {
         COLOR_BLOCKED = BUILDER.comment("Hex color code for jammed online player names").define("colorBlocked", "FF5555");
         COLOR_OBSERVING = BUILDER.comment("Hex color code for observing players").define("colorObserving", "5555FF");
         COLOR_DIMENSION = BUILDER.comment("Hex color code for dimensions in the Dimension Locator").define("colorDimension", "55FF55");
+        COLOR_OUT_OF_RANGE = BUILDER.comment("Hex color code for out of range player names without reach").define("colorOutOfRange", "FFFF55");
         BUILDER.pop();
 
         SPEC = BUILDER.build();

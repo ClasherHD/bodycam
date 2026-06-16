@@ -36,4 +36,17 @@ public class ClientPacketHandler {
     public static void handleOpenServerConfig(dev.ClasherHD.bodycam.network.OpenServerConfigS2CPacket msg) {
         Minecraft.getInstance().setScreen(new dev.ClasherHD.bodycam.client.gui.ServerConfigScreen(null, msg));
     }
+
+    public static void handlePlayerLocatorSync(dev.ClasherHD.bodycam.network.PlayerLocatorSyncS2CPacket msg) {
+        Minecraft.getInstance().setScreen(new dev.ClasherHD.bodycam.client.gui.PlayerLocatorScreen(msg.jammers, msg.dimensions, msg.positions, msg.currentTarget, msg.hasReach));
+    }
+
+    public static void handlePlayerLocatorStructureUpdate(dev.ClasherHD.bodycam.network.PlayerLocatorStructureUpdateS2CPacket msg) {
+        dev.ClasherHD.bodycam.client.ClientLocatorCache.updateStructure(msg.structurePos, msg.dimension);
+    }
+
+    public static void handlePlayerLocatorTargetUpdate(dev.ClasherHD.bodycam.network.PlayerLocatorTargetUpdateS2CPacket msg) {
+        dev.ClasherHD.bodycam.client.ClientBodycamCache.positions.put(msg.targetUUID, msg.pos);
+        dev.ClasherHD.bodycam.client.ClientBodycamCache.dimensions.put(msg.targetUUID, msg.dimension);
+    }
 }

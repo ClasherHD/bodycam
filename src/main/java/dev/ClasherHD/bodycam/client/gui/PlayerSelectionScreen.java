@@ -9,6 +9,8 @@ import net.minecraft.resources.ResourceLocation;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import dev.ClasherHD.bodycam.registry.ModSounds;
 
 @SuppressWarnings("null")
 public class PlayerSelectionScreen extends Screen {
@@ -136,7 +138,11 @@ public class PlayerSelectionScreen extends Screen {
                             }
                         }
                         try {
-                            PlayerSelectionScreen.this.minecraft.getSoundManager().play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(net.minecraft.sounds.SoundEvents.LODESTONE_COMPASS_LOCK, 1.0F));
+                            PlayerSelectionScreen.this.minecraft.getSoundManager().play(SimpleSoundInstance.forUI(ModSounds.MONITOR_SELECT_RESONATE1.get(), 2.0F, 0.06F));
+                            PlayerSelectionScreen.this.minecraft.getSoundManager().playDelayed(SimpleSoundInstance.forUI(ModSounds.MONITOR_SELECT_RESONATE2.get(), 2.0F, 0.06F), 10);
+                            PlayerSelectionScreen.this.minecraft.getSoundManager().playDelayed(SimpleSoundInstance.forUI(ModSounds.MONITOR_SELECT_RESONATE3.get(), 2.0F, 0.06F), 20);
+                            PlayerSelectionScreen.this.minecraft.getSoundManager().playDelayed(SimpleSoundInstance.forUI(ModSounds.MONITOR_SELECT_RESONATE4.get(), 2.0F, 0.06F), 30);
+                            PlayerSelectionScreen.this.minecraft.getSoundManager().play(SimpleSoundInstance.forUI(ModSounds.MONITOR_SELECT_SHIMMER.get(), 2.0F, 0.25F));
                             PlayerSelectionScreen.this.minecraft.setScreen(new BodycamViewScreen(this.playerInfo.getProfile().getId(), this.displayName, PlayerSelectionScreen.this.hasReach, PlayerSelectionScreen.this.isOnHologram));
                         } catch (Exception e) {
                         }
@@ -181,22 +187,25 @@ public class PlayerSelectionScreen extends Screen {
             graphics.blit(skin, left, top + 4, 32, 32, 40.0F, 8.0F, 8, 8, 64, 64);
             boolean hasAnonymizer = dev.ClasherHD.bodycam.client.ClientBodycamCache.anonymizers.getOrDefault(this.playerInfo.getProfile().getId(), false);
             int jammerMode = dev.ClasherHD.bodycam.client.ClientBodycamCache.jammers.getOrDefault(this.playerInfo.getProfile().getId(), 0);
-            int nameColor;
 
+            net.minecraft.core.BlockPos targetPos = dev.ClasherHD.bodycam.client.ClientBodycamCache.positions.get(this.playerInfo.getProfile().getId());
+            String targetDim = dev.ClasherHD.bodycam.client.ClientBodycamCache.dimensions.get(this.playerInfo.getProfile().getId());
+            String myDim = Minecraft.getInstance().player != null ? Minecraft.getInstance().player.level().dimension().location().toString() : "";
+            
+            boolean isOutOfRangeOrDimension = targetPos == null || targetDim == null || !myDim.equals(targetDim);
+            if (!isOutOfRangeOrDimension) {
+                isOutOfRangeOrDimension = Math.sqrt(Minecraft.getInstance().player.blockPosition().distSqr(targetPos)) > (double) dev.ClasherHD.bodycam.config.ModServerConfig.MAX_MONITOR_DISTANCE.get();
+            }
+
+            boolean isBlocked = jammerMode == 1 || (jammerMode == 2 && isOutOfRangeOrDimension);
+
+            int nameColor;
             if (!hasAnonymizer && observingMe.contains(this.playerInfo.getProfile().getId())) {
                 nameColor = 0xFF000000 | Integer.parseInt(dev.ClasherHD.bodycam.config.ModClientConfig.COLOR_OBSERVING.get(), 16);
-            } else if (jammerMode == 1) {
+            } else if (isBlocked) {
                 nameColor = 0xFF000000 | Integer.parseInt(dev.ClasherHD.bodycam.config.ModClientConfig.COLOR_BLOCKED.get(), 16);
-            } else if (jammerMode == 2) {
-                net.minecraft.core.BlockPos targetPos = dev.ClasherHD.bodycam.client.ClientBodycamCache.positions.get(this.playerInfo.getProfile().getId());
-                String targetDim = dev.ClasherHD.bodycam.client.ClientBodycamCache.dimensions.get(this.playerInfo.getProfile().getId());
-                String myDim = Minecraft.getInstance().player != null ? Minecraft.getInstance().player.level().dimension().location().toString() : "";
-                boolean blocked = targetPos == null || targetDim == null || !myDim.equals(targetDim);
-                if (!blocked) {
-                    blocked = Math.sqrt(Minecraft.getInstance().player.blockPosition().distSqr(targetPos)) > (double) dev.ClasherHD.bodycam.config.ModServerConfig.MAX_MONITOR_DISTANCE.get();
-                }
-                nameColor = blocked ? (0xFF000000 | Integer.parseInt(dev.ClasherHD.bodycam.config.ModClientConfig.COLOR_BLOCKED.get(), 16))
-                        : (0xFF000000 | Integer.parseInt(dev.ClasherHD.bodycam.config.ModClientConfig.COLOR_STANDARD.get(), 16));
+            } else if (!PlayerSelectionScreen.this.hasReach && isOutOfRangeOrDimension) {
+                nameColor = 0xFF000000 | Integer.parseInt(dev.ClasherHD.bodycam.config.ModClientConfig.COLOR_OUT_OF_RANGE.get(), 16);
             } else {
                 nameColor = 0xFF000000 | Integer.parseInt(dev.ClasherHD.bodycam.config.ModClientConfig.COLOR_STANDARD.get(), 16);
             }

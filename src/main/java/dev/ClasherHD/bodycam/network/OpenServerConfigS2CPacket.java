@@ -13,16 +13,18 @@ public class OpenServerConfigS2CPacket {
     public final boolean enableDimensionLocator;
     public final boolean enableHologramBlock;
     public final boolean enableAnonymizer;
+    public final boolean enablePlayerLocator;
     public final boolean opOnlyMode;
 
     public OpenServerConfigS2CPacket(int maxMonitorDistance, boolean enableReachEnchantment, boolean enableJammer,
-            boolean enableDimensionLocator, boolean enableHologramBlock, boolean enableAnonymizer, boolean opOnlyMode) {
+            boolean enableDimensionLocator, boolean enableHologramBlock, boolean enableAnonymizer, boolean enablePlayerLocator, boolean opOnlyMode) {
         this.maxMonitorDistance = maxMonitorDistance;
         this.enableReachEnchantment = enableReachEnchantment;
         this.enableJammer = enableJammer;
         this.enableDimensionLocator = enableDimensionLocator;
         this.enableHologramBlock = enableHologramBlock;
         this.enableAnonymizer = enableAnonymizer;
+        this.enablePlayerLocator = enablePlayerLocator;
         this.opOnlyMode = opOnlyMode;
     }
 
@@ -33,12 +35,14 @@ public class OpenServerConfigS2CPacket {
         buf.writeBoolean(msg.enableDimensionLocator);
         buf.writeBoolean(msg.enableHologramBlock);
         buf.writeBoolean(msg.enableAnonymizer);
+        buf.writeBoolean(msg.enablePlayerLocator);
         buf.writeBoolean(msg.opOnlyMode);
     }
 
     public static OpenServerConfigS2CPacket decode(FriendlyByteBuf buf) {
         return new OpenServerConfigS2CPacket(
                 buf.readInt(),
+                buf.readBoolean(),
                 buf.readBoolean(),
                 buf.readBoolean(),
                 buf.readBoolean(),

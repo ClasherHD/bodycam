@@ -1,0 +1,83 @@
+{
+  "monitor_select_resonate1": {
+    "sounds": [
+      {
+        "name": "minecraft:block/amethyst/resonate1",
+        "stream": false
+      }
+    ]
+  },
+  "monitor_select_resonate2": {
+    "sounds": [
+      {
+        "name": "minecraft:block/amethyst/resonate2",
+        "stream": false
+      }
+    ]
+  },
+  "monitor_select_resonate3": {
+    "sounds": [
+      {
+        "name": "minecraft:block/amethyst/resonate3",
+        "stream": false
+      }
+    ]
+  },
+  "monitor_select_resonate4": {
+    "sounds": [
+      {
+        "name": "minecraft:block/amethyst/resonate4",
+        "stream": false
+      }
+    ]
+  },
+  "monitor_select_shimmer": {
+    "subtitle": "subtitles.bodycam.monitor_select",
+    "sounds": [
+      {
+        "name": "minecraft:block/amethyst/shimmer",
+        "stream": false
+      }
+    ]
+  },
+  "anonymizer_used1": {
+    "subtitle": "subtitles.bodycam.anonymizer_used",
+    "sounds": [
+      {
+        "name": "minecraft:block.metal.step",
+        "type": "event"
+      }
+    ]
+  },
+  "anonymizer_used2": {
+    "subtitle": "subtitles.bodycam.anonymizer_used",
+    "sounds": [
+      {
+        "name": "minecraft:block.metal.step",
+        "type": "event"
+      }
+    ]
+  },
+  "jammer_used": {
+    "subtitle": "subtitles.bodycam.jammer_used",
+    "sounds": [
+      {
+        "name": "minecraft:random/anvil_land",
+        "stream": false
+      }
+    ]
+  },
+  "player_locator_used": {
+    "subtitle": "subtitles.bodycam.player_locator_used",
+    "sounds": [
+      {
+        "name": "minecraft:block/lodestone/lock1",
+        "stream": false
+      },
+      {
+        "name": "minecraft:block/lodestone/lock2",
+        "stream": false
+      }
+    ]
+  }
+}

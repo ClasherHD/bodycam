@@ -31,6 +31,43 @@ public class ClientSetupHandler {
                         }
                         return 0.0F;
                     });
+
+            net.minecraft.client.renderer.item.ItemProperties.register(dev.ClasherHD.bodycam.registry.ModItems.PLAYER_LOCATOR_COMPASS.get(),
+                    new net.minecraft.resources.ResourceLocation("bodycam", "angle"),
+                    new net.minecraft.client.renderer.item.CompassItemPropertyFunction((level, stack, entity) -> {
+                        if (stack.hasTag() && stack.getTag().contains("LocatorTargetUUID")) {
+                            int state = stack.getTag().getInt("LocatorState");
+                            if (state == 1) {
+                                java.util.UUID targetUUID = stack.getTag().getUUID("LocatorTargetUUID");
+                                net.minecraft.core.BlockPos targetPos = dev.ClasherHD.bodycam.client.ClientBodycamCache.positions.get(targetUUID);
+                                String targetDim = dev.ClasherHD.bodycam.client.ClientBodycamCache.dimensions.get(targetUUID);
+                                if (targetPos != null && targetDim != null) {
+                                    return net.minecraft.core.GlobalPos.of(
+                                            net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, new net.minecraft.resources.ResourceLocation(targetDim)),
+                                            targetPos
+                                    );
+                                }
+                            } else if (state == 3) {
+                                if (dev.ClasherHD.bodycam.client.ClientLocatorCache.structureTarget != null && dev.ClasherHD.bodycam.client.ClientLocatorCache.structureTargetDimension != null) {
+                                    return net.minecraft.core.GlobalPos.of(
+                                            dev.ClasherHD.bodycam.client.ClientLocatorCache.structureTargetDimension,
+                                            dev.ClasherHD.bodycam.client.ClientLocatorCache.structureTarget
+                                    );
+                                }
+                            }
+                        }
+                        return null;
+                    }));
+
+            net.minecraft.client.renderer.item.ItemProperties.register(dev.ClasherHD.bodycam.registry.ModItems.PLAYER_LOCATOR_COMPASS.get(),
+                    new net.minecraft.resources.ResourceLocation("bodycam", "state"),
+                    (stack, level, entity, seed) -> {
+                        if (stack.hasTag() && stack.getTag().contains("LocatorState")) {
+                            return (float) stack.getTag().getInt("LocatorState");
+                        }
+                        return 0.0F;
+                    });
+
             registerConfigScreen();
         });
     }
@@ -41,6 +78,76 @@ public class ClientSetupHandler {
                 dev.ClasherHD.bodycam.client.render.BodycamDummyRenderer::new);
         event.registerEntityRenderer(dev.ClasherHD.bodycam.registry.ModEntityTypes.HOLOGRAM_DUMMY.get(),
                 dev.ClasherHD.bodycam.client.render.BodycamDummyRenderer::new);
+    }
+
+    @SubscribeEvent
+    public static void addLayers(EntityRenderersEvent.AddLayers event) {
+        for (String skinType : new String[]{"default", "slim"}) {
+            net.minecraft.client.renderer.entity.player.PlayerRenderer renderer = event.getSkin(skinType);
+            if (renderer != null) {
+                try {
+                    java.lang.reflect.Field layersField = net.minecraft.client.renderer.entity.LivingEntityRenderer.class.getDeclaredField("layers");
+                    layersField.setAccessible(true);
+                    @SuppressWarnings("unchecked")
+                    java.util.List<net.minecraft.client.renderer.entity.layers.RenderLayer<?, ?>> layers =
+                            (java.util.List<net.minecraft.client.renderer.entity.layers.RenderLayer<?, ?>>) layersField.get(renderer);
+                    layers.removeIf(layer -> layer instanceof net.minecraft.client.renderer.entity.layers.PlayerItemInHandLayer);
+                    renderer.addLayer(new dev.ClasherHD.bodycam.client.render.BodycamItemInHandLayer<>(renderer, net.minecraft.client.Minecraft.getInstance().getEntityRenderDispatcher().getItemInHandRenderer()));
+                    
+                    tryAddGlowingTrimLayer(renderer);
+                } catch (Exception e) {
+                }
+            }
+        }
+
+        tryAddGlowingTrimLayer(event.getRenderer(net.minecraft.world.entity.EntityType.ARMOR_STAND));
+        tryAddGlowingTrimLayer(event.getRenderer(net.minecraft.world.entity.EntityType.ZOMBIE));
+        tryAddGlowingTrimLayer(event.getRenderer(net.minecraft.world.entity.EntityType.SKELETON));
+        tryAddGlowingTrimLayer(event.getRenderer(net.minecraft.world.entity.EntityType.DROWNED));
+        tryAddGlowingTrimLayer(event.getRenderer(net.minecraft.world.entity.EntityType.STRAY));
+        tryAddGlowingTrimLayer(event.getRenderer(net.minecraft.world.entity.EntityType.HUSK));
+        tryAddGlowingTrimLayer(event.getRenderer(net.minecraft.world.entity.EntityType.WITHER_SKELETON));
+        tryAddGlowingTrimLayer(event.getRenderer(net.minecraft.world.entity.EntityType.PIGLIN));
+        tryAddGlowingTrimLayer(event.getRenderer(net.minecraft.world.entity.EntityType.PIGLIN_BRUTE));
+        tryAddGlowingTrimLayer(event.getRenderer(net.minecraft.world.entity.EntityType.ZOMBIFIED_PIGLIN));
+    }
+
+    private static void tryAddGlowingTrimLayer(net.minecraft.client.renderer.entity.LivingEntityRenderer<?, ?> renderer) {
+        if (renderer != null) {
+            try {
+                java.lang.reflect.Field layersField = net.minecraft.client.renderer.entity.LivingEntityRenderer.class.getDeclaredField("layers");
+                layersField.setAccessible(true);
+                @SuppressWarnings("unchecked")
+                java.util.List<net.minecraft.client.renderer.entity.layers.RenderLayer<?, ?>> layers =
+                        (java.util.List<net.minecraft.client.renderer.entity.layers.RenderLayer<?, ?>>) layersField.get(renderer);
+                
+                net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer<?, ?, ?> armorLayer = null;
+                for (net.minecraft.client.renderer.entity.layers.RenderLayer<?, ?> layer : layers) {
+                    if (layer instanceof net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer) {
+                        armorLayer = (net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer<?, ?, ?>) layer;
+                        break;
+                    }
+                }
+                if (armorLayer != null) {
+                    boolean alreadyHas = false;
+                    for (net.minecraft.client.renderer.entity.layers.RenderLayer<?, ?> layer : layers) {
+                        if (layer instanceof dev.ClasherHD.bodycam.client.render.GlowingArmorTrimLayer) {
+                            alreadyHas = true;
+                            break;
+                        }
+                    }
+                    if (!alreadyHas) {
+                        addLayerHelper(renderer, armorLayer);
+                    }
+                }
+            } catch (Exception e) {
+            }
+        }
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static void addLayerHelper(net.minecraft.client.renderer.entity.LivingEntityRenderer renderer, net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer armorLayer) {
+        renderer.addLayer(new dev.ClasherHD.bodycam.client.render.GlowingArmorTrimLayer(renderer, armorLayer));
     }
 
     public static void registerConfigScreen() {

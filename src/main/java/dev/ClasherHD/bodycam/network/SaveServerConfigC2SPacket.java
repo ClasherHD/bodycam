@@ -12,16 +12,18 @@ public class SaveServerConfigC2SPacket {
     public final boolean enableDimensionLocator;
     public final boolean enableHologramBlock;
     public final boolean enableAnonymizer;
+    public final boolean enablePlayerLocator;
     public final boolean opOnlyMode;
 
     public SaveServerConfigC2SPacket(int maxMonitorDistance, boolean enableReachEnchantment, boolean enableJammer,
-            boolean enableDimensionLocator, boolean enableHologramBlock, boolean enableAnonymizer, boolean opOnlyMode) {
+            boolean enableDimensionLocator, boolean enableHologramBlock, boolean enableAnonymizer, boolean enablePlayerLocator, boolean opOnlyMode) {
         this.maxMonitorDistance = maxMonitorDistance;
         this.enableReachEnchantment = enableReachEnchantment;
         this.enableJammer = enableJammer;
         this.enableDimensionLocator = enableDimensionLocator;
         this.enableHologramBlock = enableHologramBlock;
         this.enableAnonymizer = enableAnonymizer;
+        this.enablePlayerLocator = enablePlayerLocator;
         this.opOnlyMode = opOnlyMode;
     }
 
@@ -32,12 +34,14 @@ public class SaveServerConfigC2SPacket {
         buf.writeBoolean(msg.enableDimensionLocator);
         buf.writeBoolean(msg.enableHologramBlock);
         buf.writeBoolean(msg.enableAnonymizer);
+        buf.writeBoolean(msg.enablePlayerLocator);
         buf.writeBoolean(msg.opOnlyMode);
     }
 
     public static SaveServerConfigC2SPacket decode(FriendlyByteBuf buf) {
         return new SaveServerConfigC2SPacket(
                 buf.readInt(),
+                buf.readBoolean(),
                 buf.readBoolean(),
                 buf.readBoolean(),
                 buf.readBoolean(),
@@ -57,6 +61,7 @@ public class SaveServerConfigC2SPacket {
                 dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_DIMENSION_LOCATOR.set(msg.enableDimensionLocator);
                 dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_HOLOGRAM_BLOCK.set(msg.enableHologramBlock);
                 dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_ANONYMIZER.set(msg.enableAnonymizer);
+                dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_PLAYER_LOCATOR.set(msg.enablePlayerLocator);
                 dev.ClasherHD.bodycam.config.ModServerConfig.OP_ONLY_MODE.set(msg.opOnlyMode);
                 dev.ClasherHD.bodycam.config.ModServerConfig.SPEC.save();
             }
