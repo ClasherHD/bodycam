@@ -53,7 +53,7 @@ public class BodycamViewScreen extends Screen {
         }
         BodycamViewScreen.isMonitoring = true;
         dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE
-                .sendToServer(new dev.ClasherHD.bodycam.network.BodycamSetCameraPacket(this.targetId, this.hasReach, this.isOnHologram));
+                .sendToServer(new dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket(this.targetId, this.hasReach, this.isOnHologram));
         if (mc.level != null) {
             Player targetPlayer = mc.level.getPlayerByUUID(this.targetId);
             if (targetPlayer != null && targetPlayer.isAlive()) {
@@ -84,7 +84,7 @@ public class BodycamViewScreen extends Screen {
         if (this.minecraft != null && this.minecraft.options.keyShift.matches(keyCode, scanCode)) {
             if (BodycamViewScreen.isMonitoring) {
                 dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE
-                        .sendToServer(new dev.ClasherHD.bodycam.network.BodycamResetCameraPacket());
+                        .sendToServer(new dev.ClasherHD.bodycam.network.bodycam.BodycamResetCameraPacket());
             }
             return true;
         }

@@ -1,4 +1,5 @@
-package dev.ClasherHD.bodycam.network;
+package dev.ClasherHD.bodycam.network.bodycam;
+
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
@@ -21,7 +22,7 @@ public class BodycamForceClosePacket {
 
     public static void handle(BodycamForceClosePacket msg, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> dev.ClasherHD.bodycam.client.ClientPacketHandler.handleForceClose(msg));
+            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> dev.ClasherHD.bodycam.client.network.ClientPacketHandler.handleForceClose(msg));
         });
         ctx.get().setPacketHandled(true);
     }

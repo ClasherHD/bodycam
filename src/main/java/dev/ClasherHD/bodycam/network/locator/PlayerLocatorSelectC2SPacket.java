@@ -1,4 +1,5 @@
-package dev.ClasherHD.bodycam.network;
+package dev.ClasherHD.bodycam.network.locator;
+
 
 import dev.ClasherHD.bodycam.item.PlayerLocatorCompassItem;
 import net.minecraft.nbt.CompoundTag;

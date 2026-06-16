@@ -1,6 +1,9 @@
 package dev.ClasherHD.bodycam.network;
 
 import dev.ClasherHD.bodycam.bodycam;
+import dev.ClasherHD.bodycam.network.bodycam.*;
+import dev.ClasherHD.bodycam.network.locator.*;
+import dev.ClasherHD.bodycam.network.config.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;

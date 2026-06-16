@@ -44,7 +44,7 @@ public class DimensionLocatorItem extends Item {
             }
             dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
                     PacketDistributor.PLAYER.with(() -> (ServerPlayer) player),
-                    new dev.ClasherHD.bodycam.network.DimensionLocatorResponsePacket(dims));
+                    new dev.ClasherHD.bodycam.network.locator.DimensionLocatorResponsePacket(dims));
         }
         return InteractionResultHolder.sidedSuccess(player.getItemInHand(hand), level.isClientSide());
     }

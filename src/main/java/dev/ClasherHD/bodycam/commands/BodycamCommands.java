@@ -39,7 +39,7 @@ public class BodycamCommands {
 
                             dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
                                 net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
-                                new dev.ClasherHD.bodycam.network.OpenServerConfigS2CPacket(
+                                new dev.ClasherHD.bodycam.network.config.OpenServerConfigS2CPacket(
                                     maxDist, reach, jammer, locator, hologram, anonymizer, playerLocator, opOnly
                                 )
                             );
@@ -181,7 +181,7 @@ public class BodycamCommands {
                                     context.getSource().sendFailure(Component.translatable("message.bodycam.no_dummy_found"));
                                     return 0;
                                 }
-                                dev.ClasherHD.bodycam.network.BodycamResetCameraPacket.executeReset(p);
+                                dev.ClasherHD.bodycam.network.bodycam.BodycamResetCameraPacket.executeReset(p);
                                 context.getSource().sendSuccess(() -> Component.literal("Removed dummy of " + p.getName().getString()), true);
                                 return 1;
                             })
@@ -193,7 +193,7 @@ public class BodycamCommands {
                                 int count = 0;
                                 for (ServerPlayer p : context.getSource().getServer().getPlayerList().getPlayers()) {
                                     if (p.getPersistentData().getBoolean("bodycam_active")) {
-                                        dev.ClasherHD.bodycam.network.BodycamResetCameraPacket.executeReset(p);
+                                        dev.ClasherHD.bodycam.network.bodycam.BodycamResetCameraPacket.executeReset(p);
                                         count++;
                                     }
                                 }

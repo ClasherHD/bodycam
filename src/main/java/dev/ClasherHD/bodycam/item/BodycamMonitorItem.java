@@ -26,7 +26,7 @@ public class BodycamMonitorItem extends Item {
                     dev.ClasherHD.bodycam.registry.ModEnchantments.REACH_ENCHANTMENT.get(), player.getItemInHand(hand)) > 0;
             DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
                 dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE
-                        .sendToServer(new dev.ClasherHD.bodycam.network.SyncBodycamRequestC2SPacket(hasReach, false));
+                        .sendToServer(new dev.ClasherHD.bodycam.network.bodycam.SyncBodycamRequestC2SPacket(hasReach, false));
             });
         }
         return InteractionResultHolder.consume(player.getItemInHand(hand));

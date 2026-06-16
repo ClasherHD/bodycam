@@ -1,9 +1,9 @@
-package dev.ClasherHD.bodycam.client;
+package dev.ClasherHD.bodycam.client.network;
 
-import dev.ClasherHD.bodycam.network.BodycamForceClosePacket;
-import dev.ClasherHD.bodycam.network.DimensionLocatorResponsePacket;
-import dev.ClasherHD.bodycam.network.SyncBodycamStatesS2CPacket;
-import dev.ClasherHD.bodycam.network.CrossObservationSyncPacket;
+import dev.ClasherHD.bodycam.network.bodycam.BodycamForceClosePacket;
+import dev.ClasherHD.bodycam.network.locator.DimensionLocatorResponsePacket;
+import dev.ClasherHD.bodycam.network.bodycam.SyncBodycamStatesS2CPacket;
+import dev.ClasherHD.bodycam.network.bodycam.CrossObservationSyncPacket;
 import net.minecraft.client.Minecraft;
 
 public class ClientPacketHandler {
@@ -21,7 +21,7 @@ public class ClientPacketHandler {
     }
 
     public static void handleSyncStates(SyncBodycamStatesS2CPacket msg) {
-        dev.ClasherHD.bodycam.client.ClientBodycamCache.update(msg.jammers, msg.targets, msg.dimensions, msg.positions, msg.anonymizers);
+        dev.ClasherHD.bodycam.client.cache.ClientBodycamCache.update(msg.jammers, msg.targets, msg.dimensions, msg.positions, msg.anonymizers);
         Minecraft.getInstance().setScreen(new dev.ClasherHD.bodycam.client.gui.PlayerSelectionScreen(msg.hasReach, msg.isOnHologram));
     }
 
@@ -33,20 +33,20 @@ public class ClientPacketHandler {
         }
     }
 
-    public static void handleOpenServerConfig(dev.ClasherHD.bodycam.network.OpenServerConfigS2CPacket msg) {
+    public static void handleOpenServerConfig(dev.ClasherHD.bodycam.network.config.OpenServerConfigS2CPacket msg) {
         Minecraft.getInstance().setScreen(new dev.ClasherHD.bodycam.client.gui.ServerConfigScreen(null, msg));
     }
 
-    public static void handlePlayerLocatorSync(dev.ClasherHD.bodycam.network.PlayerLocatorSyncS2CPacket msg) {
+    public static void handlePlayerLocatorSync(dev.ClasherHD.bodycam.network.locator.PlayerLocatorSyncS2CPacket msg) {
         Minecraft.getInstance().setScreen(new dev.ClasherHD.bodycam.client.gui.PlayerLocatorScreen(msg.jammers, msg.dimensions, msg.positions, msg.currentTarget, msg.hasReach));
     }
 
-    public static void handlePlayerLocatorStructureUpdate(dev.ClasherHD.bodycam.network.PlayerLocatorStructureUpdateS2CPacket msg) {
-        dev.ClasherHD.bodycam.client.ClientLocatorCache.updateStructure(msg.structurePos, msg.dimension);
+    public static void handlePlayerLocatorStructureUpdate(dev.ClasherHD.bodycam.network.locator.PlayerLocatorStructureUpdateS2CPacket msg) {
+        dev.ClasherHD.bodycam.client.cache.ClientLocatorCache.updateStructure(msg.structurePos, msg.dimension);
     }
 
-    public static void handlePlayerLocatorTargetUpdate(dev.ClasherHD.bodycam.network.PlayerLocatorTargetUpdateS2CPacket msg) {
-        dev.ClasherHD.bodycam.client.ClientBodycamCache.positions.put(msg.targetUUID, msg.pos);
-        dev.ClasherHD.bodycam.client.ClientBodycamCache.dimensions.put(msg.targetUUID, msg.dimension);
+    public static void handlePlayerLocatorTargetUpdate(dev.ClasherHD.bodycam.network.locator.PlayerLocatorTargetUpdateS2CPacket msg) {
+        dev.ClasherHD.bodycam.client.cache.ClientBodycamCache.positions.put(msg.targetUUID, msg.pos);
+        dev.ClasherHD.bodycam.client.cache.ClientBodycamCache.dimensions.put(msg.targetUUID, msg.dimension);
     }
 }

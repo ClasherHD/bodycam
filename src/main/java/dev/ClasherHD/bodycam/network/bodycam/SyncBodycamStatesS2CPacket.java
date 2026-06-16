@@ -1,4 +1,5 @@
-package dev.ClasherHD.bodycam.network;
+package dev.ClasherHD.bodycam.network.bodycam;
+
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
@@ -98,7 +99,7 @@ public class SyncBodycamStatesS2CPacket {
 
     public static void handle(SyncBodycamStatesS2CPacket msg, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> dev.ClasherHD.bodycam.client.ClientPacketHandler.handleSyncStates(msg));
+            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> dev.ClasherHD.bodycam.client.network.ClientPacketHandler.handleSyncStates(msg));
         });
         ctx.get().setPacketHandled(true);
     }

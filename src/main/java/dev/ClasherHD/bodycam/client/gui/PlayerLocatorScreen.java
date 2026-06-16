@@ -1,7 +1,7 @@
 package dev.ClasherHD.bodycam.client.gui;
 
 import dev.ClasherHD.bodycam.network.PacketHandler;
-import dev.ClasherHD.bodycam.network.PlayerLocatorSelectC2SPacket;
+import dev.ClasherHD.bodycam.network.locator.PlayerLocatorSelectC2SPacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.ObjectSelectionList;

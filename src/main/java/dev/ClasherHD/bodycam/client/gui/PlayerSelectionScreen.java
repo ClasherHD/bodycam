@@ -127,8 +127,8 @@ public class PlayerSelectionScreen extends Screen {
                     (btn) -> {
                         PlayerSelectionScreen.this.listWidget.setSelected(this);
                         if (!PlayerSelectionScreen.this.hasReach && PlayerSelectionScreen.this.minecraft.level != null) {
-                            net.minecraft.core.BlockPos targetPos = dev.ClasherHD.bodycam.client.ClientBodycamCache.positions.get(this.playerInfo.getProfile().getId());
-                            String targetDim = dev.ClasherHD.bodycam.client.ClientBodycamCache.dimensions.get(this.playerInfo.getProfile().getId());
+                            net.minecraft.core.BlockPos targetPos = dev.ClasherHD.bodycam.client.cache.ClientBodycamCache.positions.get(this.playerInfo.getProfile().getId());
+                            String targetDim = dev.ClasherHD.bodycam.client.cache.ClientBodycamCache.dimensions.get(this.playerInfo.getProfile().getId());
                             String myDim = Minecraft.getInstance().player.level().dimension().location().toString();
 
                             if (targetPos == null || targetDim == null || !myDim.equals(targetDim) || Math.sqrt(Minecraft.getInstance().player.blockPosition().distSqr(targetPos)) > (float) dev.ClasherHD.bodycam.config.ModServerConfig.MAX_MONITOR_DISTANCE.get()) {
@@ -150,13 +150,13 @@ public class PlayerSelectionScreen extends Screen {
             ).bounds(0, 0, 80, 20).build();
 
             if (Minecraft.getInstance().level != null) {
-                int jammerMode = dev.ClasherHD.bodycam.client.ClientBodycamCache.jammers.getOrDefault(this.playerInfo.getProfile().getId(), 0);
+                int jammerMode = dev.ClasherHD.bodycam.client.cache.ClientBodycamCache.jammers.getOrDefault(this.playerInfo.getProfile().getId(), 0);
 
                 if (jammerMode == 1) {
                     this.selectButton.active = false;
                 } else if (jammerMode == 2) {
-                    net.minecraft.core.BlockPos targetPos = dev.ClasherHD.bodycam.client.ClientBodycamCache.positions.get(this.playerInfo.getProfile().getId());
-                    String targetDim = dev.ClasherHD.bodycam.client.ClientBodycamCache.dimensions.get(this.playerInfo.getProfile().getId());
+                    net.minecraft.core.BlockPos targetPos = dev.ClasherHD.bodycam.client.cache.ClientBodycamCache.positions.get(this.playerInfo.getProfile().getId());
+                    String targetDim = dev.ClasherHD.bodycam.client.cache.ClientBodycamCache.dimensions.get(this.playerInfo.getProfile().getId());
                     String myDim = Minecraft.getInstance().player.level().dimension().location().toString();
 
                     if (targetPos == null || targetDim == null || !myDim.equals(targetDim) || Math.sqrt(Minecraft.getInstance().player.blockPosition().distSqr(targetPos)) > (float) dev.ClasherHD.bodycam.config.ModServerConfig.MAX_MONITOR_DISTANCE.get()) {
@@ -169,8 +169,8 @@ public class PlayerSelectionScreen extends Screen {
                 }
 
                 if (!PlayerSelectionScreen.this.hasReach) {
-                    net.minecraft.core.BlockPos targetPos = dev.ClasherHD.bodycam.client.ClientBodycamCache.positions.get(this.playerInfo.getProfile().getId());
-                    String targetDim = dev.ClasherHD.bodycam.client.ClientBodycamCache.dimensions.get(this.playerInfo.getProfile().getId());
+                    net.minecraft.core.BlockPos targetPos = dev.ClasherHD.bodycam.client.cache.ClientBodycamCache.positions.get(this.playerInfo.getProfile().getId());
+                    String targetDim = dev.ClasherHD.bodycam.client.cache.ClientBodycamCache.dimensions.get(this.playerInfo.getProfile().getId());
                     String myDim = Minecraft.getInstance().player.level().dimension().location().toString();
 
                     if (targetPos == null || targetDim == null || !myDim.equals(targetDim) || Math.sqrt(Minecraft.getInstance().player.blockPosition().distSqr(targetPos)) > (float) dev.ClasherHD.bodycam.config.ModServerConfig.MAX_MONITOR_DISTANCE.get()) {
@@ -185,11 +185,11 @@ public class PlayerSelectionScreen extends Screen {
             ResourceLocation skin = this.playerInfo.getSkinLocation();
             graphics.blit(skin, left, top + 4, 32, 32, 8.0F, 8.0F, 8, 8, 64, 64);
             graphics.blit(skin, left, top + 4, 32, 32, 40.0F, 8.0F, 8, 8, 64, 64);
-            boolean hasAnonymizer = dev.ClasherHD.bodycam.client.ClientBodycamCache.anonymizers.getOrDefault(this.playerInfo.getProfile().getId(), false);
-            int jammerMode = dev.ClasherHD.bodycam.client.ClientBodycamCache.jammers.getOrDefault(this.playerInfo.getProfile().getId(), 0);
+            boolean hasAnonymizer = dev.ClasherHD.bodycam.client.cache.ClientBodycamCache.anonymizers.getOrDefault(this.playerInfo.getProfile().getId(), false);
+            int jammerMode = dev.ClasherHD.bodycam.client.cache.ClientBodycamCache.jammers.getOrDefault(this.playerInfo.getProfile().getId(), 0);
 
-            net.minecraft.core.BlockPos targetPos = dev.ClasherHD.bodycam.client.ClientBodycamCache.positions.get(this.playerInfo.getProfile().getId());
-            String targetDim = dev.ClasherHD.bodycam.client.ClientBodycamCache.dimensions.get(this.playerInfo.getProfile().getId());
+            net.minecraft.core.BlockPos targetPos = dev.ClasherHD.bodycam.client.cache.ClientBodycamCache.positions.get(this.playerInfo.getProfile().getId());
+            String targetDim = dev.ClasherHD.bodycam.client.cache.ClientBodycamCache.dimensions.get(this.playerInfo.getProfile().getId());
             String myDim = Minecraft.getInstance().player != null ? Minecraft.getInstance().player.level().dimension().location().toString() : "";
             
             boolean isOutOfRangeOrDimension = targetPos == null || targetDim == null || !myDim.equals(targetDim);

@@ -1,4 +1,5 @@
-package dev.ClasherHD.bodycam.network;
+package dev.ClasherHD.bodycam.network.bodycam;
+
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
@@ -22,7 +23,7 @@ public class BodycamResetCameraPacket {
     public static void executeReset(ServerPlayer sender) {
         if (sender != null && sender.server != null) {
             if (!sender.isAlive()) {
-                int gameModeId = dev.ClasherHD.bodycam.network.BodycamSetCameraPacket.ORIGINAL_GAMEMODE.getOrDefault(sender.getUUID(), net.minecraft.world.level.GameType.SURVIVAL.getId());
+                int gameModeId = dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_GAMEMODE.getOrDefault(sender.getUUID(), net.minecraft.world.level.GameType.SURVIVAL.getId());
                 net.minecraft.world.level.GameType originalGameType = net.minecraft.world.level.GameType.byId(gameModeId);
                 sender.setGameMode(originalGameType != null ? originalGameType : net.minecraft.world.level.GameType.SURVIVAL);
                 sender.setCamera(sender);
@@ -34,7 +35,7 @@ public class BodycamResetCameraPacket {
                         if (oldTarget != null) {
                             dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
                                     net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> oldTarget),
-                                    new dev.ClasherHD.bodycam.network.CrossObservationSyncPacket(sender.getUUID(), false)
+                                    new dev.ClasherHD.bodycam.network.bodycam.CrossObservationSyncPacket(sender.getUUID(), false)
                             );
                         }
                     }
@@ -45,10 +46,10 @@ public class BodycamResetCameraPacket {
                 sender.getPersistentData().remove("bodycam_disconnect_ticks");
                 sender.getPersistentData().remove("bodycam_has_reach");
                 sender.getPersistentData().remove("bodycam_original_dimension");
-                dev.ClasherHD.bodycam.network.BodycamSetCameraPacket.ORIGINAL_GAMEMODE.remove(sender.getUUID());
-                dev.ClasherHD.bodycam.network.BodycamSetCameraPacket.ORIGINAL_DIM.remove(sender.getUUID());
-                dev.ClasherHD.bodycam.network.BodycamSetCameraPacket.ORIGINAL_POS.remove(sender.getUUID());
-                dev.ClasherHD.bodycam.network.BodycamSetCameraPacket.ORIGINAL_ROT.remove(sender.getUUID());
+                dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_GAMEMODE.remove(sender.getUUID());
+                dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_DIM.remove(sender.getUUID());
+                dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_POS.remove(sender.getUUID());
+                dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_ROT.remove(sender.getUUID());
                 dev.ClasherHD.bodycam.entity.BodycamDummyEntity.DUMMY_POS.remove(sender.getUUID());
                 dev.ClasherHD.bodycam.entity.BodycamDummyEntity.DUMMY_FALL.remove(sender.getUUID());
                 dev.ClasherHD.bodycam.entity.BodycamDummyEntity.DUMMY_MOTION.remove(sender.getUUID());
@@ -90,7 +91,7 @@ public class BodycamResetCameraPacket {
                 xRot = dummy.getXRot();
                 dummy.discard();
             } else {
-                String dimStr = dev.ClasherHD.bodycam.network.BodycamSetCameraPacket.ORIGINAL_DIM
+                String dimStr = dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_DIM
                         .getOrDefault(sender.getUUID(), "");
                 if (!dimStr.isEmpty()) {
                     net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> dimKey = net.minecraft.resources.ResourceKey
@@ -102,14 +103,14 @@ public class BodycamResetCameraPacket {
                     }
                 }
 
-                net.minecraft.world.phys.Vec3 origPos = dev.ClasherHD.bodycam.network.BodycamSetCameraPacket.ORIGINAL_POS
+                net.minecraft.world.phys.Vec3 origPos = dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_POS
                         .get(sender.getUUID());
                 if (origPos != null) {
                     x = origPos.x;
                     y = origPos.y;
                     z = origPos.z;
                 }
-                net.minecraft.world.phys.Vec2 origRot = dev.ClasherHD.bodycam.network.BodycamSetCameraPacket.ORIGINAL_ROT
+                net.minecraft.world.phys.Vec2 origRot = dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_ROT
                         .get(sender.getUUID());
                 if (origRot != null) {
                     xRot = origRot.x;
@@ -126,9 +127,9 @@ public class BodycamResetCameraPacket {
             final float finalXRot = xRot;
             final float finalYRot = yRot;
 
-            dev.ClasherHD.bodycam.network.BodycamSetCameraPacket.ORIGINAL_DIM.remove(sender.getUUID());
-            dev.ClasherHD.bodycam.network.BodycamSetCameraPacket.ORIGINAL_POS.remove(sender.getUUID());
-            dev.ClasherHD.bodycam.network.BodycamSetCameraPacket.ORIGINAL_ROT.remove(sender.getUUID());
+            dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_DIM.remove(sender.getUUID());
+            dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_POS.remove(sender.getUUID());
+            dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_ROT.remove(sender.getUUID());
 
             boolean crossDim = !originalLevel.dimension().equals(sender.level().dimension());
             boolean involvesCustDim = !originalLevel.dimension().location().getNamespace().equals("minecraft")
@@ -151,7 +152,7 @@ public class BodycamResetCameraPacket {
             sender.hurtMarked = true;
             sender.fallDistance = lastFall;
 
-            int gameModeId = dev.ClasherHD.bodycam.network.BodycamSetCameraPacket.ORIGINAL_GAMEMODE.getOrDefault(sender.getUUID(), net.minecraft.world.level.GameType.SURVIVAL.getId());
+            int gameModeId = dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_GAMEMODE.getOrDefault(sender.getUUID(), net.minecraft.world.level.GameType.SURVIVAL.getId());
             net.minecraft.world.level.GameType originalGameType = net.minecraft.world.level.GameType.byId(gameModeId);
             sender.setGameMode(originalGameType != null ? originalGameType : net.minecraft.world.level.GameType.SURVIVAL);
 
@@ -162,7 +163,7 @@ public class BodycamResetCameraPacket {
                     if (oldTarget != null) {
                         dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
                                 net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> oldTarget),
-                                new dev.ClasherHD.bodycam.network.CrossObservationSyncPacket(sender.getUUID(), false)
+                                new dev.ClasherHD.bodycam.network.bodycam.CrossObservationSyncPacket(sender.getUUID(), false)
                         );
                     }
                 }
@@ -174,7 +175,7 @@ public class BodycamResetCameraPacket {
             sender.getPersistentData().remove("bodycam_has_reach");
             sender.getPersistentData().remove("bodycam_original_dimension");
             
-            dev.ClasherHD.bodycam.network.BodycamSetCameraPacket.ORIGINAL_GAMEMODE.remove(sender.getUUID());
+            dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_GAMEMODE.remove(sender.getUUID());
 
             dev.ClasherHD.bodycam.entity.BodycamDummyEntity.DUMMY_POS.remove(sender.getUUID());
             dev.ClasherHD.bodycam.entity.BodycamDummyEntity.DUMMY_FALL.remove(sender.getUUID());
@@ -182,7 +183,7 @@ public class BodycamResetCameraPacket {
 
             dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
                     net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> sender),
-                    new dev.ClasherHD.bodycam.network.BodycamForceClosePacket()
+                    new dev.ClasherHD.bodycam.network.bodycam.BodycamForceClosePacket()
             );
         }
     }

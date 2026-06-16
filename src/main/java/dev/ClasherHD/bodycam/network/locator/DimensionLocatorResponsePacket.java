@@ -1,4 +1,5 @@
-package dev.ClasherHD.bodycam.network;
+package dev.ClasherHD.bodycam.network.locator;
+
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
@@ -38,7 +39,7 @@ public class DimensionLocatorResponsePacket {
 
     public static void handle(DimensionLocatorResponsePacket msg, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> dev.ClasherHD.bodycam.client.ClientPacketHandler.handleDimensionResponse(msg));
+            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> dev.ClasherHD.bodycam.client.network.ClientPacketHandler.handleDimensionResponse(msg));
         });
         ctx.get().setPacketHandled(true);
     }

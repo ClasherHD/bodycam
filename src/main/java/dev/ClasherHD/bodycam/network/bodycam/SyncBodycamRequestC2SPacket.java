@@ -1,4 +1,6 @@
-package dev.ClasherHD.bodycam.network;
+package dev.ClasherHD.bodycam.network.bodycam;
+
+import dev.ClasherHD.bodycam.network.PacketHandler;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
@@ -76,14 +78,14 @@ public class SyncBodycamRequestC2SPacket {
                     if (dummyVec != null) {
                         positions.put(p.getUUID(), new BlockPos((int) dummyVec.x, (int) dummyVec.y, (int) dummyVec.z));
                     } else {
-                        net.minecraft.world.phys.Vec3 origVec = dev.ClasherHD.bodycam.network.BodycamSetCameraPacket.ORIGINAL_POS.get(p.getUUID());
+                        net.minecraft.world.phys.Vec3 origVec = dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_POS.get(p.getUUID());
                         if (origVec != null) {
                             positions.put(p.getUUID(), new BlockPos((int) origVec.x, (int) origVec.y, (int) origVec.z));
                         } else {
                             positions.put(p.getUUID(), p.blockPosition());
                         }
                     }
-                    String origDim = dev.ClasherHD.bodycam.network.BodycamSetCameraPacket.ORIGINAL_DIM.get(p.getUUID());
+                    String origDim = dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_DIM.get(p.getUUID());
                     dimensions.put(p.getUUID(), origDim != null ? origDim : p.level().dimension().location().toString());
                 } else {
                     dimensions.put(p.getUUID(), p.level().dimension().location().toString());

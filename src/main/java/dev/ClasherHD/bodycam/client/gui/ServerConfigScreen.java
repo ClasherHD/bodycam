@@ -9,7 +9,7 @@ import net.minecraft.network.chat.Component;
 @SuppressWarnings("null")
 public class ServerConfigScreen extends Screen {
     private final Screen previous;
-    private final dev.ClasherHD.bodycam.network.OpenServerConfigS2CPacket initialValues;
+    private final dev.ClasherHD.bodycam.network.config.OpenServerConfigS2CPacket initialValues;
 
     private EditBox txtMaxDistance;
     private boolean reachVal;
@@ -37,7 +37,7 @@ public class ServerConfigScreen extends Screen {
     private int maxScroll = 80;
     private int currentPage = 1;
 
-    public ServerConfigScreen(Screen previous, dev.ClasherHD.bodycam.network.OpenServerConfigS2CPacket values) {
+    public ServerConfigScreen(Screen previous, dev.ClasherHD.bodycam.network.config.OpenServerConfigS2CPacket values) {
         super(Component.translatable("gui.bodycam.server_config.title"));
         this.previous = previous;
         this.initialValues = values;
@@ -153,7 +153,7 @@ public class ServerConfigScreen extends Screen {
             } catch (NumberFormatException e) {
             }
             dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.sendToServer(
-                    new dev.ClasherHD.bodycam.network.SaveServerConfigC2SPacket(
+                    new dev.ClasherHD.bodycam.network.config.SaveServerConfigC2SPacket(
                             maxDist, this.reachVal, this.jammerVal, this.locatorVal, this.hologramVal, this.anonymizerVal, this.playerLocatorVal, this.opOnlyVal
                     )
             );

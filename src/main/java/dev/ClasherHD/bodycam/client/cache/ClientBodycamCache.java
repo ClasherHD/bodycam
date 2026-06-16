@@ -1,4 +1,4 @@
-package dev.ClasherHD.bodycam.client;
+package dev.ClasherHD.bodycam.client.cache;
 
 import java.util.HashMap;
 import java.util.Map;

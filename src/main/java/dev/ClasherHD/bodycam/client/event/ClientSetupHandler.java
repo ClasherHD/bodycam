@@ -1,4 +1,4 @@
-package dev.ClasherHD.bodycam.client;
+package dev.ClasherHD.bodycam.client.event;
 
 import dev.ClasherHD.bodycam.bodycam;
 import net.minecraftforge.api.distmarker.Dist;
@@ -39,8 +39,8 @@ public class ClientSetupHandler {
                             int state = stack.getTag().getInt("LocatorState");
                             if (state == 1) {
                                 java.util.UUID targetUUID = stack.getTag().getUUID("LocatorTargetUUID");
-                                net.minecraft.core.BlockPos targetPos = dev.ClasherHD.bodycam.client.ClientBodycamCache.positions.get(targetUUID);
-                                String targetDim = dev.ClasherHD.bodycam.client.ClientBodycamCache.dimensions.get(targetUUID);
+                                net.minecraft.core.BlockPos targetPos = dev.ClasherHD.bodycam.client.cache.ClientBodycamCache.positions.get(targetUUID);
+                                String targetDim = dev.ClasherHD.bodycam.client.cache.ClientBodycamCache.dimensions.get(targetUUID);
                                 if (targetPos != null && targetDim != null) {
                                     return net.minecraft.core.GlobalPos.of(
                                             net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, new net.minecraft.resources.ResourceLocation(targetDim)),
@@ -48,10 +48,10 @@ public class ClientSetupHandler {
                                     );
                                 }
                             } else if (state == 3) {
-                                if (dev.ClasherHD.bodycam.client.ClientLocatorCache.structureTarget != null && dev.ClasherHD.bodycam.client.ClientLocatorCache.structureTargetDimension != null) {
+                                if (dev.ClasherHD.bodycam.client.cache.ClientLocatorCache.structureTarget != null && dev.ClasherHD.bodycam.client.cache.ClientLocatorCache.structureTargetDimension != null) {
                                     return net.minecraft.core.GlobalPos.of(
-                                            dev.ClasherHD.bodycam.client.ClientLocatorCache.structureTargetDimension,
-                                            dev.ClasherHD.bodycam.client.ClientLocatorCache.structureTarget
+                                            dev.ClasherHD.bodycam.client.cache.ClientLocatorCache.structureTargetDimension,
+                                            dev.ClasherHD.bodycam.client.cache.ClientLocatorCache.structureTarget
                                     );
                                 }
                             }

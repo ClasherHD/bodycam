@@ -2,9 +2,9 @@ package dev.ClasherHD.bodycam.item;
 
 import dev.ClasherHD.bodycam.config.ModServerConfig;
 import dev.ClasherHD.bodycam.network.PacketHandler;
-import dev.ClasherHD.bodycam.network.PlayerLocatorSyncS2CPacket;
-import dev.ClasherHD.bodycam.network.PlayerLocatorStructureUpdateS2CPacket;
-import dev.ClasherHD.bodycam.network.PlayerLocatorTargetUpdateS2CPacket;
+import dev.ClasherHD.bodycam.network.locator.PlayerLocatorSyncS2CPacket;
+import dev.ClasherHD.bodycam.network.locator.PlayerLocatorStructureUpdateS2CPacket;
+import dev.ClasherHD.bodycam.network.locator.PlayerLocatorTargetUpdateS2CPacket;
 import dev.ClasherHD.bodycam.registry.ModEnchantments;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -261,7 +261,7 @@ public class PlayerLocatorCompassItem extends Item {
             if (dummyVec != null) {
                 return new BlockPos((int) dummyVec.x, (int) dummyVec.y, (int) dummyVec.z);
             }
-            net.minecraft.world.phys.Vec3 origVec = dev.ClasherHD.bodycam.network.BodycamSetCameraPacket.ORIGINAL_POS.get(p.getUUID());
+            net.minecraft.world.phys.Vec3 origVec = dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_POS.get(p.getUUID());
             if (origVec != null) {
                 return new BlockPos((int) origVec.x, (int) origVec.y, (int) origVec.z);
             }
@@ -278,7 +278,7 @@ public class PlayerLocatorCompassItem extends Item {
 
     private String getTargetDimension(ServerPlayer p) {
         if (p.getPersistentData().getBoolean("bodycam_active")) {
-            String origDim = dev.ClasherHD.bodycam.network.BodycamSetCameraPacket.ORIGINAL_DIM.get(p.getUUID());
+            String origDim = dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_DIM.get(p.getUUID());
             if (origDim != null) {
                 return origDim;
             }

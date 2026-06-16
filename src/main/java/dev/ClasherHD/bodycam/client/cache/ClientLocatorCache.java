@@ -1,4 +1,4 @@
-package dev.ClasherHD.bodycam.client;
+package dev.ClasherHD.bodycam.client.cache;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;

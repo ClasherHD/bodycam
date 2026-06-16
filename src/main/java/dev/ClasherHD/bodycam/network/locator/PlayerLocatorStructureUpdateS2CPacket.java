@@ -1,4 +1,5 @@
-package dev.ClasherHD.bodycam.network;
+package dev.ClasherHD.bodycam.network.locator;
+
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -29,7 +30,7 @@ public class PlayerLocatorStructureUpdateS2CPacket {
 
     public static void handle(PlayerLocatorStructureUpdateS2CPacket msg, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> dev.ClasherHD.bodycam.client.ClientPacketHandler.handlePlayerLocatorStructureUpdate(msg));
+            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> dev.ClasherHD.bodycam.client.network.ClientPacketHandler.handlePlayerLocatorStructureUpdate(msg));
         });
         ctx.get().setPacketHandled(true);
     }

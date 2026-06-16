@@ -1,4 +1,5 @@
-package dev.ClasherHD.bodycam.network;
+package dev.ClasherHD.bodycam.network.bodycam;
+
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
@@ -57,7 +58,7 @@ public class BodycamSetCameraPacket {
                             "message.bodycam.signal_weak").withStyle(net.minecraft.ChatFormatting.RED));
                     dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
                             net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
-                            new dev.ClasherHD.bodycam.network.BodycamForceClosePacket()
+                            new dev.ClasherHD.bodycam.network.bodycam.BodycamForceClosePacket()
                     );
                     return;
                 }
@@ -75,7 +76,7 @@ public class BodycamSetCameraPacket {
                         "message.bodycam.jammer_blocked").withStyle(net.minecraft.ChatFormatting.RED));
                 dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
                         net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
-                        new dev.ClasherHD.bodycam.network.BodycamForceClosePacket());
+                        new dev.ClasherHD.bodycam.network.bodycam.BodycamForceClosePacket());
                 return;
             } else if (jammerMode == 2) {
                 if (player.level() != target.level() || player.distanceTo(target) > (double) dev.ClasherHD.bodycam.config.ModServerConfig.MAX_MONITOR_DISTANCE.get()) {
@@ -83,7 +84,7 @@ public class BodycamSetCameraPacket {
                             "message.bodycam.jammer_blocked").withStyle(net.minecraft.ChatFormatting.RED));
                     dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
                             net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
-                            new dev.ClasherHD.bodycam.network.BodycamForceClosePacket());
+                            new dev.ClasherHD.bodycam.network.bodycam.BodycamForceClosePacket());
                     return;
                 }
             }
@@ -96,7 +97,7 @@ public class BodycamSetCameraPacket {
                             "message.bodycam.signal_weak").withStyle(net.minecraft.ChatFormatting.RED));
                     dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
                             net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
-                            new dev.ClasherHD.bodycam.network.BodycamForceClosePacket());
+                            new dev.ClasherHD.bodycam.network.bodycam.BodycamForceClosePacket());
                     return;
                 }
             }
@@ -184,7 +185,7 @@ public class BodycamSetCameraPacket {
                     if (oldTarget != null) {
                         dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
                                 net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> oldTarget),
-                                new dev.ClasherHD.bodycam.network.CrossObservationSyncPacket(player.getUUID(), false));
+                                new dev.ClasherHD.bodycam.network.bodycam.CrossObservationSyncPacket(player.getUUID(), false));
                     }
                 }
             }
@@ -196,7 +197,7 @@ public class BodycamSetCameraPacket {
 
             dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
                     net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> target),
-                    new dev.ClasherHD.bodycam.network.CrossObservationSyncPacket(player.getUUID(), true));
+                    new dev.ClasherHD.bodycam.network.bodycam.CrossObservationSyncPacket(player.getUUID(), true));
             player.setGameMode(net.minecraft.world.level.GameType.SPECTATOR);
 
             if (player.level().dimension() != target.level().dimension()) {

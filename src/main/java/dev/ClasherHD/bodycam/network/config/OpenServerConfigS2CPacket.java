@@ -1,11 +1,13 @@
-package dev.ClasherHD.bodycam.network;
+package dev.ClasherHD.bodycam.network.config;
+
 
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.DistExecutor;
 import java.util.function.Supplier;
 
-public class SaveServerConfigC2SPacket {
+public class OpenServerConfigS2CPacket {
     public final int maxMonitorDistance;
     public final boolean enableReachEnchantment;
     public final boolean enableJammer;
@@ -15,7 +17,7 @@ public class SaveServerConfigC2SPacket {
     public final boolean enablePlayerLocator;
     public final boolean opOnlyMode;
 
-    public SaveServerConfigC2SPacket(int maxMonitorDistance, boolean enableReachEnchantment, boolean enableJammer,
+    public OpenServerConfigS2CPacket(int maxMonitorDistance, boolean enableReachEnchantment, boolean enableJammer,
             boolean enableDimensionLocator, boolean enableHologramBlock, boolean enableAnonymizer, boolean enablePlayerLocator, boolean opOnlyMode) {
         this.maxMonitorDistance = maxMonitorDistance;
         this.enableReachEnchantment = enableReachEnchantment;
@@ -27,7 +29,7 @@ public class SaveServerConfigC2SPacket {
         this.opOnlyMode = opOnlyMode;
     }
 
-    public static void encode(SaveServerConfigC2SPacket msg, FriendlyByteBuf buf) {
+    public static void encode(OpenServerConfigS2CPacket msg, FriendlyByteBuf buf) {
         buf.writeInt(msg.maxMonitorDistance);
         buf.writeBoolean(msg.enableReachEnchantment);
         buf.writeBoolean(msg.enableJammer);
@@ -38,8 +40,8 @@ public class SaveServerConfigC2SPacket {
         buf.writeBoolean(msg.opOnlyMode);
     }
 
-    public static SaveServerConfigC2SPacket decode(FriendlyByteBuf buf) {
-        return new SaveServerConfigC2SPacket(
+    public static OpenServerConfigS2CPacket decode(FriendlyByteBuf buf) {
+        return new OpenServerConfigS2CPacket(
                 buf.readInt(),
                 buf.readBoolean(),
                 buf.readBoolean(),
@@ -51,20 +53,9 @@ public class SaveServerConfigC2SPacket {
         );
     }
 
-    public static void handle(SaveServerConfigC2SPacket msg, Supplier<NetworkEvent.Context> ctx) {
+    public static void handle(OpenServerConfigS2CPacket msg, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            ServerPlayer player = ctx.get().getSender();
-            if (player != null && player.hasPermissions(2)) {
-                dev.ClasherHD.bodycam.config.ModServerConfig.MAX_MONITOR_DISTANCE.set(msg.maxMonitorDistance);
-                dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_REACH_ENCHANTMENT.set(msg.enableReachEnchantment);
-                dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_JAMMER.set(msg.enableJammer);
-                dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_DIMENSION_LOCATOR.set(msg.enableDimensionLocator);
-                dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_HOLOGRAM_BLOCK.set(msg.enableHologramBlock);
-                dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_ANONYMIZER.set(msg.enableAnonymizer);
-                dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_PLAYER_LOCATOR.set(msg.enablePlayerLocator);
-                dev.ClasherHD.bodycam.config.ModServerConfig.OP_ONLY_MODE.set(msg.opOnlyMode);
-                dev.ClasherHD.bodycam.config.ModServerConfig.SPEC.save();
-            }
+            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> dev.ClasherHD.bodycam.client.network.ClientPacketHandler.handleOpenServerConfig(msg));
         });
         ctx.get().setPacketHandled(true);
     }

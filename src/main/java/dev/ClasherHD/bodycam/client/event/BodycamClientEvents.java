@@ -66,7 +66,7 @@ public class BodycamClientEvents {
         }
         if (event.getLevel().isClientSide()) {
             if (net.minecraft.client.Minecraft.getInstance().screen == null) {
-                dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.sendToServer(new dev.ClasherHD.bodycam.network.SyncBodycamRequestC2SPacket(true, true));
+                dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.sendToServer(new dev.ClasherHD.bodycam.network.bodycam.SyncBodycamRequestC2SPacket(true, true));
             }
         }
     }

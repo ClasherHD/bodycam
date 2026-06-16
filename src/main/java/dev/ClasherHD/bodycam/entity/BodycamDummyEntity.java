@@ -73,10 +73,10 @@ public class BodycamDummyEntity extends LivingEntity {
             if (server != null) {
                 net.minecraft.server.level.ServerPlayer owner = server.getPlayerList().getPlayer(this.getOwnerUUID());
                 if (owner != null && owner.getPersistentData().getBoolean("bodycam_active")) {
-                    dev.ClasherHD.bodycam.network.BodycamResetCameraPacket.executeReset(owner);
+                    dev.ClasherHD.bodycam.network.bodycam.BodycamResetCameraPacket.executeReset(owner);
                     dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
                             net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> owner),
-                            new dev.ClasherHD.bodycam.network.BodycamForceClosePacket()
+                            new dev.ClasherHD.bodycam.network.bodycam.BodycamForceClosePacket()
                     );
                 }
             }
