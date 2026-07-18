@@ -1,0 +1,17 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        " Q ",
+        "DAD",
+        " Q "
+    ],
+    "key": {
+        "A": { "item": "minecraft:amethyst_shard" },
+        "D": { "item": "minecraft:diamond" },
+        "Q": { "item": "minecraft:quartz" }
+    },
+    "result": {
+        "count": 1,
+        "id": "bodycam:observation_crystal"
+    }
+}

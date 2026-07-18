@@ -1,0 +1,16 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        " Q ",
+        "QCQ",
+        " Q "
+    ],
+    "key": {
+        "C": { "item": "bodycam:observation_crystal" },
+        "Q": { "item": "minecraft:quartz" }
+    },
+    "result": {
+        "count": 1,
+        "id": "bodycam:bodycam_monitor"
+    }
+}

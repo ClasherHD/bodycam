@@ -1,0 +1,29 @@
+﻿{
+    "schemaVersion":  1,
+    "id":  "bodycam",
+    "version":  "2.1.2A",
+    "name":  "Bodycam",
+    "environment":  "*",
+    "entrypoints":  {
+                        "main":  [
+                                     "dev.ClasherHD.bodycam.fabric.BodycamFabric"
+                                 ],
+                        "client":  [
+                                       "dev.ClasherHD.bodycam.fabric.BodycamClientFabric"
+                                   ],
+                        "modmenu":  [
+                                        "dev.ClasherHD.bodycam.fabric.ModMenuIntegration"
+                                    ]
+                    },
+    "mixins":  [
+                   "bodycam.mixins.json"
+               ],
+    "depends":  {
+                    "fabricloader":  "\u003e=0.16.0",
+                    "minecraft":  "~1.21.1",
+                    "java":  "\u003e=21",
+                    "fabric-api":  "*",
+                    "architectury":  "\u003e=13.0.8"
+                },
+    "icon":  "assets/bodycam/icon.png"
+}
