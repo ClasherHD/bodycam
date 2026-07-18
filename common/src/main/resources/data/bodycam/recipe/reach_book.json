@@ -1,0 +1,22 @@
+﻿{
+    "type":  "minecraft:crafting_shaped",
+    "pattern":  [
+                    "SOS",
+                    "OBO",
+                    "SOS"
+                ],
+    "key":  {
+                "S":  "minecraft:spyglass",
+                "O":  "bodycam:observation_crystal",
+                "B":  "minecraft:book"
+            },
+    "result":  {
+                   "count":  1,
+                   "id":  "minecraft:enchanted_book",
+                   "components":  {
+                                      "minecraft:stored_enchantments":  {
+                                                                            "bodycam:reach":  1
+                                                                        }
+                                  }
+               }
+}

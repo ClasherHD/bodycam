@@ -1,0 +1,911 @@
+
+> Configure project :
+Architect Plugin: 3.4.164
+Architectury Loom: 1.13.469
+This version of Architectury Loom is in beta! Please report any issues you encounter: https://github.com/architectury/architectury-loom/issues
+
+> Task :common:compileJava FAILED
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\BodycamClient.java:6: Fehler: Symbol nicht gefunden
+import net.minecraft.resources.ResourceLocation;
+                              ^
+  Symbol: Klasse ResourceLocation
+  Ort: Package net.minecraft.resources
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\BodycamViewScreen.java:9: Fehler: Symbol nicht gefunden
+import net.minecraft.resources.ResourceLocation;
+                              ^
+  Symbol: Klasse ResourceLocation
+  Ort: Package net.minecraft.resources
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\BodycamViewScreen.java:11: Fehler: Symbol nicht gefunden
+import net.minecraft.client.renderer.RenderType;
+                                    ^
+  Symbol: Klasse RenderType
+  Ort: Package net.minecraft.client.renderer
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\BodycamViewScreen.java:31: Fehler: Symbol nicht gefunden
+    private static final ResourceLocation HEART_CONTAINER = ResourceLocation.fromNamespaceAndPath("minecraft",
+                         ^
+  Symbol: Klasse ResourceLocation
+  Ort: Klasse BodycamViewScreen
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\BodycamViewScreen.java:33: Fehler: Symbol nicht gefunden
+    private static final ResourceLocation HEART_FULL = ResourceLocation.fromNamespaceAndPath("minecraft",
+                         ^
+  Symbol: Klasse ResourceLocation
+  Ort: Klasse BodycamViewScreen
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\BodycamViewScreen.java:35: Fehler: Symbol nicht gefunden
+    private static final ResourceLocation HEART_HALF = ResourceLocation.fromNamespaceAndPath("minecraft",
+                         ^
+  Symbol: Klasse ResourceLocation
+  Ort: Klasse BodycamViewScreen
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\BodycamViewScreen.java:37: Fehler: Symbol nicht gefunden
+    private static final ResourceLocation HEART_ABSORBING_FULL = ResourceLocation.fromNamespaceAndPath("minecraft",
+                         ^
+  Symbol: Klasse ResourceLocation
+  Ort: Klasse BodycamViewScreen
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\BodycamViewScreen.java:39: Fehler: Symbol nicht gefunden
+    private static final ResourceLocation HEART_ABSORBING_HALF = ResourceLocation.fromNamespaceAndPath("minecraft",
+                         ^
+  Symbol: Klasse ResourceLocation
+  Ort: Klasse BodycamViewScreen
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\DimensionLocatorScreen.java:9: Fehler: Symbol nicht gefunden
+import net.minecraft.resources.ResourceLocation;
+                              ^
+  Symbol: Klasse ResourceLocation
+  Ort: Package net.minecraft.resources
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\DimensionLocatorScreen.java:10: Fehler: Symbol nicht gefunden
+import net.minecraft.client.renderer.RenderType;
+                                    ^
+  Symbol: Klasse RenderType
+  Ort: Package net.minecraft.client.renderer
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\DimensionLocatorScreen.java:18: Fehler: Symbol nicht gefunden
+    private static final ResourceLocation WINDOW_TEXTURE = ResourceLocation.fromNamespaceAndPath("bodycam", "textures/gui/gui_window.png");
+                         ^
+  Symbol: Klasse ResourceLocation
+  Ort: Klasse DimensionLocatorScreen
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\DimensionLocatorScreen.java:72: Fehler: Symbol nicht gefunden
+    private void drawNineSlice(GuiGraphics graphics, ResourceLocation texture, int x, int y, int width, int height, int rCW, int rCH, int uvCW, int uvCH, int texW, int texH) {
+                                                     ^
+  Symbol: Klasse ResourceLocation
+  Ort: Klasse DimensionLocatorScreen
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\PlayerSelectionScreen.java:8: Fehler: Symbol nicht gefunden
+import net.minecraft.client.renderer.RenderType;
+                                    ^
+  Symbol: Klasse RenderType
+  Ort: Package net.minecraft.client.renderer
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\PlayerSelectionScreen.java:11: Fehler: Symbol nicht gefunden
+import net.minecraft.resources.ResourceLocation;
+                              ^
+  Symbol: Klasse ResourceLocation
+  Ort: Package net.minecraft.resources
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\PlayerSelectionScreen.java:20: Fehler: Symbol nicht gefunden
+    private static final ResourceLocation WINDOW_TEXTURE = ResourceLocation.fromNamespaceAndPath("bodycam", "textures/gui/gui_window.png");
+                         ^
+  Symbol: Klasse ResourceLocation
+  Ort: Klasse PlayerSelectionScreen
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\PlayerSelectionScreen.java:76: Fehler: Symbol nicht gefunden
+    private void drawNineSlice(GuiGraphics graphics, ResourceLocation texture, int x, int y, int width, int height, int rCW, int rCH, int uvCW, int uvCH, int texW, int texH) {
+                                                     ^
+  Symbol: Klasse ResourceLocation
+  Ort: Klasse PlayerSelectionScreen
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\render\BodycamDummyRenderer.java:4: Fehler: Symbol nicht gefunden
+import net.minecraft.client.model.PlayerModel;
+                                 ^
+  Symbol: Klasse PlayerModel
+  Ort: Package net.minecraft.client.model
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\render\BodycamDummyRenderer.java:12: Fehler: Symbol nicht gefunden
+import net.minecraft.resources.ResourceLocation;
+                              ^
+  Symbol: Klasse ResourceLocation
+  Ort: Package net.minecraft.resources
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\render\BodycamDummyRenderer.java:14: Fehler: Symbol nicht gefunden
+public class BodycamDummyRenderer<T extends BodycamDummyEntity> extends LivingEntityRenderer<T, BodycamDummyRenderer.DummyRenderState, PlayerModel> {
+                                                                                                                                       ^
+  Symbol: Klasse PlayerModel
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\render\BodycamDummyRenderer.java:45: Fehler: Symbol nicht gefunden
+    public ResourceLocation getTextureLocation(DummyRenderState state) {
+           ^
+  Symbol: Klasse ResourceLocation
+  Ort: Klasse BodycamDummyRenderer<T>
+  Dabei ist T eine Typvariable:
+    T erweitert BodycamDummyEntity, deklariert in Klasse BodycamDummyRenderer
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\command\CamTpCommand.java:10: Fehler: Symbol nicht gefunden
+import net.minecraft.resources.ResourceLocation;
+                              ^
+  Symbol: Klasse ResourceLocation
+  Ort: Package net.minecraft.resources
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\BodycamForceClosePacket.java:6: Fehler: Symbol nicht gefunden
+import net.minecraft.resources.ResourceLocation;
+                              ^
+  Symbol: Klasse ResourceLocation
+  Ort: Package net.minecraft.resources
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\BodycamResetCameraPacket.java:6: Fehler: Symbol nicht gefunden
+import net.minecraft.resources.ResourceLocation;
+                              ^
+  Symbol: Klasse ResourceLocation
+  Ort: Package net.minecraft.resources
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\BodycamResetCameraS2CPacket.java:6: Fehler: Symbol nicht gefunden
+import net.minecraft.resources.ResourceLocation;
+                              ^
+  Symbol: Klasse ResourceLocation
+  Ort: Package net.minecraft.resources
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\BodycamSetCameraPacket.java:6: Fehler: Symbol nicht gefunden
+import net.minecraft.resources.ResourceLocation;
+                              ^
+  Symbol: Klasse ResourceLocation
+  Ort: Package net.minecraft.resources
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\SyncBodycamStatesS2CPacket.java:6: Fehler: Symbol nicht gefunden
+import net.minecraft.resources.ResourceLocation;
+                              ^
+  Symbol: Klasse ResourceLocation
+  Ort: Package net.minecraft.resources
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\CrossObservationSyncPacket.java:6: Fehler: Symbol nicht gefunden
+import net.minecraft.resources.ResourceLocation;
+                              ^
+  Symbol: Klasse ResourceLocation
+  Ort: Package net.minecraft.resources
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\DimensionLocatorResponsePacket.java:6: Fehler: Symbol nicht gefunden
+import net.minecraft.resources.ResourceLocation;
+                              ^
+  Symbol: Klasse ResourceLocation
+  Ort: Package net.minecraft.resources
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\ServerNetworking.java:16: Fehler: Symbol nicht gefunden
+import net.minecraft.resources.ResourceLocation;
+                              ^
+  Symbol: Klasse ResourceLocation
+  Ort: Package net.minecraft.resources
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\SyncBodycamRequestC2SPacket.java:6: Fehler: Symbol nicht gefunden
+import net.minecraft.resources.ResourceLocation;
+                              ^
+  Symbol: Klasse ResourceLocation
+  Ort: Package net.minecraft.resources
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Grund: Klassendatei für net.fabricmc.api.EnvType nicht gefunden
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\Bodycam.java:60: Fehler: Symbol nicht gefunden
+            EntityType.Builder.of(CompassDummyEntity::new, MobCategory.MISC).sized(0.6F, 1.8F).build(net.minecraft.resources.ResourceKey.create(Registries.ENTITY_TYPE, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(MOD_ID, "compass_dummy"))));
+                                                                                                                                                                                               ^
+  Symbol: Klasse ResourceLocation
+  Ort: Package net.minecraft.resources
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\Bodycam.java:63: Fehler: Symbol nicht gefunden
+            EntityType.Builder.of(HologramDummyEntity::new, MobCategory.MISC).sized(0.6F, 1.8F).build(net.minecraft.resources.ResourceKey.create(Registries.ENTITY_TYPE, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(MOD_ID, "hologram_dummy"))));
+                                                                                                                                                                                                ^
+  Symbol: Klasse ResourceLocation
+  Ort: Package net.minecraft.resources
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\BodycamViewScreen.java:31: Fehler: Symbol nicht gefunden
+    private static final ResourceLocation HEART_CONTAINER = ResourceLocation.fromNamespaceAndPath("minecraft",
+                                                            ^
+  Symbol: Variable ResourceLocation
+  Ort: Klasse BodycamViewScreen
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\BodycamViewScreen.java:33: Fehler: Symbol nicht gefunden
+    private static final ResourceLocation HEART_FULL = ResourceLocation.fromNamespaceAndPath("minecraft",
+                                                       ^
+  Symbol: Variable ResourceLocation
+  Ort: Klasse BodycamViewScreen
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\BodycamViewScreen.java:35: Fehler: Symbol nicht gefunden
+    private static final ResourceLocation HEART_HALF = ResourceLocation.fromNamespaceAndPath("minecraft",
+                                                       ^
+  Symbol: Variable ResourceLocation
+  Ort: Klasse BodycamViewScreen
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\BodycamViewScreen.java:37: Fehler: Symbol nicht gefunden
+    private static final ResourceLocation HEART_ABSORBING_FULL = ResourceLocation.fromNamespaceAndPath("minecraft",
+                                                                 ^
+  Symbol: Variable ResourceLocation
+  Ort: Klasse BodycamViewScreen
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\BodycamViewScreen.java:39: Fehler: Symbol nicht gefunden
+    private static final ResourceLocation HEART_ABSORBING_HALF = ResourceLocation.fromNamespaceAndPath("minecraft",
+                                                                 ^
+  Symbol: Variable ResourceLocation
+  Ort: Klasse BodycamViewScreen
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\DimensionLocatorScreen.java:18: Fehler: Symbol nicht gefunden
+    private static final ResourceLocation WINDOW_TEXTURE = ResourceLocation.fromNamespaceAndPath("bodycam", "textures/gui/gui_window.png");
+                                                           ^
+  Symbol: Variable ResourceLocation
+  Ort: Klasse DimensionLocatorScreen
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\DimensionLocatorScreen.java:130: Fehler: Symbol nicht gefunden
+            ResourceLocation skin = this.playerInfo.getSkin().body().texturePath();
+            ^
+  Symbol: Klasse ResourceLocation
+  Ort: Klasse DimensionLocatorScreen.DimensionEntry
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\PlayerSelectionScreen.java:20: Fehler: Symbol nicht gefunden
+    private static final ResourceLocation WINDOW_TEXTURE = ResourceLocation.fromNamespaceAndPath("bodycam", "textures/gui/gui_window.png");
+                                                           ^
+  Symbol: Variable ResourceLocation
+  Ort: Klasse PlayerSelectionScreen
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\PlayerSelectionScreen.java:134: Fehler: Symbol nicht gefunden
+                            String myDim = Minecraft.getInstance().player.level().dimension().location().toString();
+                                                                                             ^
+  Symbol: Methode location()
+  Ort: Klasse ResourceKey<Level>
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\PlayerSelectionScreen.java:158: Fehler: Symbol nicht gefunden
+                    String myDim = Minecraft.getInstance().player.level().dimension().location().toString();
+                                                                                     ^
+  Symbol: Methode location()
+  Ort: Klasse ResourceKey<Level>
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\PlayerSelectionScreen.java:172: Fehler: Symbol nicht gefunden
+                    String myDim = Minecraft.getInstance().player.level().dimension().location().toString();
+                                                                                     ^
+  Symbol: Methode location()
+  Ort: Klasse ResourceKey<Level>
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\PlayerSelectionScreen.java:196: Fehler: Symbol nicht gefunden
+                    String myDim = Minecraft.getInstance().player != null ? Minecraft.getInstance().player.level().dimension().location().toString() : "";
+                                                                                                                              ^
+  Symbol: Methode location()
+  Ort: Klasse ResourceKey<Level>
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\PlayerSelectionScreen.java:210: Fehler: Symbol nicht gefunden
+                    String myDim = Minecraft.getInstance().player != null ? Minecraft.getInstance().player.level().dimension().location().toString() : "";
+                                                                                                                              ^
+  Symbol: Methode location()
+  Ort: Klasse ResourceKey<Level>
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\PlayerSelectionScreen.java:220: Fehler: Symbol nicht gefunden
+            ResourceLocation skin = this.playerInfo.getSkin().body().texturePath();
+            ^
+  Symbol: Klasse ResourceLocation
+  Ort: Klasse PlayerSelectionScreen.PlayerEntry
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\PlayerSelectionScreen.java:234: Fehler: Symbol nicht gefunden
+                String myDim = Minecraft.getInstance().player != null ? Minecraft.getInstance().player.level().dimension().location().toString() : "";
+                                                                                                                          ^
+  Symbol: Methode location()
+  Ort: Klasse ResourceKey<Level>
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\render\BodycamDummyRenderer.java:22: Fehler: Symbol nicht gefunden
+        super(context, new PlayerModel(context.bakeLayer(ModelLayers.PLAYER), false), 0.5f);
+                           ^
+  Symbol: Klasse PlayerModel
+  Ort: Klasse BodycamDummyRenderer<T>
+  Dabei ist T eine Typvariable:
+    T erweitert BodycamDummyEntity, deklariert in Klasse BodycamDummyRenderer
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\command\CamTpCommand.java:23: Fehler: Symbol nicht gefunden
+                        .requires(source -> source.hasPermission(2))
+                                                  ^
+  Symbol: Methode hasPermission(int)
+  Ort: Variable source von Typ CommandSourceStack
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\command\CamTpCommand.java:35: Fehler: Symbol nicht gefunden
+                                                ResourceLocation.parse(dimStr));
+                                                ^
+  Symbol: Variable ResourceLocation
+  Ort: Klasse CamTpCommand
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\item\AnonymizerItem.java:22: Fehler: Symbol nicht gefunden
+            if (dev.ClasherHD.bodycam.config.ModServerConfig.OP_ONLY_MODE.get() && !player.hasPermissions(2)) {
+                                                                                          ^
+  Symbol: Methode hasPermissions(int)
+  Ort: Variable player von Typ Player
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\item\BodycamMonitorItem.java:23: Fehler: Symbol nicht gefunden
+                        .get(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENCHANTMENT, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("bodycam", "reach")));
+                                                                                                                                                     ^
+  Symbol: Klasse ResourceLocation
+  Ort: Package net.minecraft.resources
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\item\DimensionLocatorItem.java:20: Fehler: Symbol nicht gefunden
+            if (dev.ClasherHD.bodycam.config.ModServerConfig.OP_ONLY_MODE.get() && !player.hasPermissions(2)) {
+                                                                                          ^
+  Symbol: Methode hasPermissions(int)
+  Ort: Variable player von Typ Player
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\item\DimensionLocatorItem.java:36: Fehler: Symbol nicht gefunden
+                    dim = p.level().dimension().location().toString();
+                                               ^
+  Symbol: Methode location()
+  Ort: Klasse ResourceKey<Level>
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\item\JammerItem.java:26: Fehler: Symbol nicht gefunden
+            if (ModServerConfig.OP_ONLY_MODE.get() && !player.hasPermissions(2)) {
+                                                             ^
+  Symbol: Methode hasPermissions(int)
+  Ort: Variable player von Typ Player
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\BodycamForceClosePacket.java:9: Fehler: Symbol nicht gefunden
+    public static final CustomPacketPayload.Type<BodycamForceClosePacket> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("bodycam", "force_close"));
+                                                                                                                ^
+  Symbol: Variable ResourceLocation
+  Ort: Klasse BodycamForceClosePacket
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\BodycamResetCameraPacket.java:10: Fehler: Symbol nicht gefunden
+    public static final CustomPacketPayload.Type<BodycamResetCameraPacket> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("bodycam", "reset_camera"));
+                                                                                                                 ^
+  Symbol: Variable ResourceLocation
+  Ort: Klasse BodycamResetCameraPacket
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\BodycamResetCameraS2CPacket.java:10: Fehler: Symbol nicht gefunden
+    public static final CustomPacketPayload.Type<BodycamResetCameraS2CPacket> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("bodycam", "reset_camera_s2c"));
+                                                                                                                    ^
+  Symbol: Variable ResourceLocation
+  Ort: Klasse BodycamResetCameraS2CPacket
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\BodycamSetCameraPacket.java:13: Fehler: Symbol nicht gefunden
+    public static final CustomPacketPayload.Type<BodycamSetCameraPacket> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("bodycam", "set_camera"));
+                                                                                                               ^
+  Symbol: Variable ResourceLocation
+  Ort: Klasse BodycamSetCameraPacket
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\SyncBodycamStatesS2CPacket.java:22: Fehler: Symbol nicht gefunden
+    public static final CustomPacketPayload.Type<SyncBodycamStatesS2CPacket> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("bodycam", "sync_states"));
+                                                                                                                   ^
+  Symbol: Variable ResourceLocation
+  Ort: Klasse SyncBodycamStatesS2CPacket
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\CrossObservationSyncPacket.java:12: Fehler: Symbol nicht gefunden
+    public static final CustomPacketPayload.Type<CrossObservationSyncPacket> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("bodycam", "cross_sync"));
+                                                                                                                   ^
+  Symbol: Variable ResourceLocation
+  Ort: Klasse CrossObservationSyncPacket
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\DimensionLocatorResponsePacket.java:13: Fehler: Symbol nicht gefunden
+    public static final CustomPacketPayload.Type<DimensionLocatorResponsePacket> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("bodycam", "dim_locator_resp"));
+                                                                                                                       ^
+  Symbol: Variable ResourceLocation
+  Ort: Klasse DimensionLocatorResponsePacket
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\ServerNetworking.java:42: Fehler: Symbol nicht gefunden
+            if (ModServerConfig.OP_ONLY_MODE.get() && !player.hasPermissions(2)) {
+                                                             ^
+  Symbol: Methode hasPermissions(int)
+  Ort: Variable player von Typ ServerPlayer
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\ServerNetworking.java:62: Fehler: Symbol nicht gefunden
+                        .get(ResourceKey.create(Registries.ENCHANTMENT, ResourceLocation.fromNamespaceAndPath("bodycam", "reach")));
+                                                                        ^
+  Symbol: Variable ResourceLocation
+  Ort: Klasse ServerNetworking
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\ServerNetworking.java:201: Fehler: Symbol nicht gefunden
+            if (key.location().toString().equals(origDimStr)) {
+                   ^
+  Symbol: Methode location()
+  Ort: Variable key von Typ ResourceKey<Level>
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\ServerNetworking.java:239: Fehler: Symbol nicht gefunden
+        BodycamHelper.getPersistentData(player).putString("bodycam_orig_dim", player.level().dimension().location().toString());
+                                                                                                        ^
+  Symbol: Methode location()
+  Ort: Klasse ResourceKey<Level>
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\ServerNetworking.java:254: Fehler: Symbol nicht gefunden
+            if (ModServerConfig.OP_ONLY_MODE.get() && !player.hasPermissions(2)) {
+                                                             ^
+  Symbol: Methode hasPermissions(int)
+  Ort: Variable player von Typ ServerPlayer
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\ServerNetworking.java:316: Fehler: Symbol nicht gefunden
+            dimensions.put(p.getUUID(), p.level().dimension().location().toString());
+                                                             ^
+  Symbol: Methode location()
+  Ort: Klasse ResourceKey<Level>
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\SyncBodycamRequestC2SPacket.java:10: Fehler: Symbol nicht gefunden
+    public static final CustomPacketPayload.Type<SyncBodycamRequestC2SPacket> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("bodycam", "sync_request"));
+                                                                                                                    ^
+  Symbol: Variable ResourceLocation
+  Ort: Klasse SyncBodycamRequestC2SPacket
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\util\BodycamLifecycle.java:131: Fehler: Symbol nicht gefunden
+                            if (!origDim.equals(target.level().dimension().location().toString())) {
+                                                                          ^
+  Symbol: Methode location()
+  Ort: Klasse ResourceKey<Level>
+C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\util\BodycamLifecycle.java:187: Fehler: Symbol nicht gefunden
+                if (key.location().toString().equals(dim)) {
+                       ^
+  Symbol: Methode location()
+  Ort: Variable key von Typ ResourceKey<Level>
+Hinweis: C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\render\BodycamDummyRenderer.java verwendet nicht geprüfte oder unsichere Vorgänge.
+Hinweis: Wiederholen Sie die Kompilierung mit -Xlint:unchecked, um Details zu erhalten.
+71 Fehler
+79 Warnungen
+[Incubating] Problems report is available at: file:///C:/Users/Sebastian/Desktop/Bodycam_alle_versionen/Architectury/Bodycam_2.1.2_Architectury_1.21.11/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':common:compileJava'.
+> Compilation failed; see the compiler output below.
+  Hinweis: C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\render\BodycamDummyRenderer.java verwendet nicht geprüfte oder unsichere Vorgänge.
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\render\BodycamDummyRenderer.java:14: Fehler: Symbol nicht gefunden
+  public class BodycamDummyRenderer<T extends BodycamDummyEntity> extends LivingEntityRenderer<T, BodycamDummyRenderer.DummyRenderState, PlayerModel> {
+                                                                                                                                         ^
+    Symbol: Klasse PlayerModel
+  Warnung: Unbekannte Enum-Konstante EnvType.CLIENT
+    Grund: Klassendatei für net.fabricmc.api.EnvType nicht gefunden
+  Hinweis: Wiederholen Sie die Kompilierung mit -Xlint:unchecked, um Details zu erhalten.
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\PlayerSelectionScreen.java:134: Fehler: Symbol nicht gefunden
+                              String myDim = Minecraft.getInstance().player.level().dimension().location().toString();
+                                                                                               ^
+    Symbol: Methode location()
+    Ort: Klasse ResourceKey<Level>
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\PlayerSelectionScreen.java:158: Fehler: Symbol nicht gefunden
+                      String myDim = Minecraft.getInstance().player.level().dimension().location().toString();
+                                                                                       ^
+    Symbol: Methode location()
+    Ort: Klasse ResourceKey<Level>
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\PlayerSelectionScreen.java:172: Fehler: Symbol nicht gefunden
+                      String myDim = Minecraft.getInstance().player.level().dimension().location().toString();
+                                                                                       ^
+    Symbol: Methode location()
+    Ort: Klasse ResourceKey<Level>
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\PlayerSelectionScreen.java:196: Fehler: Symbol nicht gefunden
+                      String myDim = Minecraft.getInstance().player != null ? Minecraft.getInstance().player.level().dimension().location().toString() : "";
+                                                                                                                                ^
+    Symbol: Methode location()
+    Ort: Klasse ResourceKey<Level>
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\PlayerSelectionScreen.java:210: Fehler: Symbol nicht gefunden
+                      String myDim = Minecraft.getInstance().player != null ? Minecraft.getInstance().player.level().dimension().location().toString() : "";
+                                                                                                                                ^
+    Symbol: Methode location()
+    Ort: Klasse ResourceKey<Level>
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\PlayerSelectionScreen.java:234: Fehler: Symbol nicht gefunden
+                  String myDim = Minecraft.getInstance().player != null ? Minecraft.getInstance().player.level().dimension().location().toString() : "";
+                                                                                                                            ^
+    Symbol: Methode location()
+    Ort: Klasse ResourceKey<Level>
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\command\CamTpCommand.java:23: Fehler: Symbol nicht gefunden
+                          .requires(source -> source.hasPermission(2))
+                                                    ^
+    Symbol: Methode hasPermission(int)
+    Ort: Variable source von Typ CommandSourceStack
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\item\AnonymizerItem.java:22: Fehler: Symbol nicht gefunden
+              if (dev.ClasherHD.bodycam.config.ModServerConfig.OP_ONLY_MODE.get() && !player.hasPermissions(2)) {
+                                                                                            ^
+    Symbol: Methode hasPermissions(int)
+    Ort: Variable player von Typ Player
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\item\DimensionLocatorItem.java:20: Fehler: Symbol nicht gefunden
+              if (dev.ClasherHD.bodycam.config.ModServerConfig.OP_ONLY_MODE.get() && !player.hasPermissions(2)) {
+                                                                                            ^
+    Symbol: Methode hasPermissions(int)
+    Ort: Variable player von Typ Player
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\item\DimensionLocatorItem.java:36: Fehler: Symbol nicht gefunden
+                      dim = p.level().dimension().location().toString();
+                                                 ^
+    Symbol: Methode location()
+    Ort: Klasse ResourceKey<Level>
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\item\JammerItem.java:26: Fehler: Symbol nicht gefunden
+              if (ModServerConfig.OP_ONLY_MODE.get() && !player.hasPermissions(2)) {
+                                                               ^
+    Symbol: Methode hasPermissions(int)
+    Ort: Variable player von Typ Player
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\ServerNetworking.java:42: Fehler: Symbol nicht gefunden
+              if (ModServerConfig.OP_ONLY_MODE.get() && !player.hasPermissions(2)) {
+                                                               ^
+    Symbol: Methode hasPermissions(int)
+    Ort: Variable player von Typ ServerPlayer
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\ServerNetworking.java:201: Fehler: Symbol nicht gefunden
+              if (key.location().toString().equals(origDimStr)) {
+                     ^
+    Symbol: Methode location()
+    Ort: Variable key von Typ ResourceKey<Level>
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\ServerNetworking.java:239: Fehler: Symbol nicht gefunden
+          BodycamHelper.getPersistentData(player).putString("bodycam_orig_dim", player.level().dimension().location().toString());
+                                                                                                          ^
+    Symbol: Methode location()
+    Ort: Klasse ResourceKey<Level>
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\ServerNetworking.java:254: Fehler: Symbol nicht gefunden
+              if (ModServerConfig.OP_ONLY_MODE.get() && !player.hasPermissions(2)) {
+                                                               ^
+    Symbol: Methode hasPermissions(int)
+    Ort: Variable player von Typ ServerPlayer
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\ServerNetworking.java:316: Fehler: Symbol nicht gefunden
+              dimensions.put(p.getUUID(), p.level().dimension().location().toString());
+                                                               ^
+    Symbol: Methode location()
+    Ort: Klasse ResourceKey<Level>
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\util\BodycamLifecycle.java:131: Fehler: Symbol nicht gefunden
+                              if (!origDim.equals(target.level().dimension().location().toString())) {
+                                                                            ^
+    Symbol: Methode location()
+    Ort: Klasse ResourceKey<Level>
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\util\BodycamLifecycle.java:187: Fehler: Symbol nicht gefunden
+                  if (key.location().toString().equals(dim)) {
+                         ^
+    Symbol: Methode location()
+    Ort: Variable key von Typ ResourceKey<Level>
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\BodycamClient.java:6: Fehler: Symbol nicht gefunden
+  import net.minecraft.resources.ResourceLocation;
+                                ^
+    Symbol: Klasse ResourceLocation
+    Ort: Package net.minecraft.resources
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\BodycamViewScreen.java:9: Fehler: Symbol nicht gefunden
+  import net.minecraft.resources.ResourceLocation;
+                                ^
+    Symbol: Klasse ResourceLocation
+    Ort: Package net.minecraft.resources
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\BodycamViewScreen.java:11: Fehler: Symbol nicht gefunden
+  import net.minecraft.client.renderer.RenderType;
+                                      ^
+    Symbol: Klasse RenderType
+    Ort: Package net.minecraft.client.renderer
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\BodycamViewScreen.java:31: Fehler: Symbol nicht gefunden
+      private static final ResourceLocation HEART_CONTAINER = ResourceLocation.fromNamespaceAndPath("minecraft",
+                           ^
+    Symbol: Klasse ResourceLocation
+    Ort: Klasse BodycamViewScreen
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\BodycamViewScreen.java:33: Fehler: Symbol nicht gefunden
+      private static final ResourceLocation HEART_FULL = ResourceLocation.fromNamespaceAndPath("minecraft",
+                           ^
+    Symbol: Klasse ResourceLocation
+    Ort: Klasse BodycamViewScreen
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\BodycamViewScreen.java:35: Fehler: Symbol nicht gefunden
+      private static final ResourceLocation HEART_HALF = ResourceLocation.fromNamespaceAndPath("minecraft",
+                           ^
+    Symbol: Klasse ResourceLocation
+    Ort: Klasse BodycamViewScreen
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\BodycamViewScreen.java:37: Fehler: Symbol nicht gefunden
+      private static final ResourceLocation HEART_ABSORBING_FULL = ResourceLocation.fromNamespaceAndPath("minecraft",
+                           ^
+    Symbol: Klasse ResourceLocation
+    Ort: Klasse BodycamViewScreen
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\BodycamViewScreen.java:39: Fehler: Symbol nicht gefunden
+      private static final ResourceLocation HEART_ABSORBING_HALF = ResourceLocation.fromNamespaceAndPath("minecraft",
+                           ^
+    Symbol: Klasse ResourceLocation
+    Ort: Klasse BodycamViewScreen
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\DimensionLocatorScreen.java:9: Fehler: Symbol nicht gefunden
+  import net.minecraft.resources.ResourceLocation;
+                                ^
+    Symbol: Klasse ResourceLocation
+    Ort: Package net.minecraft.resources
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\DimensionLocatorScreen.java:10: Fehler: Symbol nicht gefunden
+  import net.minecraft.client.renderer.RenderType;
+                                      ^
+    Symbol: Klasse RenderType
+    Ort: Package net.minecraft.client.renderer
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\DimensionLocatorScreen.java:18: Fehler: Symbol nicht gefunden
+      private static final ResourceLocation WINDOW_TEXTURE = ResourceLocation.fromNamespaceAndPath("bodycam", "textures/gui/gui_window.png");
+                           ^
+    Symbol: Klasse ResourceLocation
+    Ort: Klasse DimensionLocatorScreen
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\DimensionLocatorScreen.java:72: Fehler: Symbol nicht gefunden
+      private void drawNineSlice(GuiGraphics graphics, ResourceLocation texture, int x, int y, int width, int height, int rCW, int rCH, int uvCW, int uvCH, int texW, int texH) {
+                                                       ^
+    Symbol: Klasse ResourceLocation
+    Ort: Klasse DimensionLocatorScreen
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\PlayerSelectionScreen.java:8: Fehler: Symbol nicht gefunden
+  import net.minecraft.client.renderer.RenderType;
+                                      ^
+    Symbol: Klasse RenderType
+    Ort: Package net.minecraft.client.renderer
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\PlayerSelectionScreen.java:11: Fehler: Symbol nicht gefunden
+  import net.minecraft.resources.ResourceLocation;
+                                ^
+    Symbol: Klasse ResourceLocation
+    Ort: Package net.minecraft.resources
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\PlayerSelectionScreen.java:20: Fehler: Symbol nicht gefunden
+      private static final ResourceLocation WINDOW_TEXTURE = ResourceLocation.fromNamespaceAndPath("bodycam", "textures/gui/gui_window.png");
+                           ^
+    Symbol: Klasse ResourceLocation
+    Ort: Klasse PlayerSelectionScreen
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\PlayerSelectionScreen.java:76: Fehler: Symbol nicht gefunden
+      private void drawNineSlice(GuiGraphics graphics, ResourceLocation texture, int x, int y, int width, int height, int rCW, int rCH, int uvCW, int uvCH, int texW, int texH) {
+                                                       ^
+    Symbol: Klasse ResourceLocation
+    Ort: Klasse PlayerSelectionScreen
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\render\BodycamDummyRenderer.java:4: Fehler: Symbol nicht gefunden
+  import net.minecraft.client.model.PlayerModel;
+                                   ^
+    Symbol: Klasse PlayerModel
+    Ort: Package net.minecraft.client.model
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\render\BodycamDummyRenderer.java:12: Fehler: Symbol nicht gefunden
+  import net.minecraft.resources.ResourceLocation;
+                                ^
+    Symbol: Klasse ResourceLocation
+    Ort: Package net.minecraft.resources
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\render\BodycamDummyRenderer.java:45: Fehler: Symbol nicht gefunden
+      public ResourceLocation getTextureLocation(DummyRenderState state) {
+             ^
+    Symbol: Klasse ResourceLocation
+    Ort: Klasse BodycamDummyRenderer<T>
+    Dabei ist T eine Typvariable:
+      T erweitert BodycamDummyEntity, deklariert in Klasse BodycamDummyRenderer
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\command\CamTpCommand.java:10: Fehler: Symbol nicht gefunden
+  import net.minecraft.resources.ResourceLocation;
+                                ^
+    Symbol: Klasse ResourceLocation
+    Ort: Package net.minecraft.resources
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\BodycamForceClosePacket.java:6: Fehler: Symbol nicht gefunden
+  import net.minecraft.resources.ResourceLocation;
+                                ^
+    Symbol: Klasse ResourceLocation
+    Ort: Package net.minecraft.resources
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\BodycamResetCameraPacket.java:6: Fehler: Symbol nicht gefunden
+  import net.minecraft.resources.ResourceLocation;
+                                ^
+    Symbol: Klasse ResourceLocation
+    Ort: Package net.minecraft.resources
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\BodycamResetCameraS2CPacket.java:6: Fehler: Symbol nicht gefunden
+  import net.minecraft.resources.ResourceLocation;
+                                ^
+    Symbol: Klasse ResourceLocation
+    Ort: Package net.minecraft.resources
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\BodycamSetCameraPacket.java:6: Fehler: Symbol nicht gefunden
+  import net.minecraft.resources.ResourceLocation;
+                                ^
+    Symbol: Klasse ResourceLocation
+    Ort: Package net.minecraft.resources
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\SyncBodycamStatesS2CPacket.java:6: Fehler: Symbol nicht gefunden
+  import net.minecraft.resources.ResourceLocation;
+                                ^
+    Symbol: Klasse ResourceLocation
+    Ort: Package net.minecraft.resources
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\CrossObservationSyncPacket.java:6: Fehler: Symbol nicht gefunden
+  import net.minecraft.resources.ResourceLocation;
+                                ^
+    Symbol: Klasse ResourceLocation
+    Ort: Package net.minecraft.resources
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\DimensionLocatorResponsePacket.java:6: Fehler: Symbol nicht gefunden
+  import net.minecraft.resources.ResourceLocation;
+                                ^
+    Symbol: Klasse ResourceLocation
+    Ort: Package net.minecraft.resources
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\ServerNetworking.java:16: Fehler: Symbol nicht gefunden
+  import net.minecraft.resources.ResourceLocation;
+                                ^
+    Symbol: Klasse ResourceLocation
+    Ort: Package net.minecraft.resources
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\SyncBodycamRequestC2SPacket.java:6: Fehler: Symbol nicht gefunden
+  import net.minecraft.resources.ResourceLocation;
+                                ^
+    Symbol: Klasse ResourceLocation
+    Ort: Package net.minecraft.resources
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\Bodycam.java:60: Fehler: Symbol nicht gefunden
+              EntityType.Builder.of(CompassDummyEntity::new, MobCategory.MISC).sized(0.6F, 1.8F).build(net.minecraft.resources.ResourceKey.create(Registries.ENTITY_TYPE, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(MOD_ID, "compass_dummy"))));
+                                                                                                                                                                                                 ^
+    Symbol: Klasse ResourceLocation
+    Ort: Package net.minecraft.resources
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\Bodycam.java:63: Fehler: Symbol nicht gefunden
+              EntityType.Builder.of(HologramDummyEntity::new, MobCategory.MISC).sized(0.6F, 1.8F).build(net.minecraft.resources.ResourceKey.create(Registries.ENTITY_TYPE, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(MOD_ID, "hologram_dummy"))));
+                                                                                                                                                                                                  ^
+    Symbol: Klasse ResourceLocation
+    Ort: Package net.minecraft.resources
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\BodycamViewScreen.java:31: Fehler: Symbol nicht gefunden
+      private static final ResourceLocation HEART_CONTAINER = ResourceLocation.fromNamespaceAndPath("minecraft",
+                                                              ^
+    Symbol: Variable ResourceLocation
+    Ort: Klasse BodycamViewScreen
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\BodycamViewScreen.java:33: Fehler: Symbol nicht gefunden
+      private static final ResourceLocation HEART_FULL = ResourceLocation.fromNamespaceAndPath("minecraft",
+                                                         ^
+    Symbol: Variable ResourceLocation
+    Ort: Klasse BodycamViewScreen
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\BodycamViewScreen.java:35: Fehler: Symbol nicht gefunden
+      private static final ResourceLocation HEART_HALF = ResourceLocation.fromNamespaceAndPath("minecraft",
+                                                         ^
+    Symbol: Variable ResourceLocation
+    Ort: Klasse BodycamViewScreen
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\BodycamViewScreen.java:37: Fehler: Symbol nicht gefunden
+      private static final ResourceLocation HEART_ABSORBING_FULL = ResourceLocation.fromNamespaceAndPath("minecraft",
+                                                                   ^
+    Symbol: Variable ResourceLocation
+    Ort: Klasse BodycamViewScreen
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\BodycamViewScreen.java:39: Fehler: Symbol nicht gefunden
+      private static final ResourceLocation HEART_ABSORBING_HALF = ResourceLocation.fromNamespaceAndPath("minecraft",
+                                                                   ^
+    Symbol: Variable ResourceLocation
+    Ort: Klasse BodycamViewScreen
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\DimensionLocatorScreen.java:18: Fehler: Symbol nicht gefunden
+      private static final ResourceLocation WINDOW_TEXTURE = ResourceLocation.fromNamespaceAndPath("bodycam", "textures/gui/gui_window.png");
+                                                             ^
+    Symbol: Variable ResourceLocation
+    Ort: Klasse DimensionLocatorScreen
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\DimensionLocatorScreen.java:130: Fehler: Symbol nicht gefunden
+              ResourceLocation skin = this.playerInfo.getSkin().body().texturePath();
+              ^
+    Symbol: Klasse ResourceLocation
+    Ort: Klasse DimensionLocatorScreen.DimensionEntry
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\PlayerSelectionScreen.java:20: Fehler: Symbol nicht gefunden
+      private static final ResourceLocation WINDOW_TEXTURE = ResourceLocation.fromNamespaceAndPath("bodycam", "textures/gui/gui_window.png");
+                                                             ^
+    Symbol: Variable ResourceLocation
+    Ort: Klasse PlayerSelectionScreen
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\gui\PlayerSelectionScreen.java:220: Fehler: Symbol nicht gefunden
+              ResourceLocation skin = this.playerInfo.getSkin().body().texturePath();
+              ^
+    Symbol: Klasse ResourceLocation
+    Ort: Klasse PlayerSelectionScreen.PlayerEntry
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\client\render\BodycamDummyRenderer.java:22: Fehler: Symbol nicht gefunden
+          super(context, new PlayerModel(context.bakeLayer(ModelLayers.PLAYER), false), 0.5f);
+                             ^
+    Symbol: Klasse PlayerModel
+    Ort: Klasse BodycamDummyRenderer<T>
+    Dabei ist T eine Typvariable:
+      T erweitert BodycamDummyEntity, deklariert in Klasse BodycamDummyRenderer
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\command\CamTpCommand.java:35: Fehler: Symbol nicht gefunden
+                                                  ResourceLocation.parse(dimStr));
+                                                  ^
+    Symbol: Variable ResourceLocation
+    Ort: Klasse CamTpCommand
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\item\BodycamMonitorItem.java:23: Fehler: Symbol nicht gefunden
+                          .get(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENCHANTMENT, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("bodycam", "reach")));
+                                                                                                                                                       ^
+    Symbol: Klasse ResourceLocation
+    Ort: Package net.minecraft.resources
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\BodycamForceClosePacket.java:9: Fehler: Symbol nicht gefunden
+      public static final CustomPacketPayload.Type<BodycamForceClosePacket> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("bodycam", "force_close"));
+                                                                                                                  ^
+    Symbol: Variable ResourceLocation
+    Ort: Klasse BodycamForceClosePacket
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\BodycamResetCameraPacket.java:10: Fehler: Symbol nicht gefunden
+      public static final CustomPacketPayload.Type<BodycamResetCameraPacket> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("bodycam", "reset_camera"));
+                                                                                                                   ^
+    Symbol: Variable ResourceLocation
+    Ort: Klasse BodycamResetCameraPacket
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\BodycamResetCameraS2CPacket.java:10: Fehler: Symbol nicht gefunden
+      public static final CustomPacketPayload.Type<BodycamResetCameraS2CPacket> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("bodycam", "reset_camera_s2c"));
+                                                                                                                      ^
+    Symbol: Variable ResourceLocation
+    Ort: Klasse BodycamResetCameraS2CPacket
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\BodycamSetCameraPacket.java:13: Fehler: Symbol nicht gefunden
+      public static final CustomPacketPayload.Type<BodycamSetCameraPacket> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("bodycam", "set_camera"));
+                                                                                                                 ^
+    Symbol: Variable ResourceLocation
+    Ort: Klasse BodycamSetCameraPacket
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\SyncBodycamStatesS2CPacket.java:22: Fehler: Symbol nicht gefunden
+      public static final CustomPacketPayload.Type<SyncBodycamStatesS2CPacket> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("bodycam", "sync_states"));
+                                                                                                                     ^
+    Symbol: Variable ResourceLocation
+    Ort: Klasse SyncBodycamStatesS2CPacket
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\CrossObservationSyncPacket.java:12: Fehler: Symbol nicht gefunden
+      public static final CustomPacketPayload.Type<CrossObservationSyncPacket> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("bodycam", "cross_sync"));
+                                                                                                                     ^
+    Symbol: Variable ResourceLocation
+    Ort: Klasse CrossObservationSyncPacket
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\DimensionLocatorResponsePacket.java:13: Fehler: Symbol nicht gefunden
+      public static final CustomPacketPayload.Type<DimensionLocatorResponsePacket> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("bodycam", "dim_locator_resp"));
+                                                                                                                         ^
+    Symbol: Variable ResourceLocation
+    Ort: Klasse DimensionLocatorResponsePacket
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\ServerNetworking.java:62: Fehler: Symbol nicht gefunden
+                          .get(ResourceKey.create(Registries.ENCHANTMENT, ResourceLocation.fromNamespaceAndPath("bodycam", "reach")));
+                                                                          ^
+    Symbol: Variable ResourceLocation
+    Ort: Klasse ServerNetworking
+  C:\Users\Sebastian\Desktop\Bodycam_alle_versionen\Architectury\Bodycam_2.1.2_Architectury_1.21.11\common\src\main\java\dev\ClasherHD\bodycam\network\SyncBodycamRequestC2SPacket.java:10: Fehler: Symbol nicht gefunden
+      public static final CustomPacketPayload.Type<SyncBodycamRequestC2SPacket> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("bodycam", "sync_request"));
+                                                                                                                      ^
+    Symbol: Variable ResourceLocation
+    Ort: Klasse SyncBodycamRequestC2SPacket
+  71 Fehler
+  79 Warnungen
+
+* Try:
+> Check your code and dependencies to fix the compilation error(s)
+> Run with --scan to get full insights.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.11/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 1s
+1 actionable task: 1 executed

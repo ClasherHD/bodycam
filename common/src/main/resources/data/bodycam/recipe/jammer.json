@@ -1,0 +1,18 @@
+﻿{
+    "type":  "minecraft:crafting_shaped",
+    "pattern":  [
+                    "RLR",
+                    "ICI",
+                    " I "
+                ],
+    "key":  {
+                "R":  "minecraft:redstone",
+                "L":  "minecraft:lever",
+                "I":  "minecraft:copper_ingot",
+                "C":  "bodycam:observation_crystal"
+            },
+    "result":  {
+                   "count":  1,
+                   "id":  "bodycam:jammer"
+               }
+}

@@ -1,0 +1,17 @@
+﻿{
+    "type":  "minecraft:crafting_shaped",
+    "pattern":  [
+                    " S ",
+                    "OCO",
+                    " O "
+                ],
+    "key":  {
+                "S":  "minecraft:spyglass",
+                "O":  "minecraft:obsidian",
+                "C":  "bodycam:observation_crystal"
+            },
+    "result":  {
+                   "count":  1,
+                   "id":  "bodycam:anonymizer"
+               }
+}
