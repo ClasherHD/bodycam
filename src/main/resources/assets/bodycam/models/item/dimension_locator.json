@@ -2,5 +2,13 @@
     "parent": "item/generated",
     "textures": {
         "layer0": "bodycam:item/dimension_locator"
-    }
+    },
+    "overrides": [
+        {
+            "predicate": {
+                "bodycam:empty": 1.0
+            },
+            "model": "bodycam:item/dimension_locator_empty"
+        }
+    ]
 }

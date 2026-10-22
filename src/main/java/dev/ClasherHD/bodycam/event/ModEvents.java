@@ -1,9 +1,10 @@
 package dev.ClasherHD.bodycam.event;
 
 import dev.ClasherHD.bodycam.bodycam;
-import dev.ClasherHD.bodycam.registry.ModEntityTypes;
 import dev.ClasherHD.bodycam.entity.BodycamDummyEntity;
+import dev.ClasherHD.bodycam.entity.WatchPointDummyEntity;
 import dev.ClasherHD.bodycam.network.PacketHandler;
+import dev.ClasherHD.bodycam.registry.ModEntityTypes;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -21,6 +22,10 @@ public class ModEvents {
                     (level, ticketHelper) -> {
                         ticketHelper.getEntityTickets().forEach((uuid, chunks) -> {
                             net.minecraft.world.entity.Entity entity = level.getEntity(uuid);
+                            if (entity instanceof WatchPointDummyEntity wp && wp.isAlive()) {
+                                WatchPointDummyEntity.ACTIVE_WATCH_POINTS.add(wp);
+                                return;
+                            }
                             if (entity instanceof BodycamDummyEntity dummy) {
                                 java.util.UUID ownerUUID = dummy.getOwnerUUID();
                                 if (ownerUUID != null) {
@@ -43,5 +48,6 @@ public class ModEvents {
     public static void entityAttributes(EntityAttributeCreationEvent event) {
         event.put(ModEntityTypes.COMPASS_DUMMY.get(), BodycamDummyEntity.createAttributes().build());
         event.put(ModEntityTypes.HOLOGRAM_DUMMY.get(), BodycamDummyEntity.createAttributes().build());
+        event.put(ModEntityTypes.WATCH_POINT_DUMMY.get(), BodycamDummyEntity.createAttributes().build());
     }
 }

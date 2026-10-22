@@ -79,5 +79,68 @@
         "stream": false
       }
     ]
+  },
+  "ancient_table_refuel": {
+    "subtitle": "subtitles.bodycam.ancient_table_refuel",
+    "sounds": [
+      {
+        "name": "minecraft:block.amethyst_block.chime",
+        "type": "event"
+      }
+    ]
+  },
+  "ancient_table_use": {
+    "subtitle": "subtitles.bodycam.ancient_table_use",
+    "sounds": [
+      {
+        "name": "minecraft:block.smithing_table.use",
+        "type": "event"
+      }
+    ]
+  },
+  "podest_charge": {
+    "subtitle": "subtitles.bodycam.podest_charge",
+    "sounds": [
+      {
+        "name": "minecraft:block.amethyst_block.chime",
+        "type": "event"
+      }
+    ]
+  },
+  "podest_place": {
+    "subtitle": "subtitles.bodycam.podest_place",
+    "sounds": [
+      {
+        "name": "minecraft:item.book.put",
+        "type": "event"
+      }
+    ]
+  },
+  "podest_remove": {
+    "subtitle": "subtitles.bodycam.podest_remove",
+    "sounds": [
+      {
+        "name": "minecraft:entity.item.pickup",
+        "type": "event"
+      }
+    ]
+  },
+  "watch_point_activate": {
+    "subtitle": "subtitles.bodycam.watch_point_activate",
+    "sounds": [
+      {
+        "name": "minecraft:block.beacon.activate",
+        "type": "event"
+      }
+    ]
+  },
+  "watch_point_deactivate": {
+    "subtitle": "subtitles.bodycam.watch_point_deactivate",
+    "sounds": [
+      {
+        "name": "minecraft:block.beacon.deactivate",
+        "type": "event"
+      }
+    ]
   }
 }

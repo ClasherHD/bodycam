@@ -24,6 +24,7 @@
   },
   "result": {
     "item": "bodycam:dimension_locator",
-    "count": 1
+    "count": 1,
+    "nbt": "{Damage:8}"
   }
 }

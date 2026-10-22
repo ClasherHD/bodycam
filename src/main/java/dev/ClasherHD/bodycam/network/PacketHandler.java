@@ -2,14 +2,15 @@ package dev.ClasherHD.bodycam.network;
 
 import dev.ClasherHD.bodycam.bodycam;
 import dev.ClasherHD.bodycam.network.bodycam.*;
-import dev.ClasherHD.bodycam.network.locator.*;
 import dev.ClasherHD.bodycam.network.config.*;
+import dev.ClasherHD.bodycam.network.locator.*;
+import dev.ClasherHD.bodycam.network.watchpoint.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
 
 public class PacketHandler {
-    private static final String PROTOCOL_VERSION = "1";
+    private static final String PROTOCOL_VERSION = "2";
     public static final SimpleChannel INSTANCE = NetworkRegistry.newSimpleChannel(
             new ResourceLocation(bodycam.MODID, "main"),
             () -> PROTOCOL_VERSION,
@@ -87,5 +88,20 @@ public class PacketHandler {
                 PlayerLocatorTargetUpdateS2CPacket::encode,
                 PlayerLocatorTargetUpdateS2CPacket::decode,
                 PlayerLocatorTargetUpdateS2CPacket::handle);
+
+        INSTANCE.registerMessage(id(), OpenWatchPointScreenS2CPacket.class,
+                OpenWatchPointScreenS2CPacket::encode,
+                OpenWatchPointScreenS2CPacket::decode,
+                OpenWatchPointScreenS2CPacket::handle);
+
+        INSTANCE.registerMessage(id(), RenameWatchPointC2SPacket.class,
+                RenameWatchPointC2SPacket::encode,
+                RenameWatchPointC2SPacket::decode,
+                RenameWatchPointC2SPacket::handle);
+
+        INSTANCE.registerMessage(id(), WatchPointLookC2SPacket.class,
+                WatchPointLookC2SPacket::encode,
+                WatchPointLookC2SPacket::decode,
+                WatchPointLookC2SPacket::handle);
     }
 }

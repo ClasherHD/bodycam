@@ -1,0 +1,9 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "render_type": "minecraft:translucent",
+  "textures": {
+    "top": "bodycam:block/watch_point/watchpoint_top",
+    "bottom": "bodycam:block/watch_point/watchpoint_bottom",
+    "side": "bodycam:block/watch_point/watchpoint_side"
+  }
+}

@@ -1,0 +1,14 @@
+{
+    "parent": "item/generated",
+    "textures": {
+        "layer0": "bodycam:item/portable_nether_portal_empty"
+    },
+    "overrides": [
+        {
+            "predicate": {
+                "bodycam:charged": 1.0
+            },
+            "model": "bodycam:item/portable_nether_portal_loaded"
+        }
+    ]
+}

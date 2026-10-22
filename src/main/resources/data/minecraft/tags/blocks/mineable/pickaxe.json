@@ -1,6 +1,9 @@
 {
   "replace": false,
   "values": [
-    "bodycam:observation_crystal_block"
+    "bodycam:observation_crystal_block",
+    "bodycam:ancient_table",
+    "bodycam:watch_point",
+    "bodycam:podest"
   ]
 }

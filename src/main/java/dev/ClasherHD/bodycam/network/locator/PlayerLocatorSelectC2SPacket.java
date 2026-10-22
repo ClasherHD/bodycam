@@ -1,6 +1,6 @@
 package dev.ClasherHD.bodycam.network.locator;
 
-
+import dev.ClasherHD.bodycam.item.ItemDurabilityHelper;
 import dev.ClasherHD.bodycam.item.PlayerLocatorCompassItem;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
@@ -12,7 +12,7 @@ import net.minecraftforge.network.NetworkEvent;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-@SuppressWarnings({"null", "deprecation"})
+@SuppressWarnings("null")
 public class PlayerLocatorSelectC2SPacket {
     private final UUID targetUUID;
     private final boolean isDeselect;
@@ -39,25 +39,26 @@ public class PlayerLocatorSelectC2SPacket {
     public static void handle(PlayerLocatorSelectC2SPacket msg, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             ServerPlayer sender = ctx.get().getSender();
-            if (sender == null) return;
+            if (sender == null) {
+                return;
+            }
 
             ItemStack stack = sender.getItemInHand(InteractionHand.MAIN_HAND);
             if (!(stack.getItem() instanceof PlayerLocatorCompassItem)) {
                 stack = sender.getItemInHand(InteractionHand.OFF_HAND);
             }
 
-            if (stack.getItem() instanceof PlayerLocatorCompassItem) {
-                PlayerLocatorCompassItem item = (PlayerLocatorCompassItem) stack.getItem();
+            if (stack.getItem() instanceof PlayerLocatorCompassItem item) {
                 CompoundTag tag = stack.getOrCreateTag();
-                if (msg.isDeselect) {
+                if (ItemDurabilityHelper.isEmpty(stack) || msg.isDeselect) {
                     item.resetToIdle(tag);
                 } else if (msg.targetUUID != null) {
+                    item.resetToIdle(tag);
                     tag.putUUID("LocatorTargetUUID", msg.targetUUID);
                     ServerPlayer targetPlayer = sender.server.getPlayerList().getPlayer(msg.targetUUID);
-                    if (targetPlayer != null) {
-                        boolean hasReach = net.minecraft.world.item.enchantment.EnchantmentHelper.getItemEnchantmentLevel(
-                                dev.ClasherHD.bodycam.registry.ModEnchantments.REACH_ENCHANTMENT.get(), stack) > 0;
-                        item.calculateState(stack, sender, targetPlayer, hasReach, sender.level().getGameTime());
+                    if (targetPlayer != null && !dev.ClasherHD.bodycam.enchantment.EnchantmentLevels.isHiddenFromSelection(targetPlayer)) {
+                        int reachLevel = dev.ClasherHD.bodycam.enchantment.EnchantmentLevels.reach(stack);
+                        item.calculateState(stack, sender, targetPlayer, reachLevel, sender.level().getGameTime());
                     } else {
                         item.resetToIdle(tag);
                     }

@@ -15,6 +15,12 @@
                 "bodycam:mode": 2.0
             },
             "model": "bodycam:item/jammer/jammer_limited"
+        },
+        {
+            "predicate": {
+                "bodycam:empty": 1.0
+            },
+            "model": "bodycam:item/jammer/jammer_empty"
         }
     ]
 }

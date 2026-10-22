@@ -20,5 +20,13 @@
         "head": {
             "parent": "bodycam:item/observation_spyglass/bodycam_monitor_in_hand"
         }
-    }
+    },
+    "overrides": [
+        {
+            "predicate": {
+                "bodycam:empty": 1.0
+            },
+            "model": "bodycam:item/bodycam_monitor_empty"
+        }
+    ]
 }

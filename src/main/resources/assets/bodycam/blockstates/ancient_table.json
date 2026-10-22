@@ -1,0 +1,33 @@
+{
+  "variants": {
+    "facing=north,fuel_level=0": { "model": "bodycam:block/ancient_table_0" },
+    "facing=south,fuel_level=0": { "model": "bodycam:block/ancient_table_0", "y": 180 },
+    "facing=west,fuel_level=0":  { "model": "bodycam:block/ancient_table_0", "y": 270 },
+    "facing=east,fuel_level=0":  { "model": "bodycam:block/ancient_table_0", "y": 90 },
+
+    "facing=north,fuel_level=1": { "model": "bodycam:block/ancient_table_1" },
+    "facing=south,fuel_level=1": { "model": "bodycam:block/ancient_table_1", "y": 180 },
+    "facing=west,fuel_level=1":  { "model": "bodycam:block/ancient_table_1", "y": 270 },
+    "facing=east,fuel_level=1":  { "model": "bodycam:block/ancient_table_1", "y": 90 },
+
+    "facing=north,fuel_level=2": { "model": "bodycam:block/ancient_table_2" },
+    "facing=south,fuel_level=2": { "model": "bodycam:block/ancient_table_2", "y": 180 },
+    "facing=west,fuel_level=2":  { "model": "bodycam:block/ancient_table_2", "y": 270 },
+    "facing=east,fuel_level=2":  { "model": "bodycam:block/ancient_table_2", "y": 90 },
+
+    "facing=north,fuel_level=3": { "model": "bodycam:block/ancient_table_3" },
+    "facing=south,fuel_level=3": { "model": "bodycam:block/ancient_table_3", "y": 180 },
+    "facing=west,fuel_level=3":  { "model": "bodycam:block/ancient_table_3", "y": 270 },
+    "facing=east,fuel_level=3":  { "model": "bodycam:block/ancient_table_3", "y": 90 },
+
+    "facing=north,fuel_level=4": { "model": "bodycam:block/ancient_table_4" },
+    "facing=south,fuel_level=4": { "model": "bodycam:block/ancient_table_4", "y": 180 },
+    "facing=west,fuel_level=4":  { "model": "bodycam:block/ancient_table_4", "y": 270 },
+    "facing=east,fuel_level=4":  { "model": "bodycam:block/ancient_table_4", "y": 90 },
+
+    "facing=north,fuel_level=5": { "model": "bodycam:block/ancient_table_5" },
+    "facing=south,fuel_level=5": { "model": "bodycam:block/ancient_table_5", "y": 180 },
+    "facing=west,fuel_level=5":  { "model": "bodycam:block/ancient_table_5", "y": 270 },
+    "facing=east,fuel_level=5":  { "model": "bodycam:block/ancient_table_5", "y": 90 }
+  }
+}

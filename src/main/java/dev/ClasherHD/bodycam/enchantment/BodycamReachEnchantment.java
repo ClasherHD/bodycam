@@ -13,17 +13,17 @@ public class BodycamReachEnchantment extends Enchantment {
 
     @Override
     public int getMaxLevel() {
-        return 1;
+        return 2;
     }
 
     @Override
     public int getMinCost(int level) {
-        return 15;
+        return 15 + (level - 1) * 15;
     }
 
     @Override
     public int getMaxCost(int level) {
-        return super.getMinCost(level) + 50;
+        return getMinCost(level) + 50;
     }
 
     @Override

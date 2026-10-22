@@ -12,12 +12,16 @@ public class ServerConfigScreen extends Screen {
     private final dev.ClasherHD.bodycam.network.config.OpenServerConfigS2CPacket initialValues;
 
     private EditBox txtMaxDistance;
+    private EditBox txtMaxWatchPointsPlayer;
+    private EditBox txtMaxWatchPointsTotal;
     private boolean reachVal;
     private boolean jammerVal;
     private boolean locatorVal;
     private boolean hologramVal;
     private boolean anonymizerVal;
     private boolean playerLocatorVal;
+    private boolean watchPointVal;
+    private boolean podestVal;
     private boolean opOnlyVal;
 
     private Button btnReach;
@@ -26,6 +30,8 @@ public class ServerConfigScreen extends Screen {
     private Button btnHologram;
     private Button btnAnonymizer;
     private Button btnPlayerLocator;
+    private Button btnWatchPoint;
+    private Button btnPodest;
     private Button btnOpOnly;
 
     private Button btnBack;
@@ -48,6 +54,8 @@ public class ServerConfigScreen extends Screen {
         this.hologramVal = values.enableHologramBlock;
         this.anonymizerVal = values.enableAnonymizer;
         this.playerLocatorVal = values.enablePlayerLocator;
+        this.watchPointVal = values.enableWatchPoint;
+        this.podestVal = values.enablePodest;
         this.opOnlyVal = values.opOnlyMode;
     }
 
@@ -67,6 +75,16 @@ public class ServerConfigScreen extends Screen {
         this.txtMaxDistance.setMaxLength(8);
         this.txtMaxDistance.setValue(String.valueOf(this.initialValues.maxMonitorDistance));
         this.addRenderableWidget(this.txtMaxDistance);
+
+        this.txtMaxWatchPointsPlayer = new EditBox(this.font, this.width / 2 - 205, 0, 200, 20, Component.translatable("gui.bodycam.server_config.max_wp_player"));
+        this.txtMaxWatchPointsPlayer.setMaxLength(4);
+        this.txtMaxWatchPointsPlayer.setValue(String.valueOf(this.initialValues.maxWatchPointsPerPlayer));
+        this.addRenderableWidget(this.txtMaxWatchPointsPlayer);
+
+        this.txtMaxWatchPointsTotal = new EditBox(this.font, this.width / 2 + 5, 0, 200, 20, Component.translatable("gui.bodycam.server_config.max_wp_total"));
+        this.txtMaxWatchPointsTotal.setMaxLength(5);
+        this.txtMaxWatchPointsTotal.setValue(String.valueOf(this.initialValues.maxWatchPointsTotal));
+        this.addRenderableWidget(this.txtMaxWatchPointsTotal);
 
         this.btnReach = Button.builder(this.getToggleButtonMessage("gui.bodycam.server_config.enable_reach", this.reachVal), btn -> {
             this.reachVal = !this.reachVal;
@@ -104,6 +122,18 @@ public class ServerConfigScreen extends Screen {
         }).bounds(this.width / 2 + 5, 0, 200, 20).build();
         this.addRenderableWidget(this.btnPlayerLocator);
 
+        this.btnWatchPoint = Button.builder(this.getToggleButtonMessage("gui.bodycam.server_config.enable_watch_point", this.watchPointVal), btn -> {
+            this.watchPointVal = !this.watchPointVal;
+            btn.setMessage(this.getToggleButtonMessage("gui.bodycam.server_config.enable_watch_point", this.watchPointVal));
+        }).bounds(this.width / 2 - 205, 0, 200, 20).build();
+        this.addRenderableWidget(this.btnWatchPoint);
+
+        this.btnPodest = Button.builder(this.getToggleButtonMessage("gui.bodycam.server_config.enable_podest", this.podestVal), btn -> {
+            this.podestVal = !this.podestVal;
+            btn.setMessage(this.getToggleButtonMessage("gui.bodycam.server_config.enable_podest", this.podestVal));
+        }).bounds(this.width / 2 + 5, 0, 200, 20).build();
+        this.addRenderableWidget(this.btnPodest);
+
         this.btnOpOnly = Button.builder(this.getToggleButtonMessage("gui.bodycam.server_config.op_only", this.opOnlyVal), btn -> {
             this.opOnlyVal = !this.opOnlyVal;
             btn.setMessage(this.getToggleButtonMessage("gui.bodycam.server_config.op_only", this.opOnlyVal));
@@ -128,12 +158,16 @@ public class ServerConfigScreen extends Screen {
 
         this.btnReset = Button.builder(Component.translatable("gui.bodycam.config.reset"), btn -> {
             this.txtMaxDistance.setValue("500");
+            this.txtMaxWatchPointsPlayer.setValue("5");
+            this.txtMaxWatchPointsTotal.setValue("50");
             this.reachVal = true;
             this.jammerVal = true;
             this.locatorVal = true;
             this.hologramVal = true;
             this.anonymizerVal = true;
             this.playerLocatorVal = true;
+            this.watchPointVal = true;
+            this.podestVal = true;
             this.opOnlyVal = false;
 
             this.btnReach.setMessage(this.getToggleButtonMessage("gui.bodycam.server_config.enable_reach", this.reachVal));
@@ -142,19 +176,33 @@ public class ServerConfigScreen extends Screen {
             this.btnHologram.setMessage(this.getToggleButtonMessage("gui.bodycam.server_config.enable_hologram", this.hologramVal));
             this.btnAnonymizer.setMessage(this.getToggleButtonMessage("gui.bodycam.server_config.enable_anonymizer", this.anonymizerVal));
             this.btnPlayerLocator.setMessage(this.getToggleButtonMessage("gui.bodycam.server_config.enable_player_locator", this.playerLocatorVal));
+            this.btnWatchPoint.setMessage(this.getToggleButtonMessage("gui.bodycam.server_config.enable_watch_point", this.watchPointVal));
+            this.btnPodest.setMessage(this.getToggleButtonMessage("gui.bodycam.server_config.enable_podest", this.podestVal));
             this.btnOpOnly.setMessage(this.getToggleButtonMessage("gui.bodycam.server_config.op_only", this.opOnlyVal));
         }).bounds(this.width / 2 - 205, 0, 200, 20).build();
         this.addRenderableWidget(this.btnReset);
 
         this.btnSave = Button.builder(Component.translatable("gui.done"), btn -> {
             int maxDist = this.initialValues.maxMonitorDistance;
+            int maxWpPlayer = this.initialValues.maxWatchPointsPerPlayer;
+            int maxWpTotal = this.initialValues.maxWatchPointsTotal;
             try {
                 maxDist = Integer.parseInt(this.txtMaxDistance.getValue());
             } catch (NumberFormatException e) {
             }
+            try {
+                maxWpPlayer = Integer.parseInt(this.txtMaxWatchPointsPlayer.getValue());
+            } catch (NumberFormatException e) {
+            }
+            try {
+                maxWpTotal = Integer.parseInt(this.txtMaxWatchPointsTotal.getValue());
+            } catch (NumberFormatException e) {
+            }
             dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.sendToServer(
                     new dev.ClasherHD.bodycam.network.config.SaveServerConfigC2SPacket(
-                            maxDist, this.reachVal, this.jammerVal, this.locatorVal, this.hologramVal, this.anonymizerVal, this.playerLocatorVal, this.opOnlyVal
+                            maxDist, maxWpPlayer, maxWpTotal,
+                            this.reachVal, this.jammerVal, this.locatorVal, this.hologramVal,
+                            this.anonymizerVal, this.playerLocatorVal, this.watchPointVal, this.podestVal, this.opOnlyVal
                     )
             );
             this.onClose();
@@ -177,6 +225,10 @@ public class ServerConfigScreen extends Screen {
         this.btnAnonymizer.visible = page1;
         this.btnPlayerLocator.visible = page1;
 
+        this.txtMaxWatchPointsPlayer.visible = page2;
+        this.txtMaxWatchPointsTotal.visible = page2;
+        this.btnWatchPoint.visible = page2;
+        this.btnPodest.visible = page2;
         this.btnOpOnly.visible = page2;
 
         this.btnBack.active = page2;
@@ -197,7 +249,13 @@ public class ServerConfigScreen extends Screen {
         this.btnAnonymizer.setY(yOffset + 99);
         this.btnPlayerLocator.setY(yOffset + 99);
 
-        this.btnOpOnly.setY(yOffset + 47);
+        this.txtMaxWatchPointsPlayer.setY(yOffset + 12);
+        this.txtMaxWatchPointsTotal.setY(yOffset + 12);
+
+        this.btnWatchPoint.setY(yOffset + 47);
+        this.btnPodest.setY(yOffset + 47);
+
+        this.btnOpOnly.setY(yOffset + 73);
 
         this.btnBack.setY(yOffset + 125);
         this.btnNext.setY(yOffset + 125);
@@ -229,6 +287,9 @@ public class ServerConfigScreen extends Screen {
         int y = 49 + (int) this.scrollY;
         if (this.currentPage == 1) {
             pGuiGraphics.drawString(this.font, Component.translatable("gui.bodycam.server_config.max_distance"), this.width / 2 - 100, y, 10526880);
+        } else if (this.currentPage == 2) {
+            pGuiGraphics.drawString(this.font, Component.translatable("gui.bodycam.server_config.max_wp_player"), this.width / 2 - 205, y, 10526880);
+            pGuiGraphics.drawString(this.font, Component.translatable("gui.bodycam.server_config.max_wp_total"), this.width / 2 + 5, y, 10526880);
         }
 
         super.render(pGuiGraphics, pMouseX, pMouseY, pPartialTick);

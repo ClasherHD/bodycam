@@ -1,6 +1,5 @@
 package dev.ClasherHD.bodycam.network.bodycam;
 
-
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
@@ -42,9 +41,11 @@ public class BodycamResetCameraPacket {
                 }
 
                 sender.getPersistentData().putBoolean("bodycam_active", false);
+                sender.getPersistentData().remove("bodycam_watching_watchpoint");
                 sender.getPersistentData().remove("bodycam_target_uuid");
                 sender.getPersistentData().remove("bodycam_disconnect_ticks");
-                sender.getPersistentData().remove("bodycam_has_reach");
+                sender.getPersistentData().remove("bodycam_reach_level");
+                dev.ClasherHD.bodycam.enchantment.NightspyEffectHandler.clear(sender);
                 sender.getPersistentData().remove("bodycam_original_dimension");
                 dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_GAMEMODE.remove(sender.getUUID());
                 dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_DIM.remove(sender.getUUID());
@@ -170,11 +171,13 @@ public class BodycamResetCameraPacket {
             }
 
             sender.getPersistentData().putBoolean("bodycam_active", false);
+            sender.getPersistentData().remove("bodycam_watching_watchpoint");
             sender.getPersistentData().remove("bodycam_target_uuid");
             sender.getPersistentData().remove("bodycam_disconnect_ticks");
-            sender.getPersistentData().remove("bodycam_has_reach");
+            sender.getPersistentData().remove("bodycam_reach_level");
+            dev.ClasherHD.bodycam.enchantment.NightspyEffectHandler.clear(sender);
             sender.getPersistentData().remove("bodycam_original_dimension");
-            
+
             dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_GAMEMODE.remove(sender.getUUID());
 
             dev.ClasherHD.bodycam.entity.BodycamDummyEntity.DUMMY_POS.remove(sender.getUUID());

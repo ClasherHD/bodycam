@@ -1,11 +1,15 @@
 package dev.ClasherHD.bodycam.item;
 
+import dev.ClasherHD.bodycam.enchantment.EnchantmentLevels;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.network.PacketDistributor;
 
@@ -22,30 +26,74 @@ public class DimensionLocatorItem extends Item {
 
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
-        if (!level.isClientSide() && player instanceof ServerPlayer) {
+        ItemStack stack = player.getItemInHand(hand);
+        if (ItemDurabilityHelper.isEmpty(stack)) {
+            return InteractionResultHolder.fail(stack);
+        }
+        if (!level.isClientSide() && player instanceof ServerPlayer sPlayer) {
             if (dev.ClasherHD.bodycam.config.ModServerConfig.OP_ONLY_MODE.get() && !player.hasPermissions(2)) {
-                player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("message.bodycam.op_only").withStyle(net.minecraft.ChatFormatting.RED));
-                return InteractionResultHolder.fail(player.getItemInHand(hand));
+                player.sendSystemMessage(Component.translatable("message.bodycam.op_only").withStyle(ChatFormatting.RED));
+                return InteractionResultHolder.fail(stack);
             }
             if (!dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_DIMENSION_LOCATOR.get()) {
-                player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("message.bodycam.locator_disabled").withStyle(net.minecraft.ChatFormatting.RED));
-                return InteractionResultHolder.fail(player.getItemInHand(hand));
+                player.sendSystemMessage(Component.translatable("message.bodycam.locator_disabled").withStyle(ChatFormatting.RED));
+                return InteractionResultHolder.fail(stack);
             }
+            ItemDurabilityHelper.damagePerUse(stack, sPlayer, 1);
+
             Map<UUID, String> dims = new HashMap<>();
-            ServerPlayer sPlayer = (ServerPlayer) player;
             for (ServerPlayer onlinePlayer : sPlayer.server.getPlayerList().getPlayers()) {
-                if (!onlinePlayer.getUUID().equals(player.getUUID())) {
+                if (!onlinePlayer.getUUID().equals(player.getUUID()) && !EnchantmentLevels.isHiddenFromSelection(onlinePlayer)) {
                     if (onlinePlayer.getPersistentData().contains("bodycam_target_uuid") && onlinePlayer.getPersistentData().contains("bodycam_original_dimension")) {
                         dims.put(onlinePlayer.getUUID(), onlinePlayer.getPersistentData().getString("bodycam_original_dimension"));
                     } else {
                         dims.put(onlinePlayer.getUUID(), onlinePlayer.level().dimension().location().toString());
                     }
+                    if (EnchantmentLevels.isDimensionScrambled(onlinePlayer)) {
+                        dims.put(onlinePlayer.getUUID(), EnchantmentLevels.SCRAMBLED_DIMENSION);
+                    }
                 }
             }
             dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
-                    PacketDistributor.PLAYER.with(() -> (ServerPlayer) player),
+                    PacketDistributor.PLAYER.with(() -> sPlayer),
                     new dev.ClasherHD.bodycam.network.locator.DimensionLocatorResponsePacket(dims));
         }
-        return InteractionResultHolder.sidedSuccess(player.getItemInHand(hand), level.isClientSide());
+        return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
+    }
+
+    @Override
+    public void onCraftedBy(ItemStack stack, Level level, Player player) {
+        super.onCraftedBy(stack, level, player);
+        ItemDurabilityHelper.setEmpty(stack);
+    }
+
+    @Override
+    public boolean isBarVisible(ItemStack stack) {
+        return stack.isDamaged() && !ItemDurabilityHelper.isEmpty(stack);
+    }
+
+    @Override
+    public boolean isEnchantable(ItemStack stack) {
+        return false;
+    }
+
+    @Override
+    public boolean canApplyAtEnchantingTable(ItemStack stack, Enchantment enchantment) {
+        return false;
+    }
+
+    @Override
+    public boolean isBookEnchantable(ItemStack stack, ItemStack book) {
+        return false;
+    }
+
+    @Override
+    public boolean isRepairable(ItemStack stack) {
+        return false;
+    }
+
+    @Override
+    public boolean shouldCauseReequipAnimation(ItemStack oldStack, ItemStack newStack, boolean slotChanged) {
+        return slotChanged || !ItemStack.isSameItem(oldStack, newStack);
     }
 }

@@ -1,15 +1,18 @@
 package dev.ClasherHD.bodycam.network.bodycam;
 
-
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
 import net.minecraft.core.BlockPos;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-import java.util.function.Supplier;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
+import net.minecraftforge.network.NetworkEvent;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.function.Supplier;
 
 @SuppressWarnings("null")
 public class SyncBodycamStatesS2CPacket {
@@ -18,17 +21,22 @@ public class SyncBodycamStatesS2CPacket {
     public final Map<UUID, String> dimensions;
     public final Map<UUID, BlockPos> positions;
     public final Map<UUID, Boolean> anonymizers;
-    public final boolean hasReach;
+    public final Set<UUID> hidden;
+    public final Map<UUID, String> watchPoints;
+    public final int reachLevel;
     public final boolean isOnHologram;
 
     public SyncBodycamStatesS2CPacket(Map<UUID, Integer> jammers, Map<UUID, UUID> targets, Map<UUID, String> dimensions,
-            Map<UUID, BlockPos> positions, Map<UUID, Boolean> anonymizers, boolean hasReach, boolean isOnHologram) {
+            Map<UUID, BlockPos> positions, Map<UUID, Boolean> anonymizers, Set<UUID> hidden, Map<UUID, String> watchPoints,
+            int reachLevel, boolean isOnHologram) {
         this.jammers = jammers;
         this.targets = targets;
         this.dimensions = dimensions;
         this.positions = positions;
         this.anonymizers = anonymizers;
-        this.hasReach = hasReach;
+        this.hidden = hidden;
+        this.watchPoints = watchPoints;
+        this.reachLevel = reachLevel;
         this.isOnHologram = isOnHologram;
     }
 
@@ -63,7 +71,18 @@ public class SyncBodycamStatesS2CPacket {
             buf.writeBoolean(entry.getValue());
         }
 
-        buf.writeBoolean(msg.hasReach);
+        buf.writeInt(msg.hidden.size());
+        for (UUID id : msg.hidden) {
+            buf.writeUUID(id);
+        }
+
+        buf.writeInt(msg.watchPoints.size());
+        for (Map.Entry<UUID, String> entry : msg.watchPoints.entrySet()) {
+            buf.writeUUID(entry.getKey());
+            buf.writeUtf(entry.getValue());
+        }
+
+        buf.writeInt(msg.reachLevel);
         buf.writeBoolean(msg.isOnHologram);
     }
 
@@ -93,8 +112,18 @@ public class SyncBodycamStatesS2CPacket {
         for (int i = 0; i < anonymizerSize; i++)
             anonymizers.put(buf.readUUID(), buf.readBoolean());
 
-        return new SyncBodycamStatesS2CPacket(jammers, targets, dimensions, positions, anonymizers, buf.readBoolean(),
-                buf.readBoolean());
+        Set<UUID> hidden = new HashSet<>();
+        int hiddenSize = buf.readInt();
+        for (int i = 0; i < hiddenSize; i++)
+            hidden.add(buf.readUUID());
+
+        Map<UUID, String> watchPoints = new LinkedHashMap<>();
+        int wpSize = buf.readInt();
+        for (int i = 0; i < wpSize; i++)
+            watchPoints.put(buf.readUUID(), buf.readUtf());
+
+        return new SyncBodycamStatesS2CPacket(jammers, targets, dimensions, positions, anonymizers, hidden, watchPoints,
+                buf.readInt(), buf.readBoolean());
     }
 
     public static void handle(SyncBodycamStatesS2CPacket msg, Supplier<NetworkEvent.Context> ctx) {

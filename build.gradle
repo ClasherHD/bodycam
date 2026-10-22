@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "dev.ClasherHD"
-version = "2.5"
+version = "3.0"
 base.archivesName = "bodycam-forge-1.20.1"
 
 java {
@@ -65,11 +65,16 @@ repositories {
     maven {
         url = "https://maven.maxhenkel.de/repository/public"
     }
+    maven {
+        name = "Curios Maven"
+        url = "https://maven.theillusivec4.top/"
+    }
 }
 
 dependencies {
     minecraft 'net.minecraftforge:forge:1.20.1-47.3.0'
     compileOnly "de.maxhenkel.voicechat:voicechat-api:2.5.0"
+    compileOnly fg.deobf("top.theillusivec4.curios:curios-forge:5.14.1+1.20.1:api")
 }
 
 jar {

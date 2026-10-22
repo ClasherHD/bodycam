@@ -1,13 +1,20 @@
 package dev.ClasherHD.bodycam.network.bodycam;
 
-
+import dev.ClasherHD.bodycam.block.entity.PodestBlockEntity;
+import dev.ClasherHD.bodycam.enchantment.EnchantmentLevels;
+import dev.ClasherHD.bodycam.enchantment.NightspyEffectHandler;
+import dev.ClasherHD.bodycam.entity.WatchPointDummyEntity;
+import dev.ClasherHD.bodycam.item.ItemDurabilityHelper;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.UUID;
-import java.util.function.Supplier;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 @SuppressWarnings("null")
 public class BodycamSetCameraPacket {
@@ -18,96 +25,131 @@ public class BodycamSetCameraPacket {
     public static final ConcurrentHashMap<UUID, Integer> ORIGINAL_GAMEMODE = new ConcurrentHashMap<>();
 
     public final UUID targetId;
-    public final boolean hasReach;
     public final boolean isOnHologram;
 
-    public BodycamSetCameraPacket(UUID targetId, boolean hasReach, boolean isOnHologram) {
+    public BodycamSetCameraPacket(UUID targetId, boolean isOnHologram) {
         this.targetId = targetId;
-        this.hasReach = hasReach;
         this.isOnHologram = isOnHologram;
     }
 
     public static void encode(BodycamSetCameraPacket msg, FriendlyByteBuf buf) {
         buf.writeUUID(msg.targetId);
-        buf.writeBoolean(msg.hasReach);
         buf.writeBoolean(msg.isOnHologram);
     }
 
     public static BodycamSetCameraPacket decode(FriendlyByteBuf buf) {
-        return new BodycamSetCameraPacket(buf.readUUID(), buf.readBoolean(), buf.readBoolean());
+        return new BodycamSetCameraPacket(buf.readUUID(), buf.readBoolean());
     }
 
     public static void handle(BodycamSetCameraPacket msg, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             ServerPlayer player = ctx.get().getSender();
-            if (player == null)
+            if (player == null) {
                 return;
-            ServerPlayer target = player.server.getPlayerList().getPlayer(msg.targetId);
-            if (target == null)
-                return;
-
+            }
             if (player.isSpectator()) {
                 ctx.get().setPacketHandled(true);
                 return;
             }
 
-            if (target.getPersistentData().getBoolean("bodycam_active") && target.getPersistentData().contains("bodycam_target_uuid")) {
-                java.util.UUID targetUuid = target.getPersistentData().getUUID("bodycam_target_uuid");
-                if (targetUuid != null && targetUuid.equals(player.getUUID())) {
-                    player.sendSystemMessage(net.minecraft.network.chat.Component.translatable(
-                            "message.bodycam.signal_weak").withStyle(net.minecraft.ChatFormatting.RED));
-                    dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
-                            net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
-                            new dev.ClasherHD.bodycam.network.bodycam.BodycamForceClosePacket()
-                    );
-                    return;
+            ServerPlayer target = player.server.getPlayerList().getPlayer(msg.targetId);
+            WatchPointDummyEntity targetWatchPoint = null;
+            if (target == null) {
+                if (dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_WATCH_POINT.get()) {
+                    targetWatchPoint = WatchPointDummyEntity.findByUUID(player.server, msg.targetId);
+                    if (targetWatchPoint != null && !player.getUUID().equals(targetWatchPoint.getOwnerUUID())) {
+                        targetWatchPoint = null;
+                    }
                 }
             }
 
-            long lastJammer = target.getPersistentData().getLong("bodycam_jammer_heartbeat");
-            int jammerMode = target.getPersistentData().getInt("bodycam_jammer_mode");
-            boolean isJammerActive = (target.level().getGameTime() - lastJammer) <= 10;
-            if (!isJammerActive) {
-                jammerMode = 0;
-            }
-
-            if (jammerMode == 1) {
-                player.sendSystemMessage(net.minecraft.network.chat.Component.translatable(
-                        "message.bodycam.jammer_blocked").withStyle(net.minecraft.ChatFormatting.RED));
+            Entity targetEntity = target != null ? target : targetWatchPoint;
+            if (targetEntity == null || !(targetEntity.level() instanceof ServerLevel targetServerLevel)) {
                 dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
                         net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
-                        new dev.ClasherHD.bodycam.network.bodycam.BodycamForceClosePacket());
+                        new BodycamForceClosePacket());
                 return;
-            } else if (jammerMode == 2) {
-                if (player.level() != target.level() || player.distanceTo(target) > (double) dev.ClasherHD.bodycam.config.ModServerConfig.MAX_MONITOR_DISTANCE.get()) {
+            }
+
+            if (target != null) {
+                if (EnchantmentLevels.isHiddenFromSelection(target)) {
+                    dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
+                            net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
+                            new BodycamForceClosePacket());
+                    return;
+                }
+
+                if (target.getPersistentData().getBoolean("bodycam_active") && target.getPersistentData().contains("bodycam_target_uuid")) {
+                    UUID targetUuid = target.getPersistentData().getUUID("bodycam_target_uuid");
+                    if (targetUuid != null && targetUuid.equals(player.getUUID())) {
+                        player.sendSystemMessage(net.minecraft.network.chat.Component.translatable(
+                                "message.bodycam.signal_weak").withStyle(net.minecraft.ChatFormatting.RED));
+                        dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
+                                net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
+                                new BodycamForceClosePacket()
+                        );
+                        return;
+                    }
+                }
+
+                long lastJammer = target.getPersistentData().getLong("bodycam_jammer_heartbeat");
+                int jammerMode = target.getPersistentData().getInt("bodycam_jammer_mode");
+                boolean isJammerActive = (target.level().getGameTime() - lastJammer) <= 10;
+                if (!isJammerActive) {
+                    jammerMode = 0;
+                }
+                jammerMode = PodestBlockEntity.combineJammerModes(jammerMode, PodestBlockEntity.getPodestJammerMode(target));
+
+                if (jammerMode == 1) {
                     player.sendSystemMessage(net.minecraft.network.chat.Component.translatable(
                             "message.bodycam.jammer_blocked").withStyle(net.minecraft.ChatFormatting.RED));
                     dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
                             net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
-                            new dev.ClasherHD.bodycam.network.bodycam.BodycamForceClosePacket());
+                            new BodycamForceClosePacket());
                     return;
+                } else if (jammerMode == 2) {
+                    if (player.level() != target.level() || player.distanceTo(target) > (double) dev.ClasherHD.bodycam.config.ModServerConfig.MAX_MONITOR_DISTANCE.get()) {
+                        player.sendSystemMessage(net.minecraft.network.chat.Component.translatable(
+                                "message.bodycam.jammer_blocked").withStyle(net.minecraft.ChatFormatting.RED));
+                        dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
+                                net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
+                                new BodycamForceClosePacket());
+                        return;
+                    }
                 }
             }
 
-            boolean hasReach = msg.hasReach && dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_REACH_ENCHANTMENT.get();
+            int reachLevel = EnchantmentLevels.sessionReach(player, msg.isOnHologram);
 
-            if (!hasReach) {
-                if (player.level() != target.level() || player.distanceTo(target) > (double) dev.ClasherHD.bodycam.config.ModServerConfig.MAX_MONITOR_DISTANCE.get()) {
+            if (reachLevel < 2) {
+                if (player.level() != targetEntity.level() || (reachLevel < 1 && player.distanceTo(targetEntity) > (double) dev.ClasherHD.bodycam.config.ModServerConfig.MAX_MONITOR_DISTANCE.get())) {
                     player.sendSystemMessage(net.minecraft.network.chat.Component.translatable(
                             "message.bodycam.signal_weak").withStyle(net.minecraft.ChatFormatting.RED));
                     dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
                             net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
-                            new dev.ClasherHD.bodycam.network.bodycam.BodycamForceClosePacket());
+                            new BodycamForceClosePacket());
                     return;
                 }
             }
 
+            if (!msg.isOnHologram && !player.getPersistentData().getBoolean("bodycam_active")) {
+                ItemStack spyglassStack = EnchantmentLevels.heldBodycam(player);
+                if (spyglassStack.isEmpty() || ItemDurabilityHelper.isEmpty(spyglassStack)) {
+                    dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
+                            net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
+                            new BodycamForceClosePacket());
+                    return;
+                }
+                ItemDurabilityHelper.damagePerUse(spyglassStack, player, 1);
+            }
+
             if (player.getPersistentData().contains("bodycam_dummy_uuid")) {
-                java.util.UUID oldId = player.getPersistentData().getUUID("bodycam_dummy_uuid");
+                UUID oldId = player.getPersistentData().getUUID("bodycam_dummy_uuid");
                 for (net.minecraft.server.level.ServerLevel lvl : player.server.getAllLevels()) {
                     net.minecraft.world.entity.Entity e = lvl.getEntity(oldId);
-                    if (e != null)
+                    if (e != null) {
                         e.discard();
+                    }
                 }
             }
 
@@ -179,31 +221,38 @@ public class BodycamSetCameraPacket {
             player.getPersistentData().putUUID("bodycam_dummy_uuid", dummy.getUUID());
 
             if (player.getPersistentData().contains("bodycam_target_uuid")) {
-                java.util.UUID oldTargetId = player.getPersistentData().getUUID("bodycam_target_uuid");
+                UUID oldTargetId = player.getPersistentData().getUUID("bodycam_target_uuid");
                 if (oldTargetId != null && !oldTargetId.equals(msg.targetId)) {
-                    net.minecraft.server.level.ServerPlayer oldTarget = player.server.getPlayerList().getPlayer(oldTargetId);
+                    ServerPlayer oldTarget = player.server.getPlayerList().getPlayer(oldTargetId);
                     if (oldTarget != null) {
                         dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
                                 net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> oldTarget),
-                                new dev.ClasherHD.bodycam.network.bodycam.CrossObservationSyncPacket(player.getUUID(), false));
+                                new CrossObservationSyncPacket(player.getUUID(), false));
                     }
                 }
             }
             player.getPersistentData().putBoolean("bodycam_active", true);
+            player.getPersistentData().putBoolean("bodycam_watching_watchpoint", targetWatchPoint != null);
             player.getPersistentData().putUUID("bodycam_target_uuid", msg.targetId);
             player.getPersistentData().putInt("bodycam_disconnect_ticks", 0);
-            player.getPersistentData().putBoolean("bodycam_has_reach", hasReach);
+            player.getPersistentData().putInt("bodycam_reach_level", reachLevel);
+            NightspyEffectHandler.begin(player, EnchantmentLevels.sessionNightspy(player, msg.isOnHologram));
             player.getPersistentData().putString("bodycam_original_dimension", player.level().dimension().location().toString());
 
-            dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
-                    net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> target),
-                    new dev.ClasherHD.bodycam.network.bodycam.CrossObservationSyncPacket(player.getUUID(), true));
+            if (target != null) {
+                final ServerPlayer syncTarget = target;
+                dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
+                        net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> syncTarget),
+                        new CrossObservationSyncPacket(player.getUUID(), true));
+            }
             player.setGameMode(net.minecraft.world.level.GameType.SPECTATOR);
 
-            if (player.level().dimension() != target.level().dimension()) {
-                player.teleportTo(target.serverLevel(), target.getX(), target.getY(), target.getZ(), target.getYRot(), target.getXRot());
+            player.teleportTo(targetServerLevel, targetEntity.getX(), targetEntity.getY(), targetEntity.getZ(), targetEntity.getYRot(), targetEntity.getXRot());
+            if (target != null) {
+                player.setCamera(target);
+            } else {
+                player.setCamera(player);
             }
-            player.setCamera(target);
         });
         ctx.get().setPacketHandled(true);
     }

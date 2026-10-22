@@ -1,10 +1,13 @@
 package dev.ClasherHD.bodycam;
 
-import dev.ClasherHD.bodycam.registry.ModItems;
+import dev.ClasherHD.bodycam.registry.ModBlockEntities;
 import dev.ClasherHD.bodycam.registry.ModBlocks;
 import dev.ClasherHD.bodycam.registry.ModCreativeTabs;
 import dev.ClasherHD.bodycam.registry.ModEnchantments;
 import dev.ClasherHD.bodycam.registry.ModEntityTypes;
+import dev.ClasherHD.bodycam.registry.ModItems;
+import dev.ClasherHD.bodycam.registry.ModMenuTypes;
+import dev.ClasherHD.bodycam.registry.ModSounds;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -25,9 +28,11 @@ public class bodycam {
 
         ModItems.ITEMS.register(modEventBus);
         ModBlocks.BLOCKS.register(modEventBus);
+        ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
+        ModMenuTypes.MENUS.register(modEventBus);
         ModCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus);
         ModEnchantments.ENCHANTMENTS.register(modEventBus);
         ModEntityTypes.ENTITY_TYPES.register(modEventBus);
-        dev.ClasherHD.bodycam.registry.ModSounds.SOUND_EVENTS.register(modEventBus);
+        ModSounds.SOUND_EVENTS.register(modEventBus);
     }
 }

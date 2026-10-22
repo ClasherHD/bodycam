@@ -1,8 +1,10 @@
 package dev.ClasherHD.bodycam.client.render;
 
+import dev.ClasherHD.bodycam.client.gui.BodycamViewScreen;
 import dev.ClasherHD.bodycam.entity.BodycamDummyEntity;
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.model.geom.ModelLayers;
+import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.layers.CustomHeadLayer;
@@ -23,6 +25,14 @@ public class BodycamDummyRenderer<T extends BodycamDummyEntity> extends LivingEn
         this.addLayer(new dev.ClasherHD.bodycam.client.render.GlowingArmorTrimLayer<>(this, armorLayer));
         this.addLayer(new BodycamItemInHandLayer<>(this, context.getItemInHandRenderer()));
         this.addLayer(new CustomHeadLayer<>(this, context.getModelSet(), context.getItemInHandRenderer()));
+    }
+
+    @Override
+    public boolean shouldRender(T livingEntity, Frustum camera, double camX, double camY, double camZ) {
+        if (BodycamViewScreen.isMonitoring && livingEntity.getUUID().equals(BodycamViewScreen.targetUuid)) {
+            return false;
+        }
+        return super.shouldRender(livingEntity, camera, camX, camY, camZ);
     }
 
     @Override

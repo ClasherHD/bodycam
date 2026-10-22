@@ -18,14 +18,14 @@ public class PlayerLocatorSyncS2CPacket {
     public final Map<UUID, String> dimensions;
     public final Map<UUID, BlockPos> positions;
     public final UUID currentTarget;
-    public final boolean hasReach;
+    public final int reachLevel;
 
-    public PlayerLocatorSyncS2CPacket(Map<UUID, Integer> jammers, Map<UUID, String> dimensions, Map<UUID, BlockPos> positions, UUID currentTarget, boolean hasReach) {
+    public PlayerLocatorSyncS2CPacket(Map<UUID, Integer> jammers, Map<UUID, String> dimensions, Map<UUID, BlockPos> positions, UUID currentTarget, int reachLevel) {
         this.jammers = jammers;
         this.dimensions = dimensions;
         this.positions = positions;
         this.currentTarget = currentTarget;
-        this.hasReach = hasReach;
+        this.reachLevel = reachLevel;
     }
 
     public static void encode(PlayerLocatorSyncS2CPacket msg, FriendlyByteBuf buf) {
@@ -51,7 +51,7 @@ public class PlayerLocatorSyncS2CPacket {
         if (msg.currentTarget != null) {
             buf.writeUUID(msg.currentTarget);
         }
-        buf.writeBoolean(msg.hasReach);
+        buf.writeInt(msg.reachLevel);
     }
 
     public static PlayerLocatorSyncS2CPacket decode(FriendlyByteBuf buf) {
@@ -74,9 +74,9 @@ public class PlayerLocatorSyncS2CPacket {
         }
 
         UUID currentTarget = buf.readBoolean() ? buf.readUUID() : null;
-        boolean hasReach = buf.readBoolean();
+        int reachLevel = buf.readInt();
 
-        return new PlayerLocatorSyncS2CPacket(jammers, dimensions, positions, currentTarget, hasReach);
+        return new PlayerLocatorSyncS2CPacket(jammers, dimensions, positions, currentTarget, reachLevel);
     }
 
     public static void handle(PlayerLocatorSyncS2CPacket msg, Supplier<NetworkEvent.Context> ctx) {

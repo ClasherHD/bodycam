@@ -69,6 +69,7 @@
         { "predicate": { "bodycam:state": 3.0, "bodycam:angle": 0.906250 }, "model": "bodycam:item/player_locator/player_locator_compass_other_dimension_13" },
         { "predicate": { "bodycam:state": 3.0, "bodycam:angle": 0.937500 }, "model": "bodycam:item/player_locator/player_locator_compass_other_dimension_14" },
         { "predicate": { "bodycam:state": 3.0, "bodycam:angle": 0.968750 }, "model": "bodycam:item/player_locator/player_locator_compass_other_dimension_15" },
-        { "predicate": { "bodycam:state": 4.0 }, "model": "bodycam:item/player_locator/player_locator_compass_jammed" }
+        { "predicate": { "bodycam:state": 4.0 }, "model": "bodycam:item/player_locator/player_locator_compass_jammed" },
+        { "predicate": { "bodycam:empty": 1.0 }, "model": "bodycam:item/player_locator/player_locator_compass_empty" }
     ]
 }

@@ -16,9 +16,9 @@ public class BodycamClientEvents {
                 if (dev.ClasherHD.bodycam.client.gui.BodycamViewScreen.isMonitoring && mc.screen == null) {
                     mc.setScreen(new dev.ClasherHD.bodycam.client.gui.BodycamViewScreen(
                             dev.ClasherHD.bodycam.client.gui.BodycamViewScreen.targetUuid,
-                            dev.ClasherHD.bodycam.client.gui.BodycamViewScreen.targetNameStatic, 
-                            dev.ClasherHD.bodycam.client.gui.BodycamViewScreen.lastHasReach,
-                            dev.ClasherHD.bodycam.client.gui.BodycamViewScreen.lastIsOnHologram));
+                            dev.ClasherHD.bodycam.client.gui.BodycamViewScreen.targetNameStatic,
+                            dev.ClasherHD.bodycam.client.gui.BodycamViewScreen.lastIsOnHologram,
+                            dev.ClasherHD.bodycam.client.gui.BodycamViewScreen.lastIsWatchPoint));
                 }
             }
         }
@@ -28,6 +28,7 @@ public class BodycamClientEvents {
     public static void onClientLogout(net.minecraftforge.client.event.ClientPlayerNetworkEvent.LoggingOut event) {
         dev.ClasherHD.bodycam.client.gui.BodycamViewScreen.isMonitoring = false;
         dev.ClasherHD.bodycam.client.gui.BodycamViewScreen.targetUuid = null;
+        dev.ClasherHD.bodycam.client.gui.BodycamViewScreen.lastIsWatchPoint = false;
     }
 
     @SubscribeEvent
@@ -66,7 +67,7 @@ public class BodycamClientEvents {
         }
         if (event.getLevel().isClientSide()) {
             if (net.minecraft.client.Minecraft.getInstance().screen == null) {
-                dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.sendToServer(new dev.ClasherHD.bodycam.network.bodycam.SyncBodycamRequestC2SPacket(true, true));
+                dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.sendToServer(new dev.ClasherHD.bodycam.network.bodycam.SyncBodycamRequestC2SPacket(true));
             }
         }
     }

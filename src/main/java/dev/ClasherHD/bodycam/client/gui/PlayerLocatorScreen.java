@@ -21,7 +21,7 @@ public class PlayerLocatorScreen extends Screen {
     private final Map<UUID, String> dimensions;
     private final Map<UUID, BlockPos> positions;
     private final UUID currentTarget;
-    private final boolean hasReach;
+    private final int reachLevel;
 
     private PlayerListWidget listWidget;
     private int guiWidth;
@@ -29,13 +29,13 @@ public class PlayerLocatorScreen extends Screen {
     private int guiX;
     private int guiY;
 
-    public PlayerLocatorScreen(Map<UUID, Integer> jammers, Map<UUID, String> dimensions, Map<UUID, BlockPos> positions, UUID currentTarget, boolean hasReach) {
+    public PlayerLocatorScreen(Map<UUID, Integer> jammers, Map<UUID, String> dimensions, Map<UUID, BlockPos> positions, UUID currentTarget, int reachLevel) {
         super(Component.translatable("gui.bodycam.player_locator"));
         this.jammers = jammers;
         this.dimensions = dimensions;
         this.positions = positions;
         this.currentTarget = currentTarget;
-        this.hasReach = hasReach;
+        this.reachLevel = reachLevel;
     }
 
     @Override
@@ -55,7 +55,7 @@ public class PlayerLocatorScreen extends Screen {
 
         if (this.minecraft != null && this.minecraft.getConnection() != null) {
             // First, check if the current target is online and add them to the top
-            if (this.currentTarget != null) {
+            if (this.currentTarget != null && this.jammers.containsKey(this.currentTarget)) {
                 for (net.minecraft.client.multiplayer.PlayerInfo info : this.minecraft.getConnection().getOnlinePlayers()) {
                     if (info.getProfile().getId().equals(this.currentTarget)) {
                         this.listWidget.addPlayerEntry(new PlayerEntry(info, info.getProfile().getName(), true));
@@ -66,7 +66,7 @@ public class PlayerLocatorScreen extends Screen {
 
             // Then, add all other online players (excluding ourselves and the current target)
             for (net.minecraft.client.multiplayer.PlayerInfo info : this.minecraft.getConnection().getOnlinePlayers()) {
-                if (this.minecraft.player != null && !info.getProfile().getId().equals(this.minecraft.player.getUUID())) {
+                if (this.minecraft.player != null && !info.getProfile().getId().equals(this.minecraft.player.getUUID()) && this.jammers.containsKey(info.getProfile().getId())) {
                     if (this.currentTarget == null || !info.getProfile().getId().equals(this.currentTarget)) {
                         this.listWidget.addPlayerEntry(new PlayerEntry(info, info.getProfile().getName(), false));
                     }
@@ -178,7 +178,7 @@ public class PlayerLocatorScreen extends Screen {
                 nameColor = 0xFFFF5555; // Red
                 highlightColor = 0x2AFF5555;
             } else if (sameDim) {
-                if (distSq <= maxDistSq) {
+                if (distSq <= maxDistSq || PlayerLocatorScreen.this.reachLevel >= 1) {
                     nameColor = 0xFF55FF55; // Green
                     highlightColor = 0x2A55FF55;
                 } else {
@@ -186,7 +186,7 @@ public class PlayerLocatorScreen extends Screen {
                     highlightColor = 0x2AFFFF55;
                 }
             } else {
-                if (PlayerLocatorScreen.this.hasReach) {
+                if (PlayerLocatorScreen.this.reachLevel >= 2) {
                     nameColor = 0xFFFFB000; // Orange
                     highlightColor = 0x2AFFB000;
                 } else {

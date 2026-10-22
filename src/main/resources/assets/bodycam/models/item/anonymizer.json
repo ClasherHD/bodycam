@@ -9,6 +9,12 @@
                 "bodycam:active": 1.0
             },
             "model": "bodycam:item/anonymizer/anonymizer_on"
+        },
+        {
+            "predicate": {
+                "bodycam:empty": 1.0
+            },
+            "model": "bodycam:item/anonymizer/anonymizer_empty"
         }
     ]
 }

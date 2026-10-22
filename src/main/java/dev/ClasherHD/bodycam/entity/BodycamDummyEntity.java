@@ -47,6 +47,25 @@ public class BodycamDummyEntity extends LivingEntity {
         super(type, level);
     }
 
+    protected boolean isLinkedToOwnerHealth() {
+        return true;
+    }
+
+    protected void updateChunkForcing() {
+        int currentChunkX = this.blockPosition().getX() >> 4;
+        int currentChunkZ = this.blockPosition().getZ() >> 4;
+
+        if (currentChunkX != this.currentLoadedChunkX || currentChunkZ != this.currentLoadedChunkZ) {
+            if (this.isChunkForced && this.currentLoadedChunkX != Integer.MAX_VALUE && this.currentLoadedChunkZ != Integer.MAX_VALUE) {
+                net.minecraftforge.common.world.ForgeChunkManager.forceChunk((net.minecraft.server.level.ServerLevel) this.level(), "bodycam", this, this.currentLoadedChunkX, this.currentLoadedChunkZ, false, false);
+            }
+            net.minecraftforge.common.world.ForgeChunkManager.forceChunk((net.minecraft.server.level.ServerLevel) this.level(), "bodycam", this, currentChunkX, currentChunkZ, true, true);
+            this.currentLoadedChunkX = currentChunkX;
+            this.currentLoadedChunkZ = currentChunkZ;
+            this.isChunkForced = true;
+        }
+    }
+
     @Override
     public void remove(net.minecraft.world.entity.Entity.RemovalReason reason) {
         if (!this.level().isClientSide()) {
@@ -68,7 +87,7 @@ public class BodycamDummyEntity extends LivingEntity {
 
     @Override
     public void die(DamageSource source) {
-        if (!this.level().isClientSide() && this.getOwnerUUID() != null) {
+        if (!this.level().isClientSide() && this.isLinkedToOwnerHealth() && this.getOwnerUUID() != null) {
             net.minecraft.server.MinecraftServer server = this.getServer();
             if (server != null) {
                 net.minecraft.server.level.ServerPlayer owner = server.getPlayerList().getPlayer(this.getOwnerUUID());
@@ -132,6 +151,7 @@ public class BodycamDummyEntity extends LivingEntity {
 
     @Override
     protected void hurtArmor(DamageSource source, float damage) {
+        if (!this.isLinkedToOwnerHealth()) return;
         if (damage <= 0.0F) return;
         damage /= 4.0F;
         if (damage < 1.0F) damage = 1.0F;
@@ -156,6 +176,9 @@ public class BodycamDummyEntity extends LivingEntity {
 
     @Override
     public boolean hurt(DamageSource source, float amount) {
+        if (!this.isLinkedToOwnerHealth()) {
+            return super.hurt(source, amount);
+        }
         if (!this.level().isClientSide() && this.getOwnerUUID() != null) {
             net.minecraft.server.MinecraftServer server = this.getServer();
             if (server != null) {
@@ -192,6 +215,9 @@ public class BodycamDummyEntity extends LivingEntity {
     @Override
     public void heal(float amount) {
         super.heal(amount);
+        if (!this.isLinkedToOwnerHealth()) {
+            return;
+        }
         if (!this.level().isClientSide() && this.getOwnerUUID() != null) {
             net.minecraft.server.MinecraftServer server = this.getServer();
             if (server != null) {
@@ -213,7 +239,7 @@ public class BodycamDummyEntity extends LivingEntity {
     @Override
     public void tick() {
         super.tick();
-        if (!this.level().isClientSide()) {
+        if (!this.level().isClientSide() && this.isLinkedToOwnerHealth()) {
             if (this.getOwnerUUID() == null) {
                 this.discard();
                 return;
@@ -226,22 +252,7 @@ public class BodycamDummyEntity extends LivingEntity {
                 return;
             }
 
-
-
-            int currentChunkX = this.blockPosition().getX() >> 4;
-            int currentChunkZ = this.blockPosition().getZ() >> 4;
-
-            if (currentChunkX != this.currentLoadedChunkX || currentChunkZ != this.currentLoadedChunkZ) {
-                if (this.isChunkForced && this.currentLoadedChunkX != Integer.MAX_VALUE && this.currentLoadedChunkZ != Integer.MAX_VALUE) {
-                    net.minecraftforge.common.world.ForgeChunkManager.forceChunk((net.minecraft.server.level.ServerLevel) this.level(), "bodycam", this, this.currentLoadedChunkX, this.currentLoadedChunkZ, false, false);
-                }
-                net.minecraftforge.common.world.ForgeChunkManager.forceChunk((net.minecraft.server.level.ServerLevel) this.level(), "bodycam", this, currentChunkX, currentChunkZ, true, true);
-                this.currentLoadedChunkX = currentChunkX;
-                this.currentLoadedChunkZ = currentChunkZ;
-                this.isChunkForced = true;
-            }
-
-
+            this.updateChunkForcing();
 
             DUMMY_POS.put(this.getOwnerUUID(), this.position());
             DUMMY_FALL.put(this.getOwnerUUID(), this.fallDistance);

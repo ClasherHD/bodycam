@@ -1,6 +1,16 @@
 package dev.ClasherHD.bodycam.client.event;
 
 import dev.ClasherHD.bodycam.bodycam;
+import dev.ClasherHD.bodycam.client.gui.AncientTableScreen;
+import dev.ClasherHD.bodycam.client.render.PodestBlockEntityRenderer;
+import dev.ClasherHD.bodycam.item.ItemDurabilityHelper;
+import dev.ClasherHD.bodycam.registry.ModBlockEntities;
+import dev.ClasherHD.bodycam.registry.ModItems;
+import dev.ClasherHD.bodycam.registry.ModMenuTypes;
+import net.minecraft.client.gui.screens.MenuScreens;
+import net.minecraft.client.renderer.item.ClampedItemPropertyFunction;
+import net.minecraft.client.renderer.item.ItemProperties;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -14,16 +24,29 @@ public class ClientSetupHandler {
     @SubscribeEvent
     public static void clientSetup(final FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
-            net.minecraft.client.renderer.item.ItemProperties.register(dev.ClasherHD.bodycam.registry.ModItems.JAMMER.get(),
-                    new net.minecraft.resources.ResourceLocation("bodycam", "mode"),
+            MenuScreens.register(ModMenuTypes.ANCIENT_TABLE.get(), AncientTableScreen::new);
+
+            ResourceLocation emptyProperty = new ResourceLocation("bodycam", "empty");
+            ClampedItemPropertyFunction emptyFunc = (stack, level, entity, seed) -> ItemDurabilityHelper.isEmpty(stack) ? 1.0F : 0.0F;
+            ItemProperties.register(ModItems.BODYCAM_MONITOR.get(), emptyProperty, emptyFunc);
+            ItemProperties.register(ModItems.DIMENSION_LOCATOR.get(), emptyProperty, emptyFunc);
+            ItemProperties.register(ModItems.JAMMER.get(), emptyProperty, emptyFunc);
+            ItemProperties.register(ModItems.ANONYMIZER.get(), emptyProperty, emptyFunc);
+            ItemProperties.register(ModItems.PLAYER_LOCATOR_COMPASS.get(), emptyProperty, emptyFunc);
+
+            ItemProperties.register(ModItems.JAMMER.get(),
+                    new ResourceLocation("bodycam", "mode"),
                     (stack, level, entity, seed) -> {
                         if (stack.hasTag() && stack.getTag().contains("JammerMode")) {
                             return stack.getTag().getInt("JammerMode");
                         }
                         return 0.0F;
                     });
-            net.minecraft.client.renderer.item.ItemProperties.register(dev.ClasherHD.bodycam.registry.ModItems.ANONYMIZER.get(),
-                    new net.minecraft.resources.ResourceLocation("bodycam", "active"),
+            ItemProperties.register(ModItems.PORTABLE_NETHER_PORTAL.get(),
+                    new ResourceLocation("bodycam", "charged"),
+                    (stack, level, entity, seed) -> dev.ClasherHD.bodycam.item.PortableNetherPortalItem.getCharges(stack) > 0 ? 1.0F : 0.0F);
+            ItemProperties.register(ModItems.ANONYMIZER.get(),
+                    new ResourceLocation("bodycam", "active"),
                     (stack, level, entity, seed) -> {
                         if (stack.hasTag() && stack.getTag().contains("AnonymizerActive")
                                 && stack.getTag().getBoolean("AnonymizerActive")) {
@@ -32,8 +55,8 @@ public class ClientSetupHandler {
                         return 0.0F;
                     });
 
-            net.minecraft.client.renderer.item.ItemProperties.register(dev.ClasherHD.bodycam.registry.ModItems.PLAYER_LOCATOR_COMPASS.get(),
-                    new net.minecraft.resources.ResourceLocation("bodycam", "angle"),
+            ItemProperties.register(ModItems.PLAYER_LOCATOR_COMPASS.get(),
+                    new ResourceLocation("bodycam", "angle"),
                     new net.minecraft.client.renderer.item.CompassItemPropertyFunction((level, stack, entity) -> {
                         if (stack.hasTag() && stack.getTag().contains("LocatorTargetUUID")) {
                             int state = stack.getTag().getInt("LocatorState");
@@ -43,7 +66,7 @@ public class ClientSetupHandler {
                                 String targetDim = dev.ClasherHD.bodycam.client.cache.ClientBodycamCache.dimensions.get(targetUUID);
                                 if (targetPos != null && targetDim != null) {
                                     return net.minecraft.core.GlobalPos.of(
-                                            net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, new net.minecraft.resources.ResourceLocation(targetDim)),
+                                            net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, new ResourceLocation(targetDim)),
                                             targetPos
                                     );
                                 }
@@ -59,8 +82,8 @@ public class ClientSetupHandler {
                         return null;
                     }));
 
-            net.minecraft.client.renderer.item.ItemProperties.register(dev.ClasherHD.bodycam.registry.ModItems.PLAYER_LOCATOR_COMPASS.get(),
-                    new net.minecraft.resources.ResourceLocation("bodycam", "state"),
+            ItemProperties.register(ModItems.PLAYER_LOCATOR_COMPASS.get(),
+                    new ResourceLocation("bodycam", "state"),
                     (stack, level, entity, seed) -> {
                         if (stack.hasTag() && stack.getTag().contains("LocatorState")) {
                             return (float) stack.getTag().getInt("LocatorState");
@@ -78,6 +101,10 @@ public class ClientSetupHandler {
                 dev.ClasherHD.bodycam.client.render.BodycamDummyRenderer::new);
         event.registerEntityRenderer(dev.ClasherHD.bodycam.registry.ModEntityTypes.HOLOGRAM_DUMMY.get(),
                 dev.ClasherHD.bodycam.client.render.BodycamDummyRenderer::new);
+        event.registerEntityRenderer(dev.ClasherHD.bodycam.registry.ModEntityTypes.WATCH_POINT_DUMMY.get(),
+                dev.ClasherHD.bodycam.client.render.BodycamDummyRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.PODEST.get(),
+                PodestBlockEntityRenderer::new);
     }
 
     @SubscribeEvent
@@ -130,6 +157,11 @@ public class ClientSetupHandler {
     @SuppressWarnings({"unchecked", "rawtypes"})
     private static void addLayerHelper(net.minecraft.client.renderer.entity.LivingEntityRenderer renderer, net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer armorLayer) {
         renderer.addLayer(new dev.ClasherHD.bodycam.client.render.GlowingArmorTrimLayer(renderer, armorLayer));
+    }
+
+    @SubscribeEvent
+    public static void registerGuiOverlays(net.minecraftforge.client.event.RegisterGuiOverlaysEvent event) {
+        event.registerAboveAll("portal_channel_overlay", dev.ClasherHD.bodycam.client.render.PortalChannelOverlay.INSTANCE);
     }
 
     public static void registerConfigScreen() {

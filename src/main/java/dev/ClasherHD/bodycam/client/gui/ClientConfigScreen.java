@@ -17,6 +17,7 @@ public class ClientConfigScreen extends Screen {
     private final String initialObs;
     private final String initialDim;
     private final String initialOor;
+    private final String initialOtd;
 
     private boolean nameVal;
     private boolean healthVal;
@@ -26,6 +27,7 @@ public class ClientConfigScreen extends Screen {
     private int obsColorIdx;
     private int dimColorIdx;
     private int oorColorIdx;
+    private int otdColorIdx;
 
     private Button btnName;
     private Button btnHealth;
@@ -36,6 +38,7 @@ public class ClientConfigScreen extends Screen {
     private Button btnColorObs;
     private Button btnColorDim;
     private Button btnColorOor;
+    private Button btnColorOtd;
     private Button btnDone;
 
     private double scrollY = 0;
@@ -86,6 +89,7 @@ public class ClientConfigScreen extends Screen {
         this.initialObs = dev.ClasherHD.bodycam.config.ModClientConfig.COLOR_OBSERVING.get();
         this.initialDim = dev.ClasherHD.bodycam.config.ModClientConfig.COLOR_DIMENSION.get();
         this.initialOor = dev.ClasherHD.bodycam.config.ModClientConfig.COLOR_OUT_OF_RANGE.get();
+        this.initialOtd = dev.ClasherHD.bodycam.config.ModClientConfig.COLOR_OTHER_DIMENSION.get();
 
         this.nameVal = this.initialName;
         this.healthVal = this.initialHealth;
@@ -95,6 +99,7 @@ public class ClientConfigScreen extends Screen {
         this.obsColorIdx = this.getClosestPresetIndex(this.initialObs);
         this.dimColorIdx = this.getClosestPresetIndex(this.initialDim);
         this.oorColorIdx = this.getClosestPresetIndex(this.initialOor);
+        this.otdColorIdx = this.getClosestPresetIndex(this.initialOtd);
     }
 
     private int getClosestPresetIndex(String hex) {
@@ -172,6 +177,7 @@ public class ClientConfigScreen extends Screen {
             this.obsColorIdx = this.getClosestPresetIndex("5555FF");
             this.dimColorIdx = this.getClosestPresetIndex("55FF55");
             this.oorColorIdx = this.getClosestPresetIndex("FFFF55");
+            this.otdColorIdx = this.getClosestPresetIndex("FFAA00");
 
             this.btnName.setMessage(this.getToggleButtonMessage("gui.bodycam.config.name_overlay", true));
             this.btnHealth.setMessage(this.getToggleButtonMessage("gui.bodycam.config.health_overlay", true));
@@ -181,6 +187,7 @@ public class ClientConfigScreen extends Screen {
             this.btnColorObs.setMessage(this.getColorButtonMessage("gui.bodycam.config.observing_color", this.obsColorIdx));
             this.btnColorDim.setMessage(this.getColorButtonMessage("gui.bodycam.config.dimension_color", this.dimColorIdx));
             this.btnColorOor.setMessage(this.getColorButtonMessage("gui.bodycam.config.out_of_range_color", this.oorColorIdx));
+            this.btnColorOtd.setMessage(this.getColorButtonMessage("gui.bodycam.config.other_dimension_color", this.otdColorIdx));
         }).bounds(this.width / 2 - 205, 0, 200, 20).build();
         this.addRenderableWidget(this.btnReset);
 
@@ -214,6 +221,12 @@ public class ClientConfigScreen extends Screen {
         }).bounds(this.width / 2 - 205, 0, 200, 20).build();
         this.addRenderableWidget(this.btnColorOor);
 
+        this.btnColorOtd = Button.builder(this.getColorButtonMessage("gui.bodycam.config.other_dimension_color", this.otdColorIdx), btn -> {
+            this.otdColorIdx = (this.otdColorIdx + 1) % PRESET_COLORS.length;
+            btn.setMessage(this.getColorButtonMessage("gui.bodycam.config.other_dimension_color", this.otdColorIdx));
+        }).bounds(this.width / 2 + 5, 0, 200, 20).build();
+        this.addRenderableWidget(this.btnColorOtd);
+
         this.btnDone = Button.builder(Component.translatable("gui.done"), btn -> {
             dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_NAME_OVERLAY.set(this.nameVal);
             dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_HEALTH_OVERLAY.set(this.healthVal);
@@ -223,6 +236,7 @@ public class ClientConfigScreen extends Screen {
             dev.ClasherHD.bodycam.config.ModClientConfig.COLOR_OBSERVING.set(PRESET_COLORS[this.obsColorIdx].hex);
             dev.ClasherHD.bodycam.config.ModClientConfig.COLOR_DIMENSION.set(PRESET_COLORS[this.dimColorIdx].hex);
             dev.ClasherHD.bodycam.config.ModClientConfig.COLOR_OUT_OF_RANGE.set(PRESET_COLORS[this.oorColorIdx].hex);
+            dev.ClasherHD.bodycam.config.ModClientConfig.COLOR_OTHER_DIMENSION.set(PRESET_COLORS[this.otdColorIdx].hex);
             dev.ClasherHD.bodycam.config.ModClientConfig.SPEC.save();
             this.onClose();
         }).bounds(this.width / 2 + 5, 0, 200, 20).build();
@@ -246,6 +260,7 @@ public class ClientConfigScreen extends Screen {
         this.btnColorDim.setY(yOffset + 78);
 
         this.btnColorOor.setY(yOffset + 104);
+        this.btnColorOtd.setY(yOffset + 104);
 
         this.btnReset.setY(yOffset + 136);
         this.btnDone.setY(yOffset + 136);
