@@ -61,6 +61,11 @@ public class BodycamMonitorItem extends Item {
     }
 
     @Override
+    public int getMaxDamage(ItemStack stack) {
+        return ItemDurabilityHelper.getSpyglassMaxDurability();
+    }
+
+    @Override
     public boolean isBarVisible(ItemStack stack) {
         return stack.isDamaged() && !ItemDurabilityHelper.isEmpty(stack);
     }

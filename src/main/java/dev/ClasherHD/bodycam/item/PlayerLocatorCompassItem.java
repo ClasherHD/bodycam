@@ -40,8 +40,6 @@ import java.util.UUID;
 @SuppressWarnings("null")
 public class PlayerLocatorCompassItem extends Item {
 
-    private static final int SCAN_INTERVAL_TICKS = 50;
-
     public PlayerLocatorCompassItem(Properties properties) {
         super(properties);
     }
@@ -57,6 +55,10 @@ public class PlayerLocatorCompassItem extends Item {
                 sPlayer.sendSystemMessage(Component.translatable("message.bodycam.op_only").withStyle(net.minecraft.ChatFormatting.RED));
                 return InteractionResultHolder.fail(stack);
             }
+            if (ModServerConfig.isDimensionBlacklisted(level)) {
+                sPlayer.sendSystemMessage(Component.translatable("message.bodycam.dimension_blacklisted").withStyle(net.minecraft.ChatFormatting.RED));
+                return InteractionResultHolder.fail(stack);
+            }
             if (!ModServerConfig.ENABLE_PLAYER_LOCATOR.get()) {
                 sPlayer.sendSystemMessage(Component.translatable("message.bodycam.player_locator_disabled").withStyle(net.minecraft.ChatFormatting.RED));
                 return InteractionResultHolder.fail(stack);
@@ -69,19 +71,40 @@ public class PlayerLocatorCompassItem extends Item {
             Map<UUID, String> dimensions = new HashMap<>();
             Map<UUID, BlockPos> positions = new HashMap<>();
 
+            int reachLevel = EnchantmentLevels.reach(stack);
+            String myDim = sPlayer.level().dimension().location().toString();
+            double maxDist = ModServerConfig.MAX_MONITOR_DISTANCE.get();
+            double maxDistSq = maxDist * maxDist;
+
             for (ServerPlayer p : sPlayer.server.getPlayerList().getPlayers()) {
                 if (!p.getUUID().equals(sPlayer.getUUID()) && !EnchantmentLevels.isHiddenFromSelection(p)) {
-                    jammers.put(p.getUUID(), getJammerMode(p));
-                    dimensions.put(p.getUUID(), getTargetDimension(p));
-                    positions.put(p.getUUID(), getTargetPosition(p));
+                    int jammerMode = getJammerMode(p);
+                    String targetDim = getTargetDimension(p);
+                    BlockPos targetPos = getTargetPosition(p);
+                    boolean sameDim = myDim.equals(targetDim);
+                    double distSq = sPlayer.blockPosition().distSqr(targetPos);
+                    boolean isJammed = (jammerMode == 1) || (jammerMode == 2 && (!sameDim || distSq > maxDistSq));
+
+                    boolean inReach;
+                    if (reachLevel >= 2) {
+                        inReach = true;
+                    } else if (reachLevel >= 1) {
+                        inReach = sameDim;
+                    } else {
+                        inReach = sameDim && (distSq <= maxDistSq);
+                    }
+
+                    jammers.put(p.getUUID(), jammerMode);
+                    dimensions.put(p.getUUID(), targetDim);
+                    if (!isJammed && inReach) {
+                        positions.put(p.getUUID(), targetPos);
+                    }
                 }
             }
 
             UUID currentTarget = stack.hasTag() && stack.getOrCreateTag().contains("LocatorTargetUUID")
                     ? stack.getOrCreateTag().getUUID("LocatorTargetUUID")
                     : null;
-
-            int reachLevel = EnchantmentLevels.reach(stack);
 
             PacketHandler.INSTANCE.send(
                     PacketDistributor.PLAYER.with(() -> sPlayer),
@@ -125,7 +148,8 @@ public class PlayerLocatorCompassItem extends Item {
         }
 
         long currentTick = owner.level().getGameTime();
-        if (!owner.isCreative() && currentTick % 20 == 0) {
+        int durabilityInterval = Math.max(1, ModServerConfig.PLAYER_LOCATOR_DURABILITY_INTERVAL_TICKS.get());
+        if (!owner.isCreative() && currentTick % durabilityInterval == 0) {
             ItemDurabilityHelper.damagePerTime(stack, owner, 1);
             if (ItemDurabilityHelper.isEmpty(stack)) {
                 resetToIdle(tag);
@@ -159,8 +183,9 @@ public class PlayerLocatorCompassItem extends Item {
         String currentTargetDim = getTargetDimension(targetPlayer);
         String currentMyDim = owner.level().dimension().location().toString();
 
+        int scanInterval = Math.max(1, ModServerConfig.LOCATOR_SCAN_INTERVAL_TICKS.get());
         boolean dimChanged = !currentTargetDim.equals(lastTargetDim) || !currentMyDim.equals(myLastDim);
-        boolean periodic = (currentTick - lastCheck >= SCAN_INTERVAL_TICKS);
+        boolean periodic = (currentTick - lastCheck >= scanInterval);
 
         if (dimChanged || periodic || !tag.contains("LocatorState")) {
             calculateState(stack, owner, targetPlayer, reachLevel, currentTick);
@@ -176,6 +201,10 @@ public class PlayerLocatorCompassItem extends Item {
 
         boolean dimChanged = !currentTargetDim.equals(tag.getString("LocatorLastTargetDim"))
                 || !currentMyDim.equals(tag.getString("LocatorLastMyDim"));
+
+        if (dimChanged) {
+            tag.remove("LocatorStructSearchFailedTick");
+        }
 
         tag.putString("LocatorLastTargetDim", currentTargetDim);
         tag.putString("LocatorLastMyDim", currentMyDim);
@@ -248,11 +277,18 @@ public class PlayerLocatorCompassItem extends Item {
             return;
         }
 
+        if (tag.contains("LocatorStructSearchFailedTick") && (currentTick - tag.getLong("LocatorStructSearchFailedTick") < 1200)) {
+            tag.putInt("LocatorState", 2);
+            return;
+        }
+
         BlockPos structPos = findRoutingStructure(owner, targetDim);
         if (structPos != null) {
+            tag.remove("LocatorStructSearchFailedTick");
             applyRoutingTarget(tag, owner, structPos, currentMyDim, currentTick, false);
         } else {
             clearRoutingCache(tag);
+            tag.putLong("LocatorStructSearchFailedTick", currentTick);
             tag.putInt("LocatorState", 2);
             tag.putLong("LocatorStateTimestamp", currentTick);
         }
@@ -422,6 +458,11 @@ public class PlayerLocatorCompassItem extends Item {
     }
 
     @Override
+    public int getMaxDamage(ItemStack stack) {
+        return ItemDurabilityHelper.getPlayerLocatorMaxDurability();
+    }
+
+    @Override
     public boolean isBarVisible(ItemStack stack) {
         return stack.isDamaged() && !ItemDurabilityHelper.isEmpty(stack);
     }
@@ -466,6 +507,7 @@ public class PlayerLocatorCompassItem extends Item {
         tag.remove("LocatorLastTargetDim");
         tag.remove("LocatorLastMyDim");
         tag.remove("LocatorLastCheckTick");
+        tag.remove("LocatorStructSearchFailedTick");
     }
 
     private int getJammerMode(ServerPlayer player) {
@@ -507,17 +549,17 @@ public class PlayerLocatorCompassItem extends Item {
         if (p.getPersistentData().getBoolean("bodycam_active")) {
             net.minecraft.world.phys.Vec3 dummyVec = dev.ClasherHD.bodycam.entity.BodycamDummyEntity.DUMMY_POS.get(p.getUUID());
             if (dummyVec != null) {
-                return new BlockPos((int) dummyVec.x, (int) dummyVec.y, (int) dummyVec.z);
+                return BlockPos.containing(dummyVec);
             }
             net.minecraft.world.phys.Vec3 origVec = dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_POS.get(p.getUUID());
             if (origVec != null) {
-                return new BlockPos((int) origVec.x, (int) origVec.y, (int) origVec.z);
+                return BlockPos.containing(origVec);
             }
             if (p.getPersistentData().contains("bodycam_orig_x")) {
-                return new BlockPos(
-                        (int) p.getPersistentData().getDouble("bodycam_orig_x"),
-                        (int) p.getPersistentData().getDouble("bodycam_orig_y"),
-                        (int) p.getPersistentData().getDouble("bodycam_orig_z")
+                return BlockPos.containing(
+                        p.getPersistentData().getDouble("bodycam_orig_x"),
+                        p.getPersistentData().getDouble("bodycam_orig_y"),
+                        p.getPersistentData().getDouble("bodycam_orig_z")
                 );
             }
         }

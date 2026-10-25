@@ -107,7 +107,10 @@ public class PodestBlockEntity extends BlockEntity {
     }
 
     public double getSphericalRadius() {
-        return charges * BLOCKS_PER_CHARGE;
+        double perCharge = ModServerConfig.SPEC.isLoaded()
+                ? ModServerConfig.PODEST_BLOCKS_PER_CHARGE.get()
+                : BLOCKS_PER_CHARGE;
+        return charges * perCharge;
     }
 
     public void addCharge(Level level, BlockPos pos, BlockState state) {
@@ -135,7 +138,7 @@ public class PodestBlockEntity extends BlockEntity {
         if (this.level == null || this.isRemoved()) {
             return false;
         }
-        if (!ModServerConfig.ENABLE_PODEST.get()) {
+        if (!ModServerConfig.ENABLE_PODEST.get() || ModServerConfig.isDimensionBlacklisted(this.level)) {
             return false;
         }
         BlockState state = this.getBlockState();
@@ -160,22 +163,27 @@ public class PodestBlockEntity extends BlockEntity {
     public static void serverTick(Level level, BlockPos pos, BlockState state, PodestBlockEntity podest) {
         LOADED_PODESTS.add(podest);
 
-        boolean hasSignal = level.hasNeighborSignal(pos);
-        if (state.getValue(PodestBlock.CHARGES) != podest.charges || state.getValue(PodestBlock.POWERED) != hasSignal) {
-            state = state.setValue(PodestBlock.CHARGES, podest.charges).setValue(PodestBlock.POWERED, hasSignal);
-            level.setBlock(pos, state, 3);
-            level.updateNeighbourForOutputSignal(pos, state.getBlock());
+        long gameTime = level.getGameTime();
+        int checkInterval = Math.max(1, ModServerConfig.PODEST_SPHERE_CHECK_INTERVAL_TICKS.get());
+        if (gameTime % checkInterval == 0) {
+            boolean hasSignal = level.hasNeighborSignal(pos);
+            if (state.getValue(PodestBlock.CHARGES) != podest.charges || state.getValue(PodestBlock.POWERED) != hasSignal) {
+                state = state.setValue(PodestBlock.CHARGES, podest.charges).setValue(PodestBlock.POWERED, hasSignal);
+                level.setBlock(pos, state, 3);
+                level.updateNeighbourForOutputSignal(pos, state.getBlock());
+            }
         }
 
         if (!podest.isPodestActive()) {
             return;
         }
 
-        long gameTime = level.getGameTime();
         ItemStack stack = podest.heldItem;
         if (stack.getItem() instanceof JammerItem) {
             int mode = podest.getEffectiveJammerMode();
-            int interval = mode == 2 ? 40 : 20;
+            int interval = mode == 2
+                    ? Math.max(1, ModServerConfig.PODEST_JAMMER_LIMITED_INTERVAL_TICKS.get())
+                    : Math.max(1, ModServerConfig.PODEST_JAMMER_NORMAL_INTERVAL_TICKS.get());
             if (gameTime % interval == 0) {
                 boolean wasEmpty = ItemDurabilityHelper.isEmpty(stack);
                 ItemDurabilityHelper.damagePerTime(stack, null, 1);
@@ -185,7 +193,8 @@ public class PodestBlockEntity extends BlockEntity {
                 }
             }
         } else if (stack.getItem() instanceof AnonymizerItem) {
-            if (gameTime % 20 == 0) {
+            int interval = Math.max(1, ModServerConfig.PODEST_ANONYMIZER_INTERVAL_TICKS.get());
+            if (gameTime % interval == 0) {
                 boolean wasEmpty = ItemDurabilityHelper.isEmpty(stack);
                 ItemDurabilityHelper.damagePerTime(stack, null, 1);
                 podest.setChanged();

@@ -53,13 +53,25 @@ public class SyncBodycamRequestC2SPacket {
                 sender.sendSystemMessage(Component.translatable("message.bodycam.op_only").withStyle(ChatFormatting.RED));
                 return;
             }
-            if (msg.isOnHologram && !dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_HOLOGRAM_BLOCK.get()) {
-                sender.sendSystemMessage(Component.translatable("message.bodycam.hologram_disabled").withStyle(ChatFormatting.RED));
+            if (dev.ClasherHD.bodycam.config.ModServerConfig.isDimensionBlacklisted(sender.level())) {
+                sender.sendSystemMessage(Component.translatable("message.bodycam.dimension_blacklisted").withStyle(ChatFormatting.RED));
                 return;
+            }
+            boolean isOnHologram = msg.isOnHologram;
+            if (isOnHologram) {
+                if (!dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_HOLOGRAM_BLOCK.get()) {
+                    sender.sendSystemMessage(Component.translatable("message.bodycam.hologram_disabled").withStyle(ChatFormatting.RED));
+                    return;
+                }
+                boolean onHologramBlock = sender.level().getBlockState(sender.blockPosition().below()).is(dev.ClasherHD.bodycam.registry.ModBlocks.HOLOGRAM_BLOCK.get()) ||
+                                          sender.level().getBlockState(sender.blockPosition()).is(dev.ClasherHD.bodycam.registry.ModBlocks.HOLOGRAM_BLOCK.get());
+                if (!onHologramBlock) {
+                    isOnHologram = false;
+                }
             }
 
             int reachLevel;
-            if (!msg.isOnHologram) {
+            if (!isOnHologram) {
                 ItemStack spyglassStack = EnchantmentLevels.heldBodycam(sender);
                 if (spyglassStack.isEmpty() || ItemDurabilityHelper.isEmpty(spyglassStack)) {
                     return;
@@ -76,6 +88,10 @@ public class SyncBodycamRequestC2SPacket {
             Map<UUID, Boolean> anonymizers = new HashMap<>();
             Set<UUID> hidden = new HashSet<>();
             Map<UUID, String> watchPoints = new LinkedHashMap<>();
+
+            String senderDim = sender.level().dimension().location().toString();
+            double maxDist = dev.ClasherHD.bodycam.config.ModServerConfig.MAX_MONITOR_DISTANCE.get();
+            double maxDistSq = maxDist * maxDist;
 
             for (ServerPlayer p : sender.server.getPlayerList().getPlayers()) {
                 if (EnchantmentLevels.isHiddenFromSelection(p)) {
@@ -123,23 +139,53 @@ public class SyncBodycamRequestC2SPacket {
                     targets.put(p.getUUID(), p.getPersistentData().getUUID("bodycam_target_uuid"));
                 }
 
+                BlockPos targetPos;
+                String targetDim;
                 if (p.getPersistentData().getBoolean("bodycam_active")) {
                     net.minecraft.world.phys.Vec3 dummyVec = dev.ClasherHD.bodycam.entity.BodycamDummyEntity.DUMMY_POS.get(p.getUUID());
                     if (dummyVec != null) {
-                        positions.put(p.getUUID(), new BlockPos((int) dummyVec.x, (int) dummyVec.y, (int) dummyVec.z));
+                        targetPos = BlockPos.containing(dummyVec);
                     } else {
                         net.minecraft.world.phys.Vec3 origVec = BodycamSetCameraPacket.ORIGINAL_POS.get(p.getUUID());
                         if (origVec != null) {
-                            positions.put(p.getUUID(), new BlockPos((int) origVec.x, (int) origVec.y, (int) origVec.z));
+                            targetPos = BlockPos.containing(origVec);
+                        } else if (p.getPersistentData().contains("bodycam_orig_x")) {
+                            targetPos = BlockPos.containing(
+                                    p.getPersistentData().getDouble("bodycam_orig_x"),
+                                    p.getPersistentData().getDouble("bodycam_orig_y"),
+                                    p.getPersistentData().getDouble("bodycam_orig_z")
+                            );
                         } else {
-                            positions.put(p.getUUID(), p.blockPosition());
+                            targetPos = p.blockPosition();
                         }
                     }
                     String origDim = BodycamSetCameraPacket.ORIGINAL_DIM.get(p.getUUID());
-                    dimensions.put(p.getUUID(), origDim != null ? origDim : p.level().dimension().location().toString());
+                    if (origDim == null && p.getPersistentData().contains("bodycam_orig_dim")) {
+                        origDim = p.getPersistentData().getString("bodycam_orig_dim");
+                    }
+                    targetDim = origDim != null ? origDim : p.level().dimension().location().toString();
                 } else {
-                    dimensions.put(p.getUUID(), p.level().dimension().location().toString());
-                    positions.put(p.getUUID(), p.blockPosition());
+                    targetDim = p.level().dimension().location().toString();
+                    targetPos = p.blockPosition();
+                }
+
+                dimensions.put(p.getUUID(), targetDim);
+
+                boolean sameDim = senderDim.equals(targetDim);
+                double distSq = sender.blockPosition().distSqr(targetPos);
+                boolean isJammed = (mode == 1) || (mode == 2 && (!sameDim || distSq > maxDistSq));
+
+                boolean inReach;
+                if (reachLevel >= 2) {
+                    inReach = true;
+                } else if (reachLevel >= 1) {
+                    inReach = sameDim;
+                } else {
+                    inReach = sameDim && (distSq <= maxDistSq);
+                }
+
+                if (!isJammed && inReach) {
+                    positions.put(p.getUUID(), targetPos);
                 }
             }
 
@@ -154,7 +200,7 @@ public class SyncBodycamRequestC2SPacket {
 
             PacketHandler.INSTANCE.send(
                     PacketDistributor.PLAYER.with(() -> sender),
-                    new SyncBodycamStatesS2CPacket(jammers, targets, dimensions, positions, anonymizers, hidden, watchPoints, reachLevel, msg.isOnHologram)
+                    new SyncBodycamStatesS2CPacket(jammers, targets, dimensions, positions, anonymizers, hidden, watchPoints, reachLevel, isOnHologram)
             );
         });
         ctx.get().setPacketHandled(true);

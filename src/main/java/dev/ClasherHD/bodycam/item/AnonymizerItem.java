@@ -38,6 +38,10 @@ public class AnonymizerItem extends Item {
                 player.sendSystemMessage(Component.translatable("message.bodycam.op_only").withStyle(ChatFormatting.RED));
                 return InteractionResultHolder.fail(stack);
             }
+            if (dev.ClasherHD.bodycam.config.ModServerConfig.isDimensionBlacklisted(level)) {
+                player.sendSystemMessage(Component.translatable("message.bodycam.dimension_blacklisted").withStyle(ChatFormatting.RED));
+                return InteractionResultHolder.fail(stack);
+            }
             if (!dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_ANONYMIZER.get()) {
                 player.sendSystemMessage(Component.translatable("message.bodycam.anonymizer_disabled").withStyle(ChatFormatting.RED));
                 return InteractionResultHolder.fail(stack);
@@ -84,6 +88,11 @@ public class AnonymizerItem extends Item {
             }
         }
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
+    }
+
+    @Override
+    public int getMaxDamage(ItemStack stack) {
+        return ItemDurabilityHelper.getAnonymizerMaxDurability();
     }
 
     @Override
@@ -159,7 +168,8 @@ public class AnonymizerItem extends Item {
                 }
 
                 long gameTime = level.getGameTime();
-                if (!player.isCreative() && gameTime % 20 == 0
+                int interval = Math.max(1, dev.ClasherHD.bodycam.config.ModServerConfig.ANONYMIZER_INTERVAL_TICKS.get());
+                if (!player.isCreative() && gameTime % interval == 0
                         && entity.getPersistentData().getLong("bodycam_anonymizer_last_durability_tick") != gameTime) {
                     entity.getPersistentData().putLong("bodycam_anonymizer_last_durability_tick", gameTime);
                     ItemDurabilityHelper.damagePerTime(stack, player, 1);

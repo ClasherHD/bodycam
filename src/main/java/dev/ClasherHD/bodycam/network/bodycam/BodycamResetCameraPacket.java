@@ -40,20 +40,7 @@ public class BodycamResetCameraPacket {
                     }
                 }
 
-                sender.getPersistentData().putBoolean("bodycam_active", false);
-                sender.getPersistentData().remove("bodycam_watching_watchpoint");
-                sender.getPersistentData().remove("bodycam_target_uuid");
-                sender.getPersistentData().remove("bodycam_disconnect_ticks");
-                sender.getPersistentData().remove("bodycam_reach_level");
-                dev.ClasherHD.bodycam.enchantment.NightspyEffectHandler.clear(sender);
-                sender.getPersistentData().remove("bodycam_original_dimension");
-                dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_GAMEMODE.remove(sender.getUUID());
-                dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_DIM.remove(sender.getUUID());
-                dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_POS.remove(sender.getUUID());
-                dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_ROT.remove(sender.getUUID());
-                dev.ClasherHD.bodycam.entity.BodycamDummyEntity.DUMMY_POS.remove(sender.getUUID());
-                dev.ClasherHD.bodycam.entity.BodycamDummyEntity.DUMMY_FALL.remove(sender.getUUID());
-                dev.ClasherHD.bodycam.entity.BodycamDummyEntity.DUMMY_MOTION.remove(sender.getUUID());
+                cleanupPlayerNbtAndMaps(sender);
                 return;
             }
 
@@ -170,25 +157,45 @@ public class BodycamResetCameraPacket {
                 }
             }
 
-            sender.getPersistentData().putBoolean("bodycam_active", false);
-            sender.getPersistentData().remove("bodycam_watching_watchpoint");
-            sender.getPersistentData().remove("bodycam_target_uuid");
-            sender.getPersistentData().remove("bodycam_disconnect_ticks");
-            sender.getPersistentData().remove("bodycam_reach_level");
-            dev.ClasherHD.bodycam.enchantment.NightspyEffectHandler.clear(sender);
-            sender.getPersistentData().remove("bodycam_original_dimension");
-
-            dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_GAMEMODE.remove(sender.getUUID());
-
-            dev.ClasherHD.bodycam.entity.BodycamDummyEntity.DUMMY_POS.remove(sender.getUUID());
-            dev.ClasherHD.bodycam.entity.BodycamDummyEntity.DUMMY_FALL.remove(sender.getUUID());
-            dev.ClasherHD.bodycam.entity.BodycamDummyEntity.DUMMY_MOTION.remove(sender.getUUID());
+            cleanupPlayerNbtAndMaps(sender);
 
             dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
                     net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> sender),
                     new dev.ClasherHD.bodycam.network.bodycam.BodycamForceClosePacket()
             );
         }
+    }
+
+    public static void cleanupPlayerNbtAndMaps(ServerPlayer player) {
+        if (player == null) {
+            return;
+        }
+        player.getPersistentData().remove("bodycam_active");
+        player.getPersistentData().remove("bodycam_watching_watchpoint");
+        player.getPersistentData().remove("bodycam_target_uuid");
+        player.getPersistentData().remove("bodycam_disconnect_ticks");
+        player.getPersistentData().remove("bodycam_reach_level");
+        player.getPersistentData().remove("bodycam_dummy_uuid");
+        player.getPersistentData().remove("bodycam_original_gamemode");
+        player.getPersistentData().remove("bodycam_orig_dim");
+        player.getPersistentData().remove("bodycam_orig_x");
+        player.getPersistentData().remove("bodycam_orig_y");
+        player.getPersistentData().remove("bodycam_orig_z");
+        player.getPersistentData().remove("bodycam_orig_yrot");
+        player.getPersistentData().remove("bodycam_orig_xrot");
+        player.getPersistentData().remove("bodycam_original_dimension");
+        player.getPersistentData().remove("bodycam_on_hologram");
+        dev.ClasherHD.bodycam.enchantment.NightspyEffectHandler.clear(player);
+
+        java.util.UUID uuid = player.getUUID();
+        dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_GAMEMODE.remove(uuid);
+        dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_DIM.remove(uuid);
+        dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_POS.remove(uuid);
+        dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_ROT.remove(uuid);
+        dev.ClasherHD.bodycam.entity.BodycamDummyEntity.DUMMY_POS.remove(uuid);
+        dev.ClasherHD.bodycam.entity.BodycamDummyEntity.DUMMY_FALL.remove(uuid);
+        dev.ClasherHD.bodycam.entity.BodycamDummyEntity.DUMMY_MOTION.remove(uuid);
+        dev.ClasherHD.bodycam.event.ServerEvents.POSITION_LOCKS.remove(uuid);
     }
 
     public static void handle(BodycamResetCameraPacket msg, Supplier<NetworkEvent.Context> ctx) {

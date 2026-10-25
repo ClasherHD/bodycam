@@ -37,6 +37,10 @@ public class JammerItem extends Item {
                 player.sendSystemMessage(Component.translatable("message.bodycam.op_only").withStyle(ChatFormatting.RED));
                 return InteractionResultHolder.fail(stackInHand);
             }
+            if (dev.ClasherHD.bodycam.config.ModServerConfig.isDimensionBlacklisted(level)) {
+                player.sendSystemMessage(Component.translatable("message.bodycam.dimension_blacklisted").withStyle(ChatFormatting.RED));
+                return InteractionResultHolder.fail(stackInHand);
+            }
             if (!dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_JAMMER.get()) {
                 player.sendSystemMessage(Component.translatable("message.bodycam.jammer_disabled").withStyle(ChatFormatting.RED));
                 return InteractionResultHolder.fail(stackInHand);
@@ -133,7 +137,9 @@ public class JammerItem extends Item {
                 }
 
                 if (!player.isCreative() && playerActiveMode > 0) {
-                    int interval = playerActiveMode == 2 ? 40 : 20;
+                    int interval = playerActiveMode == 2
+                            ? Math.max(1, dev.ClasherHD.bodycam.config.ModServerConfig.JAMMER_LIMITED_INTERVAL_TICKS.get())
+                            : Math.max(1, dev.ClasherHD.bodycam.config.ModServerConfig.JAMMER_NORMAL_INTERVAL_TICKS.get());
                     long gameTime = level.getGameTime();
                     if (gameTime % interval == 0 && entity.getPersistentData().getLong("bodycam_jammer_last_durability_tick") != gameTime) {
                         entity.getPersistentData().putLong("bodycam_jammer_last_durability_tick", gameTime);
@@ -178,6 +184,11 @@ public class JammerItem extends Item {
             }
         }
         return false;
+    }
+
+    @Override
+    public int getMaxDamage(ItemStack stack) {
+        return ItemDurabilityHelper.getJammerMaxDurability();
     }
 
     @Override

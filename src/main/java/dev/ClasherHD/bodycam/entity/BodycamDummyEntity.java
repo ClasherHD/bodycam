@@ -51,13 +51,23 @@ public class BodycamDummyEntity extends LivingEntity {
         return true;
     }
 
+    public void markChunkForced(int chunkX, int chunkZ) {
+        this.currentLoadedChunkX = chunkX;
+        this.currentLoadedChunkZ = chunkZ;
+        this.isChunkForced = true;
+    }
+
+    public void markChunkUnforced() {
+        this.isChunkForced = false;
+    }
+
     protected void updateChunkForcing() {
         int currentChunkX = this.blockPosition().getX() >> 4;
         int currentChunkZ = this.blockPosition().getZ() >> 4;
 
         if (currentChunkX != this.currentLoadedChunkX || currentChunkZ != this.currentLoadedChunkZ) {
             if (this.isChunkForced && this.currentLoadedChunkX != Integer.MAX_VALUE && this.currentLoadedChunkZ != Integer.MAX_VALUE) {
-                net.minecraftforge.common.world.ForgeChunkManager.forceChunk((net.minecraft.server.level.ServerLevel) this.level(), "bodycam", this, this.currentLoadedChunkX, this.currentLoadedChunkZ, false, false);
+                net.minecraftforge.common.world.ForgeChunkManager.forceChunk((net.minecraft.server.level.ServerLevel) this.level(), "bodycam", this, this.currentLoadedChunkX, this.currentLoadedChunkZ, false, true);
             }
             net.minecraftforge.common.world.ForgeChunkManager.forceChunk((net.minecraft.server.level.ServerLevel) this.level(), "bodycam", this, currentChunkX, currentChunkZ, true, true);
             this.currentLoadedChunkX = currentChunkX;
@@ -70,7 +80,7 @@ public class BodycamDummyEntity extends LivingEntity {
     public void remove(net.minecraft.world.entity.Entity.RemovalReason reason) {
         if (!this.level().isClientSide()) {
             if (this.isChunkForced && this.level() instanceof net.minecraft.server.level.ServerLevel) {
-                net.minecraftforge.common.world.ForgeChunkManager.forceChunk((net.minecraft.server.level.ServerLevel) this.level(), "bodycam", this, this.currentLoadedChunkX, this.currentLoadedChunkZ, false, false);
+                net.minecraftforge.common.world.ForgeChunkManager.forceChunk((net.minecraft.server.level.ServerLevel) this.level(), "bodycam", this, this.currentLoadedChunkX, this.currentLoadedChunkZ, false, true);
                 this.isChunkForced = false;
             }
             java.util.List<net.minecraft.world.entity.Mob> mobs = this.level().getEntitiesOfClass(
@@ -260,6 +270,14 @@ public class BodycamDummyEntity extends LivingEntity {
 
             this.setHealth(owner.getHealth());
             this.setAbsorptionAmount(owner.getAbsorptionAmount());
+
+            for (EquipmentSlot slot : EquipmentSlot.values()) {
+                ItemStack ownerItem = owner.getItemBySlot(slot);
+                ItemStack dummyItem = this.getItemBySlot(slot);
+                if (!ItemStack.matches(ownerItem, dummyItem)) {
+                    this.setItemSlot(slot, ownerItem.copy());
+                }
+            }
 
             java.util.List<net.minecraft.world.entity.Mob> mobs = this.level().getEntitiesOfClass(
                     net.minecraft.world.entity.Mob.class,

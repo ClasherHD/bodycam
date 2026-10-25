@@ -103,12 +103,7 @@ public class ClientConfigScreen extends Screen {
     }
 
     private int getClosestPresetIndex(String hex) {
-        int targetColor;
-        try {
-            targetColor = Integer.parseInt(hex, 16);
-        } catch (NumberFormatException e) {
-            return 0;
-        }
+        int targetColor = dev.ClasherHD.bodycam.config.ModClientConfig.parseHexColor(hex, 0xFFFFFF);
         int r = (targetColor >> 16) & 0xFF;
         int g = (targetColor >> 8) & 0xFF;
         int b = targetColor & 0xFF;

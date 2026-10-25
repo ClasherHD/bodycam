@@ -82,6 +82,10 @@ public class WatchPointBlockEntity extends BlockEntity {
             player.sendSystemMessage(Component.translatable("message.bodycam.op_only").withStyle(ChatFormatting.RED));
             return;
         }
+        if (ModServerConfig.isDimensionBlacklisted(this.level)) {
+            player.sendSystemMessage(Component.translatable("message.bodycam.dimension_blacklisted").withStyle(ChatFormatting.RED));
+            return;
+        }
         if (!ModServerConfig.ENABLE_WATCH_POINT.get()) {
             player.sendSystemMessage(Component.translatable("message.bodycam.watch_point_disabled").withStyle(ChatFormatting.RED));
             return;
@@ -108,6 +112,10 @@ public class WatchPointBlockEntity extends BlockEntity {
 
         WatchPointDummyEntity existing = findActiveDummy(serverLevel);
         if (existing != null) {
+            int cx = Mth.floor(existing.getX()) >> 4;
+            int cz = Mth.floor(existing.getZ()) >> 4;
+            ForgeChunkManager.forceChunk(serverLevel, "bodycam", existing, cx, cz, false, true);
+            existing.markChunkUnforced();
             existing.discard();
             this.activeDummyUUID = null;
             setChanged();
@@ -165,6 +173,7 @@ public class WatchPointBlockEntity extends BlockEntity {
         int chunkX = Mth.floor(dummy.getX()) >> 4;
         int chunkZ = Mth.floor(dummy.getZ()) >> 4;
         ForgeChunkManager.forceChunk(serverLevel, "bodycam", dummy, chunkX, chunkZ, true, true);
+        dummy.markChunkForced(chunkX, chunkZ);
 
         this.activeDummyUUID = dummy.getUUID();
         setChanged();
@@ -197,6 +206,10 @@ public class WatchPointBlockEntity extends BlockEntity {
         if (level instanceof ServerLevel serverLevel) {
             WatchPointDummyEntity existing = findActiveDummy(serverLevel);
             if (existing != null) {
+                int cx = Mth.floor(existing.getX()) >> 4;
+                int cz = Mth.floor(existing.getZ()) >> 4;
+                ForgeChunkManager.forceChunk(serverLevel, "bodycam", existing, cx, cz, false, true);
+                existing.markChunkUnforced();
                 existing.discard();
             }
             this.activeDummyUUID = null;

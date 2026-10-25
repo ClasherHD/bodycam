@@ -7,6 +7,7 @@ import dev.ClasherHD.bodycam.registry.ModEnchantments;
 import dev.ClasherHD.bodycam.registry.ModEntityTypes;
 import dev.ClasherHD.bodycam.registry.ModItems;
 import dev.ClasherHD.bodycam.registry.ModMenuTypes;
+import dev.ClasherHD.bodycam.registry.ModRecipes;
 import dev.ClasherHD.bodycam.registry.ModSounds;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
@@ -34,5 +35,7 @@ public class bodycam {
         ModEnchantments.ENCHANTMENTS.register(modEventBus);
         ModEntityTypes.ENTITY_TYPES.register(modEventBus);
         ModSounds.SOUND_EVENTS.register(modEventBus);
+        ModRecipes.RECIPE_TYPES.register(modEventBus);
+        ModRecipes.SERIALIZERS.register(modEventBus);
     }
 }

@@ -1,5 +1,6 @@
 package dev.ClasherHD.bodycam.client.gui;
 
+import dev.ClasherHD.bodycam.config.ModClientConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.ObjectSelectionList;
@@ -54,7 +55,7 @@ public class DimensionLocatorScreen extends Screen {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(graphics);
-        drawNineSlice(graphics, WINDOW_TEXTURE, this.guiX, this.guiY, this.guiWidth, this.guiHeight, 64, 64, 512, 512, 3840, 2160);
+        drawNineSlice(graphics, WINDOW_TEXTURE, this.guiX, this.guiY, this.guiWidth, this.guiHeight, 32, 32, 32, 32, 256, 256);
         
         if (this.listWidget != null) {
             this.listWidget.render(graphics, mouseX, mouseY, partialTick);
@@ -126,7 +127,7 @@ public class DimensionLocatorScreen extends Screen {
             graphics.drawString(DimensionLocatorScreen.this.font, this.displayName, left + 40, top + 16, 0xFFFFFFFF);
             if (dev.ClasherHD.bodycam.enchantment.EnchantmentLevels.SCRAMBLED_DIMENSION.equals(this.dimensionPath)) {
                 Component scrambled = Component.literal("0".repeat(10)).withStyle(net.minecraft.ChatFormatting.OBFUSCATED);
-                graphics.drawString(DimensionLocatorScreen.this.font, scrambled, left + width - 10 - DimensionLocatorScreen.this.font.width(scrambled), top + 16, 0xFF000000 | Integer.parseInt(dev.ClasherHD.bodycam.config.ModClientConfig.COLOR_DIMENSION.get(), 16));
+                graphics.drawString(DimensionLocatorScreen.this.font, scrambled, left + width - 10 - DimensionLocatorScreen.this.font.width(scrambled), top + 16, 0xFF000000 | ModClientConfig.parseHexColor(ModClientConfig.COLOR_DIMENSION.get(), 0x55FF55));
                 return;
             }
             String translationKey = "dimension." + this.dimensionPath.replace(":", ".");
@@ -148,7 +149,7 @@ public class DimensionLocatorScreen extends Screen {
                 dimText = formatted.toString().trim();
             }
 
-            graphics.drawString(DimensionLocatorScreen.this.font, dimText, left + width - 10 - DimensionLocatorScreen.this.font.width(dimText), top + 16, 0xFF000000 | Integer.parseInt(dev.ClasherHD.bodycam.config.ModClientConfig.COLOR_DIMENSION.get(), 16));
+            graphics.drawString(DimensionLocatorScreen.this.font, dimText, left + width - 10 - DimensionLocatorScreen.this.font.width(dimText), top + 16, 0xFF000000 | ModClientConfig.parseHexColor(ModClientConfig.COLOR_DIMENSION.get(), 0x55FF55));
         }
 
         @Override

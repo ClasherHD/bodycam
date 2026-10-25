@@ -1,5 +1,6 @@
 package dev.ClasherHD.bodycam.item;
 
+import dev.ClasherHD.bodycam.config.ModServerConfig;
 import dev.ClasherHD.bodycam.enchantment.BodycamAnonymityEnchantment;
 import dev.ClasherHD.bodycam.enchantment.BodycamNightspyEnchantment;
 import dev.ClasherHD.bodycam.enchantment.BodycamReachEnchantment;
@@ -25,6 +26,26 @@ public final class ItemDurabilityHelper {
     public static final int JAMMER_DURABILITY = 336;
 
     private ItemDurabilityHelper() {
+    }
+
+    public static int getSpyglassMaxDurability() {
+        return ModServerConfig.SPEC.isLoaded() ? ModServerConfig.SPYGLASS_DURABILITY.get() : SPYGLASS_DURABILITY;
+    }
+
+    public static int getDimensionLocatorMaxDurability() {
+        return ModServerConfig.SPEC.isLoaded() ? ModServerConfig.DIMENSION_LOCATOR_DURABILITY.get() : DIMENSION_LOCATOR_DURABILITY;
+    }
+
+    public static int getPlayerLocatorMaxDurability() {
+        return ModServerConfig.SPEC.isLoaded() ? ModServerConfig.PLAYER_LOCATOR_DURABILITY.get() : PLAYER_LOCATOR_DURABILITY;
+    }
+
+    public static int getAnonymizerMaxDurability() {
+        return ModServerConfig.SPEC.isLoaded() ? ModServerConfig.ANONYMIZER_DURABILITY.get() : ANONYMIZER_DURABILITY;
+    }
+
+    public static int getJammerMaxDurability() {
+        return ModServerConfig.SPEC.isLoaded() ? ModServerConfig.JAMMER_DURABILITY.get() : JAMMER_DURABILITY;
     }
 
     public static boolean isUnbreakable(ItemStack stack) {

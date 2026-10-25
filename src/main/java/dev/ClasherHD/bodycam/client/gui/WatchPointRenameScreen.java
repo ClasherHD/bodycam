@@ -70,7 +70,7 @@ public class WatchPointRenameScreen extends Screen {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(graphics);
-        drawNineSlice(graphics, WINDOW_TEXTURE, this.guiX, this.guiY, this.guiWidth, this.guiHeight, 64, 64, 512, 512, 3840, 2160);
+        drawNineSlice(graphics, WINDOW_TEXTURE, this.guiX, this.guiY, this.guiWidth, this.guiHeight, 32, 32, 32, 32, 256, 256);
         graphics.drawCenteredString(this.font, this.title, this.width / 2, this.guiY + 14, 0xFFFFFFFF);
         super.render(graphics, mouseX, mouseY, partialTick);
     }

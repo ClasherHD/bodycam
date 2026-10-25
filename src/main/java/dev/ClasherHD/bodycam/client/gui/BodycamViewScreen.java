@@ -28,6 +28,9 @@ public class BodycamViewScreen extends Screen {
     private boolean hasMousePos = false;
     private double lastMouseX;
     private double lastMouseY;
+    private boolean packetSent = false;
+    private long lastLookPacketTime = 0L;
+    private boolean pendingLookPacket = false;
 
     public BodycamViewScreen(java.util.UUID targetId, String targetName, boolean isOnHologram) {
         this(targetId, targetName, isOnHologram, false);
@@ -67,7 +70,10 @@ public class BodycamViewScreen extends Screen {
         }
         BodycamViewScreen.isMonitoring = true;
         this.hasMousePos = false;
-        PacketHandler.INSTANCE.sendToServer(new dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket(this.targetId, this.isOnHologram));
+        if (!this.packetSent) {
+            PacketHandler.INSTANCE.sendToServer(new dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket(this.targetId, this.isOnHologram));
+            this.packetSent = true;
+        }
         if (mc.level != null) {
             if (this.isWatchPoint) {
                 mc.setCameraEntity(mc.player);
@@ -115,7 +121,14 @@ public class BodycamViewScreen extends Screen {
             double factor = sens * sens * sens * 8.0D;
             double invert = mc.options.invertYMouse().get() ? -1.0D : 1.0D;
             mc.player.turn(dx * factor, dy * factor * invert);
-            PacketHandler.INSTANCE.sendToServer(new WatchPointLookC2SPacket(mc.player.getYRot(), mc.player.getXRot()));
+            long now = System.currentTimeMillis();
+            if (now - this.lastLookPacketTime >= 50) {
+                PacketHandler.INSTANCE.sendToServer(new WatchPointLookC2SPacket(mc.player.getYRot(), mc.player.getXRot()));
+                this.lastLookPacketTime = now;
+                this.pendingLookPacket = false;
+            } else {
+                this.pendingLookPacket = true;
+            }
         }
     }
 
@@ -248,6 +261,13 @@ public class BodycamViewScreen extends Screen {
         }
 
         Minecraft mc = Minecraft.getInstance();
+        if (this.isWatchPoint && BodycamViewScreen.isMonitoring && this.pendingLookPacket) {
+            if (mc != null && mc.player != null) {
+                PacketHandler.INSTANCE.sendToServer(new WatchPointLookC2SPacket(mc.player.getYRot(), mc.player.getXRot()));
+                this.lastLookPacketTime = System.currentTimeMillis();
+                this.pendingLookPacket = false;
+            }
+        }
         if (mc != null) {
             if (mc.options.renderDebug) {
                 mc.options.renderDebug = false;

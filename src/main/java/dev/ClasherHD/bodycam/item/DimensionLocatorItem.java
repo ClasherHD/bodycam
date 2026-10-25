@@ -35,6 +35,10 @@ public class DimensionLocatorItem extends Item {
                 player.sendSystemMessage(Component.translatable("message.bodycam.op_only").withStyle(ChatFormatting.RED));
                 return InteractionResultHolder.fail(stack);
             }
+            if (dev.ClasherHD.bodycam.config.ModServerConfig.isDimensionBlacklisted(level)) {
+                player.sendSystemMessage(Component.translatable("message.bodycam.dimension_blacklisted").withStyle(ChatFormatting.RED));
+                return InteractionResultHolder.fail(stack);
+            }
             if (!dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_DIMENSION_LOCATOR.get()) {
                 player.sendSystemMessage(Component.translatable("message.bodycam.locator_disabled").withStyle(ChatFormatting.RED));
                 return InteractionResultHolder.fail(stack);
@@ -44,8 +48,13 @@ public class DimensionLocatorItem extends Item {
             Map<UUID, String> dims = new HashMap<>();
             for (ServerPlayer onlinePlayer : sPlayer.server.getPlayerList().getPlayers()) {
                 if (!onlinePlayer.getUUID().equals(player.getUUID()) && !EnchantmentLevels.isHiddenFromSelection(onlinePlayer)) {
-                    if (onlinePlayer.getPersistentData().contains("bodycam_target_uuid") && onlinePlayer.getPersistentData().contains("bodycam_original_dimension")) {
-                        dims.put(onlinePlayer.getUUID(), onlinePlayer.getPersistentData().getString("bodycam_original_dimension"));
+                    String origDim = onlinePlayer.getPersistentData().contains("bodycam_orig_dim")
+                            ? onlinePlayer.getPersistentData().getString("bodycam_orig_dim")
+                            : (onlinePlayer.getPersistentData().contains("bodycam_original_dimension")
+                                ? onlinePlayer.getPersistentData().getString("bodycam_original_dimension")
+                                : null);
+                    if (onlinePlayer.getPersistentData().contains("bodycam_target_uuid") && origDim != null) {
+                        dims.put(onlinePlayer.getUUID(), origDim);
                     } else {
                         dims.put(onlinePlayer.getUUID(), onlinePlayer.level().dimension().location().toString());
                     }
@@ -65,6 +74,11 @@ public class DimensionLocatorItem extends Item {
     public void onCraftedBy(ItemStack stack, Level level, Player player) {
         super.onCraftedBy(stack, level, player);
         ItemDurabilityHelper.setEmpty(stack);
+    }
+
+    @Override
+    public int getMaxDamage(ItemStack stack) {
+        return ItemDurabilityHelper.getDimensionLocatorMaxDurability();
     }
 
     @Override

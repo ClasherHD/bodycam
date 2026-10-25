@@ -1,6 +1,8 @@
 package dev.ClasherHD.bodycam.event;
 
 import dev.ClasherHD.bodycam.bodycam;
+import dev.ClasherHD.bodycam.config.ModClientConfig;
+import dev.ClasherHD.bodycam.config.ModServerConfig;
 import dev.ClasherHD.bodycam.entity.BodycamDummyEntity;
 import dev.ClasherHD.bodycam.entity.WatchPointDummyEntity;
 import dev.ClasherHD.bodycam.network.PacketHandler;
@@ -8,6 +10,8 @@ import dev.ClasherHD.bodycam.registry.ModEntityTypes;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.event.config.ModConfigEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 
 @Mod.EventBusSubscriber(modid = bodycam.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
@@ -49,5 +53,18 @@ public class ModEvents {
         event.put(ModEntityTypes.COMPASS_DUMMY.get(), BodycamDummyEntity.createAttributes().build());
         event.put(ModEntityTypes.HOLOGRAM_DUMMY.get(), BodycamDummyEntity.createAttributes().build());
         event.put(ModEntityTypes.WATCH_POINT_DUMMY.get(), BodycamDummyEntity.createAttributes().build());
+    }
+
+    @SubscribeEvent
+    public static void onConfigLoad(final ModConfigEvent event) {
+        ModConfig config = event.getConfig();
+        if (!bodycam.MODID.equals(config.getModId())) {
+            return;
+        }
+        if (config.getType() == ModConfig.Type.SERVER) {
+            ModServerConfig.setActiveModConfig(config);
+        } else if (config.getType() == ModConfig.Type.CLIENT) {
+            ModClientConfig.setActiveModConfig(config);
+        }
     }
 }

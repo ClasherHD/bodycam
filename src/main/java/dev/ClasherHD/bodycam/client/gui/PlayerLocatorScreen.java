@@ -79,7 +79,7 @@ public class PlayerLocatorScreen extends Screen {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(graphics);
-        drawNineSlice(graphics, WINDOW_TEXTURE, this.guiX, this.guiY, this.guiWidth, this.guiHeight, 64, 64, 512, 512, 3840, 2160);
+        drawNineSlice(graphics, WINDOW_TEXTURE, this.guiX, this.guiY, this.guiWidth, this.guiHeight, 32, 32, 32, 32, 256, 256);
 
         if (this.listWidget != null) {
             this.listWidget.render(graphics, mouseX, mouseY, partialTick);
@@ -166,11 +166,12 @@ public class PlayerLocatorScreen extends Screen {
             BlockPos myPos = Minecraft.getInstance().player != null ? Minecraft.getInstance().player.blockPosition() : BlockPos.ZERO;
 
             boolean sameDim = myDim.equals(targetDim);
-            double distSq = (targetPos != null && myPos != null) ? myPos.distSqr(targetPos) : 0;
+            boolean hasTargetPos = targetPos != null && myPos != null;
+            double distSq = hasTargetPos ? myPos.distSqr(targetPos) : Double.MAX_VALUE;
             double maxDist = dev.ClasherHD.bodycam.config.ModServerConfig.MAX_MONITOR_DISTANCE.get();
             double maxDistSq = maxDist * maxDist;
 
-            boolean isJammed = (jammerMode == 1) || (jammerMode == 2 && (!sameDim || distSq > maxDistSq));
+            boolean isJammed = (jammerMode == 1) || (jammerMode == 2 && (!sameDim || !hasTargetPos || distSq > maxDistSq));
 
             int nameColor;
             int highlightColor;
@@ -178,7 +179,7 @@ public class PlayerLocatorScreen extends Screen {
                 nameColor = 0xFFFF5555; // Red
                 highlightColor = 0x2AFF5555;
             } else if (sameDim) {
-                if (distSq <= maxDistSq || PlayerLocatorScreen.this.reachLevel >= 1) {
+                if ((hasTargetPos && distSq <= maxDistSq) || PlayerLocatorScreen.this.reachLevel >= 1) {
                     nameColor = 0xFF55FF55; // Green
                     highlightColor = 0x2A55FF55;
                 } else {

@@ -1,0 +1,22 @@
+{
+  "type": "bodycam:ancient_table_crafting",
+  "ingredients": [
+    {
+      "item": "minecraft:green_dye",
+      "count": 1
+    },
+    {
+      "item": "minecraft:spyglass",
+      "count": 1
+    },
+    {
+      "item": "minecraft:quartz",
+      "count": 1
+    }
+  ],
+  "result": {
+    "item": "bodycam:bodycam_monitor",
+    "count": 1,
+    "start_empty": true
+  }
+}

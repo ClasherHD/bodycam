@@ -74,6 +74,10 @@ public class WatchPointDummyEntity extends BodycamDummyEntity {
         return this.entityData.get(WATCH_POINT_NAME);
     }
 
+    public String getOwnerName() {
+        return this.entityData.get(OWNER_NAME);
+    }
+
     public String getSelectionDisplayName() {
         String custom = getWatchPointName();
         if (custom != null && !custom.isEmpty()) {
@@ -94,10 +98,25 @@ public class WatchPointDummyEntity extends BodycamDummyEntity {
         return this.entityData.get(WATCH_POINT_POS).orElse(null);
     }
 
+    public static List<WatchPointDummyEntity> getAllActive(MinecraftServer server) {
+        ACTIVE_WATCH_POINTS.removeIf(e -> e == null || e.isRemoved() || !e.isAlive());
+        if (server != null) {
+            for (ServerLevel lvl : server.getAllLevels()) {
+                for (Entity e : lvl.getAllEntities()) {
+                    if (e instanceof WatchPointDummyEntity wp && wp.isAlive() && !wp.isRemoved()) {
+                        ACTIVE_WATCH_POINTS.add(wp);
+                    }
+                }
+            }
+        }
+        List<WatchPointDummyEntity> list = new ArrayList<>(ACTIVE_WATCH_POINTS);
+        list.sort(java.util.Comparator.comparing(e -> e.getUUID().toString()));
+        return list;
+    }
+
     public static List<WatchPointDummyEntity> getActiveForOwner(MinecraftServer server, UUID ownerId) {
         List<WatchPointDummyEntity> list = new ArrayList<>();
-        ACTIVE_WATCH_POINTS.removeIf(e -> e == null || e.isRemoved() || !e.isAlive());
-        for (WatchPointDummyEntity dummy : ACTIVE_WATCH_POINTS) {
+        for (WatchPointDummyEntity dummy : getAllActive(server)) {
             if (ownerId.equals(dummy.getOwnerUUID())) {
                 list.add(dummy);
             }
@@ -129,6 +148,12 @@ public class WatchPointDummyEntity extends BodycamDummyEntity {
         return null;
     }
 
+    private boolean kickedObservingOwner = false;
+
+    @Override
+    protected void updateChunkForcing() {
+    }
+
     @Override
     public void tick() {
         super.tick();
@@ -138,7 +163,6 @@ public class WatchPointDummyEntity extends BodycamDummyEntity {
                 return;
             }
             ACTIVE_WATCH_POINTS.add(this);
-            this.updateChunkForcing();
 
             BlockPos wpPos = getWatchPointPos();
             if (wpPos == null) {
@@ -164,9 +188,10 @@ public class WatchPointDummyEntity extends BodycamDummyEntity {
     }
 
     private void kickObservingOwner(boolean wasKilled) {
-        if (this.level().isClientSide() || this.getOwnerUUID() == null) {
+        if (this.kickedObservingOwner || this.level().isClientSide() || this.getOwnerUUID() == null) {
             return;
         }
+        this.kickedObservingOwner = true;
         MinecraftServer server = this.getServer();
         if (server == null) {
             return;

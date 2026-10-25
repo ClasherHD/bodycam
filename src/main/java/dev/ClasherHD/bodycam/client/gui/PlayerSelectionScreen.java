@@ -1,6 +1,7 @@
 package dev.ClasherHD.bodycam.client.gui;
 
 import dev.ClasherHD.bodycam.client.cache.ClientBodycamCache;
+import dev.ClasherHD.bodycam.config.ModClientConfig;
 import dev.ClasherHD.bodycam.registry.ModSounds;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -138,7 +139,7 @@ public class PlayerSelectionScreen extends Screen {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(graphics);
-        drawNineSlice(graphics, WINDOW_TEXTURE, this.guiX, this.guiY, this.guiWidth, this.guiHeight, 64, 64, 512, 512, 3840, 2160);
+        drawNineSlice(graphics, WINDOW_TEXTURE, this.guiX, this.guiY, this.guiWidth, this.guiHeight, 32, 32, 32, 32, 256, 256);
 
         if (this.listWidget != null) {
             this.listWidget.render(graphics, mouseX, mouseY, partialTick);
@@ -291,15 +292,15 @@ public class PlayerSelectionScreen extends Screen {
 
             int nameColor;
             if (!hasAnonymizer && observingMe.contains(this.targetId)) {
-                nameColor = 0xFF000000 | Integer.parseInt(dev.ClasherHD.bodycam.config.ModClientConfig.COLOR_OBSERVING.get(), 16);
+                nameColor = 0xFF000000 | ModClientConfig.parseHexColor(ModClientConfig.COLOR_OBSERVING.get(), 0x5555FF);
             } else if (isBlocked) {
-                nameColor = 0xFF000000 | Integer.parseInt(dev.ClasherHD.bodycam.config.ModClientConfig.COLOR_BLOCKED.get(), 16);
+                nameColor = 0xFF000000 | ModClientConfig.parseHexColor(ModClientConfig.COLOR_BLOCKED.get(), 0xFF5555);
             } else if (PlayerSelectionScreen.this.isOtherDimensionWithReach(this.targetId)) {
-                nameColor = 0xFF000000 | Integer.parseInt(dev.ClasherHD.bodycam.config.ModClientConfig.COLOR_OTHER_DIMENSION.get(), 16);
+                nameColor = 0xFF000000 | ModClientConfig.parseHexColor(ModClientConfig.COLOR_OTHER_DIMENSION.get(), 0xFFAA00);
             } else if (PlayerSelectionScreen.this.isBeyondReach(this.targetId)) {
-                nameColor = 0xFF000000 | Integer.parseInt(dev.ClasherHD.bodycam.config.ModClientConfig.COLOR_OUT_OF_RANGE.get(), 16);
+                nameColor = 0xFF000000 | ModClientConfig.parseHexColor(ModClientConfig.COLOR_OUT_OF_RANGE.get(), 0xFFFF55);
             } else {
-                nameColor = 0xFF000000 | Integer.parseInt(dev.ClasherHD.bodycam.config.ModClientConfig.COLOR_STANDARD.get(), 16);
+                nameColor = 0xFF000000 | ModClientConfig.parseHexColor(ModClientConfig.COLOR_STANDARD.get(), 0xFFFFFF);
             }
 
             graphics.drawString(PlayerSelectionScreen.this.font, this.displayName, left + 40, top + 16, nameColor);

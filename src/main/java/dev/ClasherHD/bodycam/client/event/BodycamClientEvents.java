@@ -29,6 +29,9 @@ public class BodycamClientEvents {
         dev.ClasherHD.bodycam.client.gui.BodycamViewScreen.isMonitoring = false;
         dev.ClasherHD.bodycam.client.gui.BodycamViewScreen.targetUuid = null;
         dev.ClasherHD.bodycam.client.gui.BodycamViewScreen.lastIsWatchPoint = false;
+        dev.ClasherHD.bodycam.client.cache.ClientBodycamCache.clear();
+        dev.ClasherHD.bodycam.client.cache.ClientLocatorCache.clear();
+        dev.ClasherHD.bodycam.client.gui.PlayerSelectionScreen.observingMe.clear();
     }
 
     @SubscribeEvent

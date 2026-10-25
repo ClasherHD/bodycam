@@ -160,6 +160,10 @@ public class PodestBlock extends BaseEntityBlock {
                 player.sendSystemMessage(Component.translatable("message.bodycam.op_only").withStyle(ChatFormatting.RED));
                 return InteractionResult.FAIL;
             }
+            if (ModServerConfig.isDimensionBlacklisted(level)) {
+                player.sendSystemMessage(Component.translatable("message.bodycam.dimension_blacklisted").withStyle(ChatFormatting.RED));
+                return InteractionResult.FAIL;
+            }
             if (!ModServerConfig.ENABLE_PODEST.get()) {
                 player.sendSystemMessage(Component.translatable("message.bodycam.podest_disabled").withStyle(ChatFormatting.RED));
                 return InteractionResult.FAIL;
@@ -172,7 +176,7 @@ public class PodestBlock extends BaseEntityBlock {
                         held.shrink(1);
                     }
                     level.playSound(null, pos, ModSounds.PODEST_CHARGE.get(), SoundSource.BLOCKS, 1.0F, 0.8F + podest.getCharges() * 0.05F);
-                    player.displayClientMessage(Component.translatable("message.bodycam.podest.charged", podest.getCharges(), podest.getCharges() * 10)
+                    player.displayClientMessage(Component.translatable("message.bodycam.podest.charged", podest.getCharges(), (int) podest.getSphericalRadius())
                             .withStyle(ChatFormatting.AQUA), true);
                 } else {
                     player.displayClientMessage(Component.translatable("message.bodycam.podest.max_charged")

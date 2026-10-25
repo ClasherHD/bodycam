@@ -1,0 +1,22 @@
+{
+  "type": "bodycam:ancient_table_crafting",
+  "ingredients": [
+    {
+      "item": "minecraft:quartz",
+      "count": 1
+    },
+    {
+      "item": "minecraft:compass",
+      "count": 1
+    },
+    {
+      "item": "minecraft:quartz",
+      "count": 1
+    }
+  ],
+  "result": {
+    "item": "bodycam:player_locator_compass",
+    "count": 1,
+    "start_empty": true
+  }
+}

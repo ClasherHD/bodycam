@@ -36,12 +36,31 @@ public class PlayerLocatorSelectC2SPacket {
         return new PlayerLocatorSelectC2SPacket(uuid, deselect);
     }
 
+    private static final java.util.Map<UUID, Long> LAST_SELECT_TICK = new java.util.concurrent.ConcurrentHashMap<>();
+
+    public static void clearCooldowns() {
+        LAST_SELECT_TICK.clear();
+    }
+
+    public static void clearCooldown(UUID playerId) {
+        if (playerId != null) {
+            LAST_SELECT_TICK.remove(playerId);
+        }
+    }
+
     public static void handle(PlayerLocatorSelectC2SPacket msg, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             ServerPlayer sender = ctx.get().getSender();
             if (sender == null) {
                 return;
             }
+
+            long currentTick = sender.level().getGameTime();
+            Long lastTick = LAST_SELECT_TICK.get(sender.getUUID());
+            if (lastTick != null && currentTick - lastTick < 20 && currentTick >= lastTick) {
+                return;
+            }
+            LAST_SELECT_TICK.put(sender.getUUID(), currentTick);
 
             ItemStack stack = sender.getItemInHand(InteractionHand.MAIN_HAND);
             if (!(stack.getItem() instanceof PlayerLocatorCompassItem)) {

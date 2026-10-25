@@ -47,7 +47,8 @@ public class BodycamSetCameraPacket {
             if (player == null) {
                 return;
             }
-            if (player.isSpectator()) {
+            boolean alreadyActive = player.getPersistentData().getBoolean("bodycam_active");
+            if (player.isSpectator() && !alreadyActive) {
                 ctx.get().setPacketHandled(true);
                 return;
             }
@@ -65,6 +66,16 @@ public class BodycamSetCameraPacket {
 
             Entity targetEntity = target != null ? target : targetWatchPoint;
             if (targetEntity == null || !(targetEntity.level() instanceof ServerLevel targetServerLevel)) {
+                dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
+                        net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
+                        new BodycamForceClosePacket());
+                return;
+            }
+
+            if (dev.ClasherHD.bodycam.config.ModServerConfig.isDimensionBlacklisted(player.level())
+                    || dev.ClasherHD.bodycam.config.ModServerConfig.isDimensionBlacklisted(targetServerLevel)) {
+                player.sendSystemMessage(net.minecraft.network.chat.Component.translatable(
+                        "message.bodycam.dimension_blacklisted").withStyle(net.minecraft.ChatFormatting.RED));
                 dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
                         net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
                         new BodycamForceClosePacket());
@@ -112,14 +123,32 @@ public class BodycamSetCameraPacket {
                         player.sendSystemMessage(net.minecraft.network.chat.Component.translatable(
                                 "message.bodycam.jammer_blocked").withStyle(net.minecraft.ChatFormatting.RED));
                         dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
-                                net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
-                                new BodycamForceClosePacket());
+                            net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
+                            new BodycamForceClosePacket());
                         return;
                     }
                 }
             }
 
-            int reachLevel = EnchantmentLevels.sessionReach(player, msg.isOnHologram);
+            boolean isOnHologram;
+            if (alreadyActive) {
+                isOnHologram = player.getPersistentData().getBoolean("bodycam_on_hologram");
+            } else {
+                isOnHologram = msg.isOnHologram;
+                if (isOnHologram) {
+                    if (!dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_HOLOGRAM_BLOCK.get()) {
+                        isOnHologram = false;
+                    } else {
+                        boolean onHologramBlock = player.level().getBlockState(player.blockPosition().below()).is(dev.ClasherHD.bodycam.registry.ModBlocks.HOLOGRAM_BLOCK.get()) ||
+                                                  player.level().getBlockState(player.blockPosition()).is(dev.ClasherHD.bodycam.registry.ModBlocks.HOLOGRAM_BLOCK.get());
+                        if (!onHologramBlock) {
+                            isOnHologram = false;
+                        }
+                    }
+                }
+            }
+
+            int reachLevel = EnchantmentLevels.sessionReach(player, isOnHologram);
 
             if (reachLevel < 2) {
                 if (player.level() != targetEntity.level() || (reachLevel < 1 && player.distanceTo(targetEntity) > (double) dev.ClasherHD.bodycam.config.ModServerConfig.MAX_MONITOR_DISTANCE.get())) {
@@ -132,7 +161,7 @@ public class BodycamSetCameraPacket {
                 }
             }
 
-            if (!msg.isOnHologram && !player.getPersistentData().getBoolean("bodycam_active")) {
+            if (!isOnHologram && !alreadyActive) {
                 ItemStack spyglassStack = EnchantmentLevels.heldBodycam(player);
                 if (spyglassStack.isEmpty() || ItemDurabilityHelper.isEmpty(spyglassStack)) {
                     dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
@@ -143,82 +172,85 @@ public class BodycamSetCameraPacket {
                 ItemDurabilityHelper.damagePerUse(spyglassStack, player, 1);
             }
 
-            if (player.getPersistentData().contains("bodycam_dummy_uuid")) {
-                UUID oldId = player.getPersistentData().getUUID("bodycam_dummy_uuid");
-                for (net.minecraft.server.level.ServerLevel lvl : player.server.getAllLevels()) {
-                    net.minecraft.world.entity.Entity e = lvl.getEntity(oldId);
-                    if (e != null) {
-                        e.discard();
+            if (!alreadyActive) {
+                if (player.getPersistentData().contains("bodycam_dummy_uuid")) {
+                    UUID oldId = player.getPersistentData().getUUID("bodycam_dummy_uuid");
+                    for (net.minecraft.server.level.ServerLevel lvl : player.server.getAllLevels()) {
+                        net.minecraft.world.entity.Entity e = lvl.getEntity(oldId);
+                        if (e != null) {
+                            e.discard();
+                        }
                     }
                 }
+
+                ORIGINAL_DIM.put(player.getUUID(), player.level().dimension().location().toString());
+                ORIGINAL_POS.put(player.getUUID(), player.position());
+                ORIGINAL_ROT.put(player.getUUID(), new net.minecraft.world.phys.Vec2(player.getXRot(), player.getYRot()));
+                ORIGINAL_GAMEMODE.put(player.getUUID(), player.gameMode.getGameModeForPlayer().getId());
+                player.getPersistentData().putInt("bodycam_original_gamemode", player.gameMode.getGameModeForPlayer().getId());
+                player.getPersistentData().putString("bodycam_orig_dim", player.level().dimension().location().toString());
+                player.getPersistentData().putDouble("bodycam_orig_x", player.getX());
+                player.getPersistentData().putDouble("bodycam_orig_y", player.getY());
+                player.getPersistentData().putDouble("bodycam_orig_z", player.getZ());
+                player.getPersistentData().putFloat("bodycam_orig_yrot", player.getYRot());
+                player.getPersistentData().putFloat("bodycam_orig_xrot", player.getXRot());
+                player.getPersistentData().putBoolean("bodycam_on_hologram", isOnHologram);
+
+                dev.ClasherHD.bodycam.entity.BodycamDummyEntity dummy;
+                if (isOnHologram) {
+                    dummy = new dev.ClasherHD.bodycam.entity.HologramDummyEntity(
+                            dev.ClasherHD.bodycam.registry.ModEntityTypes.HOLOGRAM_DUMMY.get(), player.serverLevel());
+                    dummy.setInvulnerable(true);
+                } else {
+                    dummy = new dev.ClasherHD.bodycam.entity.CompassDummyEntity(
+                            dev.ClasherHD.bodycam.registry.ModEntityTypes.COMPASS_DUMMY.get(), player.serverLevel());
+                }
+
+                dummy.setPos(player.getX(), player.getY(), player.getZ());
+                dummy.setYRot(player.getYRot());
+                dummy.setXRot(player.getXRot());
+                dummy.setYHeadRot(player.getYHeadRot());
+
+                dummy.getEntityData().set(dev.ClasherHD.bodycam.entity.BodycamDummyEntity.OWNER_UUID,
+                        java.util.Optional.of(player.getUUID()));
+                dummy.getEntityData().set(dev.ClasherHD.bodycam.entity.BodycamDummyEntity.OWNER_NAME,
+                        player.getName().getString());
+                dummy.setCustomName(net.minecraft.network.chat.Component.literal(player.getName().getString()));
+                dummy.setCustomNameVisible(true);
+
+                if (player.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR) != null
+                        && dummy.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR) != null) {
+                    dummy.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR).setBaseValue(
+                            player.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR));
+                }
+                if (player.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR_TOUGHNESS) != null
+                        && dummy.getAttribute(
+                                net.minecraft.world.entity.ai.attributes.Attributes.ARMOR_TOUGHNESS) != null) {
+                    dummy.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR_TOUGHNESS).setBaseValue(
+                            player.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR_TOUGHNESS));
+                }
+                if (player.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH) != null
+                        && dummy.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH) != null) {
+                    dummy.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(
+                            player.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH));
+                }
+
+                dummy.setHealth(player.getHealth());
+                dummy.setDeltaMovement(player.getDeltaMovement());
+                dummy.fallDistance = player.fallDistance;
+
+                for (net.minecraft.world.entity.EquipmentSlot slot : net.minecraft.world.entity.EquipmentSlot.values()) {
+                    dummy.setItemSlot(slot, player.getItemBySlot(slot).copy());
+                }
+
+                player.serverLevel().addFreshEntity(dummy);
+                int chunkX = net.minecraft.util.Mth.floor(dummy.getX()) >> 4;
+                int chunkZ = net.minecraft.util.Mth.floor(dummy.getZ()) >> 4;
+                net.minecraftforge.common.world.ForgeChunkManager.forceChunk(
+                        player.serverLevel(), "bodycam", dummy, chunkX, chunkZ, true, true);
+                dummy.markChunkForced(chunkX, chunkZ);
+                player.getPersistentData().putUUID("bodycam_dummy_uuid", dummy.getUUID());
             }
-
-            ORIGINAL_DIM.put(player.getUUID(), player.level().dimension().location().toString());
-            ORIGINAL_POS.put(player.getUUID(), player.position());
-            ORIGINAL_ROT.put(player.getUUID(), new net.minecraft.world.phys.Vec2(player.getXRot(), player.getYRot()));
-            ORIGINAL_GAMEMODE.put(player.getUUID(), player.gameMode.getGameModeForPlayer().getId());
-            player.getPersistentData().putInt("bodycam_original_gamemode", player.gameMode.getGameModeForPlayer().getId());
-            player.getPersistentData().putString("bodycam_orig_dim", player.level().dimension().location().toString());
-            player.getPersistentData().putDouble("bodycam_orig_x", player.getX());
-            player.getPersistentData().putDouble("bodycam_orig_y", player.getY());
-            player.getPersistentData().putDouble("bodycam_orig_z", player.getZ());
-            player.getPersistentData().putFloat("bodycam_orig_yrot", player.getYRot());
-            player.getPersistentData().putFloat("bodycam_orig_xrot", player.getXRot());
-
-            boolean isOnHologram = msg.isOnHologram;
-            dev.ClasherHD.bodycam.entity.BodycamDummyEntity dummy;
-            if (isOnHologram) {
-                dummy = new dev.ClasherHD.bodycam.entity.HologramDummyEntity(
-                        dev.ClasherHD.bodycam.registry.ModEntityTypes.HOLOGRAM_DUMMY.get(), player.serverLevel());
-                dummy.setInvulnerable(true);
-            } else {
-                dummy = new dev.ClasherHD.bodycam.entity.CompassDummyEntity(
-                        dev.ClasherHD.bodycam.registry.ModEntityTypes.COMPASS_DUMMY.get(), player.serverLevel());
-            }
-
-            dummy.setPos(player.getX(), player.getY(), player.getZ());
-            dummy.setYRot(player.getYRot());
-            dummy.setXRot(player.getXRot());
-            dummy.setYHeadRot(player.getYHeadRot());
-
-            dummy.getEntityData().set(dev.ClasherHD.bodycam.entity.BodycamDummyEntity.OWNER_UUID,
-                    java.util.Optional.of(player.getUUID()));
-            dummy.getEntityData().set(dev.ClasherHD.bodycam.entity.BodycamDummyEntity.OWNER_NAME,
-                    player.getName().getString());
-            dummy.setCustomName(net.minecraft.network.chat.Component.literal(player.getName().getString()));
-            dummy.setCustomNameVisible(true);
-
-            if (player.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR) != null
-                    && dummy.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR) != null) {
-                dummy.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR).setBaseValue(
-                        player.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR));
-            }
-            if (player.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR_TOUGHNESS) != null
-                    && dummy.getAttribute(
-                            net.minecraft.world.entity.ai.attributes.Attributes.ARMOR_TOUGHNESS) != null) {
-                dummy.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR_TOUGHNESS).setBaseValue(
-                        player.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR_TOUGHNESS));
-            }
-            if (player.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH) != null
-                    && dummy.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH) != null) {
-                dummy.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(
-                        player.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH));
-            }
-
-            dummy.setHealth(player.getHealth());
-            dummy.setDeltaMovement(player.getDeltaMovement());
-            dummy.fallDistance = player.fallDistance;
-
-            for (net.minecraft.world.entity.EquipmentSlot slot : net.minecraft.world.entity.EquipmentSlot.values()) {
-                dummy.setItemSlot(slot, player.getItemBySlot(slot).copy());
-            }
-
-            player.serverLevel().addFreshEntity(dummy);
-            int chunkX = net.minecraft.util.Mth.floor(dummy.getX()) >> 4;
-            int chunkZ = net.minecraft.util.Mth.floor(dummy.getZ()) >> 4;
-            net.minecraftforge.common.world.ForgeChunkManager.forceChunk(
-                    player.serverLevel(), "bodycam", dummy, chunkX, chunkZ, true, true);
-            player.getPersistentData().putUUID("bodycam_dummy_uuid", dummy.getUUID());
 
             if (player.getPersistentData().contains("bodycam_target_uuid")) {
                 UUID oldTargetId = player.getPersistentData().getUUID("bodycam_target_uuid");
@@ -236,8 +268,7 @@ public class BodycamSetCameraPacket {
             player.getPersistentData().putUUID("bodycam_target_uuid", msg.targetId);
             player.getPersistentData().putInt("bodycam_disconnect_ticks", 0);
             player.getPersistentData().putInt("bodycam_reach_level", reachLevel);
-            NightspyEffectHandler.begin(player, EnchantmentLevels.sessionNightspy(player, msg.isOnHologram));
-            player.getPersistentData().putString("bodycam_original_dimension", player.level().dimension().location().toString());
+            NightspyEffectHandler.begin(player, EnchantmentLevels.sessionNightspy(player, isOnHologram));
 
             if (target != null) {
                 final ServerPlayer syncTarget = target;

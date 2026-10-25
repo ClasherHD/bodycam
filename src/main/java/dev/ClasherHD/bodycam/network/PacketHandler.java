@@ -6,8 +6,11 @@ import dev.ClasherHD.bodycam.network.config.*;
 import dev.ClasherHD.bodycam.network.locator.*;
 import dev.ClasherHD.bodycam.network.watchpoint.*;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.network.NetworkDirection;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
+
+import java.util.Optional;
 
 public class PacketHandler {
     private static final String PROTOCOL_VERSION = "2";
@@ -27,81 +30,103 @@ public class PacketHandler {
         INSTANCE.registerMessage(id(), BodycamSetCameraPacket.class,
                 BodycamSetCameraPacket::encode,
                 BodycamSetCameraPacket::decode,
-                BodycamSetCameraPacket::handle);
+                BodycamSetCameraPacket::handle,
+                Optional.of(NetworkDirection.PLAY_TO_SERVER));
 
         INSTANCE.registerMessage(id(), BodycamResetCameraPacket.class,
                 BodycamResetCameraPacket::encode,
                 BodycamResetCameraPacket::decode,
-                BodycamResetCameraPacket::handle);
+                BodycamResetCameraPacket::handle,
+                Optional.of(NetworkDirection.PLAY_TO_SERVER));
 
         INSTANCE.registerMessage(id(), BodycamForceClosePacket.class,
                 BodycamForceClosePacket::encode,
                 BodycamForceClosePacket::decode,
-                BodycamForceClosePacket::handle);
+                BodycamForceClosePacket::handle,
+                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
 
         INSTANCE.registerMessage(id(), DimensionLocatorResponsePacket.class,
                 DimensionLocatorResponsePacket::encode,
                 DimensionLocatorResponsePacket::decode,
-                DimensionLocatorResponsePacket::handle);
+                DimensionLocatorResponsePacket::handle,
+                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
 
         INSTANCE.registerMessage(id(), CrossObservationSyncPacket.class,
                 CrossObservationSyncPacket::encode,
                 CrossObservationSyncPacket::decode,
-                CrossObservationSyncPacket::handle);
+                CrossObservationSyncPacket::handle,
+                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
 
         INSTANCE.registerMessage(id(), SyncBodycamRequestC2SPacket.class,
                 SyncBodycamRequestC2SPacket::encode,
                 SyncBodycamRequestC2SPacket::decode,
-                SyncBodycamRequestC2SPacket::handle);
+                SyncBodycamRequestC2SPacket::handle,
+                Optional.of(NetworkDirection.PLAY_TO_SERVER));
 
         INSTANCE.registerMessage(id(), SyncBodycamStatesS2CPacket.class,
                 SyncBodycamStatesS2CPacket::encode,
                 SyncBodycamStatesS2CPacket::decode,
-                SyncBodycamStatesS2CPacket::handle);
+                SyncBodycamStatesS2CPacket::handle,
+                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
 
         INSTANCE.registerMessage(id(), OpenServerConfigS2CPacket.class,
                 OpenServerConfigS2CPacket::encode,
                 OpenServerConfigS2CPacket::decode,
-                OpenServerConfigS2CPacket::handle);
+                OpenServerConfigS2CPacket::handle,
+                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
 
         INSTANCE.registerMessage(id(), SaveServerConfigC2SPacket.class,
                 SaveServerConfigC2SPacket::encode,
                 SaveServerConfigC2SPacket::decode,
-                SaveServerConfigC2SPacket::handle);
+                SaveServerConfigC2SPacket::handle,
+                Optional.of(NetworkDirection.PLAY_TO_SERVER));
 
         INSTANCE.registerMessage(id(), PlayerLocatorSelectC2SPacket.class,
                 PlayerLocatorSelectC2SPacket::encode,
                 PlayerLocatorSelectC2SPacket::decode,
-                PlayerLocatorSelectC2SPacket::handle);
+                PlayerLocatorSelectC2SPacket::handle,
+                Optional.of(NetworkDirection.PLAY_TO_SERVER));
 
         INSTANCE.registerMessage(id(), PlayerLocatorSyncS2CPacket.class,
                 PlayerLocatorSyncS2CPacket::encode,
                 PlayerLocatorSyncS2CPacket::decode,
-                PlayerLocatorSyncS2CPacket::handle);
+                PlayerLocatorSyncS2CPacket::handle,
+                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
 
         INSTANCE.registerMessage(id(), PlayerLocatorStructureUpdateS2CPacket.class,
                 PlayerLocatorStructureUpdateS2CPacket::encode,
                 PlayerLocatorStructureUpdateS2CPacket::decode,
-                PlayerLocatorStructureUpdateS2CPacket::handle);
+                PlayerLocatorStructureUpdateS2CPacket::handle,
+                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
 
         INSTANCE.registerMessage(id(), PlayerLocatorTargetUpdateS2CPacket.class,
                 PlayerLocatorTargetUpdateS2CPacket::encode,
                 PlayerLocatorTargetUpdateS2CPacket::decode,
-                PlayerLocatorTargetUpdateS2CPacket::handle);
+                PlayerLocatorTargetUpdateS2CPacket::handle,
+                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
 
         INSTANCE.registerMessage(id(), OpenWatchPointScreenS2CPacket.class,
                 OpenWatchPointScreenS2CPacket::encode,
                 OpenWatchPointScreenS2CPacket::decode,
-                OpenWatchPointScreenS2CPacket::handle);
+                OpenWatchPointScreenS2CPacket::handle,
+                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
 
         INSTANCE.registerMessage(id(), RenameWatchPointC2SPacket.class,
                 RenameWatchPointC2SPacket::encode,
                 RenameWatchPointC2SPacket::decode,
-                RenameWatchPointC2SPacket::handle);
+                RenameWatchPointC2SPacket::handle,
+                Optional.of(NetworkDirection.PLAY_TO_SERVER));
 
         INSTANCE.registerMessage(id(), WatchPointLookC2SPacket.class,
                 WatchPointLookC2SPacket::encode,
                 WatchPointLookC2SPacket::decode,
-                WatchPointLookC2SPacket::handle);
+                WatchPointLookC2SPacket::handle,
+                Optional.of(NetworkDirection.PLAY_TO_SERVER));
+
+        INSTANCE.registerMessage(id(), ReloadClientConfigS2CPacket.class,
+                ReloadClientConfigS2CPacket::encode,
+                ReloadClientConfigS2CPacket::decode,
+                ReloadClientConfigS2CPacket::handle,
+                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
     }
 }

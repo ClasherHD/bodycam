@@ -1,6 +1,8 @@
 package dev.ClasherHD.bodycam.config;
 
+import com.electronwill.nightconfig.core.file.FileConfig;
 import net.minecraftforge.common.ForgeConfigSpec;
+import net.minecraftforge.fml.config.ModConfig;
 
 public class ModClientConfig {
     public static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
@@ -16,6 +18,8 @@ public class ModClientConfig {
     public static final ForgeConfigSpec.ConfigValue<String> COLOR_DIMENSION;
     public static final ForgeConfigSpec.ConfigValue<String> COLOR_OUT_OF_RANGE;
     public static final ForgeConfigSpec.ConfigValue<String> COLOR_OTHER_DIMENSION;
+
+    private static ModConfig activeModConfig;
 
     static {
         BUILDER.push("UI Overlays");
@@ -34,5 +38,35 @@ public class ModClientConfig {
         BUILDER.pop();
 
         SPEC = BUILDER.build();
+    }
+
+    public static void setActiveModConfig(ModConfig config) {
+        activeModConfig = config;
+    }
+
+    public static boolean reloadFromDisk() {
+        try {
+            if (activeModConfig != null && activeModConfig.getConfigData() instanceof FileConfig fileConfig) {
+                fileConfig.load();
+                SPEC.afterReload();
+                return true;
+            }
+            SPEC.afterReload();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public static int parseHexColor(String hex, int fallback) {
+        if (hex == null || hex.isEmpty()) {
+            return fallback;
+        }
+        String clean = hex.startsWith("#") ? hex.substring(1) : hex;
+        try {
+            return (int) Long.parseLong(clean, 16);
+        } catch (NumberFormatException e) {
+            return fallback;
+        }
     }
 }

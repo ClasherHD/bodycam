@@ -37,6 +37,7 @@ import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.event.server.ServerStoppedEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
 
@@ -46,6 +47,21 @@ import java.util.concurrent.ConcurrentHashMap;
 @Mod.EventBusSubscriber(modid = bodycam.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 @SuppressWarnings("null")
 public class ServerEvents {
+
+    @SubscribeEvent
+    public static void onServerStopped(ServerStoppedEvent event) {
+        POSITION_LOCKS.clear();
+        BodycamSetCameraPacket.ORIGINAL_POS.clear();
+        BodycamSetCameraPacket.ORIGINAL_ROT.clear();
+        BodycamSetCameraPacket.ORIGINAL_DIM.clear();
+        BodycamSetCameraPacket.ORIGINAL_GAMEMODE.clear();
+        BodycamDummyEntity.DUMMY_POS.clear();
+        BodycamDummyEntity.DUMMY_FALL.clear();
+        BodycamDummyEntity.DUMMY_MOTION.clear();
+        WatchPointDummyEntity.ACTIVE_WATCH_POINTS.clear();
+        PodestBlockEntity.LOADED_PODESTS.clear();
+        dev.ClasherHD.bodycam.network.locator.PlayerLocatorSelectC2SPacket.clearCooldowns();
+    }
 
     public static final ConcurrentHashMap<UUID, LockData> POSITION_LOCKS = new ConcurrentHashMap<>();
 
@@ -86,7 +102,8 @@ public class ServerEvents {
     public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
         if (!event.getEntity().level().isClientSide()
                 && event.getEntity() instanceof ServerPlayer player) {
-            if (player.getPersistentData().contains("bodycam_target_uuid")
+            if (player.getPersistentData().getBoolean("bodycam_active")
+                    || player.getPersistentData().contains("bodycam_target_uuid")
                     || player.getPersistentData().contains("bodycam_dummy_uuid")) {
 
                 if (player.getPersistentData().contains("bodycam_orig_dim")) {
@@ -136,27 +153,8 @@ public class ServerEvents {
                     int gameModeId = player.getPersistentData().getInt("bodycam_original_gamemode");
                     player.setGameMode(GameType.byId(gameModeId));
                 }
-                player.getPersistentData().remove("bodycam_target_uuid");
-                player.getPersistentData().remove("bodycam_watching_watchpoint");
-                player.getPersistentData().remove("bodycam_dummy_uuid");
-                player.getPersistentData().remove("bodycam_disconnect_ticks");
-                player.getPersistentData().remove("bodycam_active");
-                player.getPersistentData().remove("bodycam_reach_level");
-                NightspyEffectHandler.clear(player);
-                player.getPersistentData().remove("bodycam_original_dimension");
-                player.getPersistentData().remove("bodycam_original_gamemode");
-                player.getPersistentData().remove("bodycam_orig_dim");
-                player.getPersistentData().remove("bodycam_orig_x");
-                player.getPersistentData().remove("bodycam_orig_y");
-                player.getPersistentData().remove("bodycam_orig_z");
-                player.getPersistentData().remove("bodycam_orig_yrot");
-                player.getPersistentData().remove("bodycam_orig_xrot");
                 player.setInvisible(false);
-                BodycamSetCameraPacket.ORIGINAL_POS.remove(player.getUUID());
-                BodycamSetCameraPacket.ORIGINAL_ROT.remove(player.getUUID());
-                BodycamSetCameraPacket.ORIGINAL_DIM.remove(player.getUUID());
-                BodycamSetCameraPacket.ORIGINAL_GAMEMODE.remove(player.getUUID());
-                POSITION_LOCKS.remove(player.getUUID());
+                BodycamResetCameraPacket.cleanupPlayerNbtAndMaps(player);
             }
         }
     }
@@ -165,6 +163,8 @@ public class ServerEvents {
     public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         if (!event.getEntity().level().isClientSide()
                 && event.getEntity() instanceof ServerPlayer player) {
+            dev.ClasherHD.bodycam.network.locator.PlayerLocatorSelectC2SPacket.clearCooldown(player.getUUID());
+            POSITION_LOCKS.remove(player.getUUID());
             if (player.getPersistentData().contains("bodycam_target_uuid")
                     || player.getPersistentData().contains("bodycam_dummy_uuid")) {
                 if (player.getPersistentData().contains("bodycam_dummy_uuid")) {

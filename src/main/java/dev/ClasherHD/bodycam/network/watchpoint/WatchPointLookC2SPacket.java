@@ -9,7 +9,7 @@ import net.minecraftforge.network.NetworkEvent;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-@SuppressWarnings("null")
+//@SuppressWarnings("null")
 public class WatchPointLookC2SPacket {
     public final float yRot;
     public final float xRot;

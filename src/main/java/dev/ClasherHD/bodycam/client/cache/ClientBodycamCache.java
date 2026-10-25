@@ -35,4 +35,14 @@ public class ClientBodycamCache {
         hidden.addAll(hiddenIn);
         watchPoints.putAll(watchPointsIn);
     }
+
+    public static void clear() {
+        jammers.clear();
+        targets.clear();
+        dimensions.clear();
+        positions.clear();
+        anonymizers.clear();
+        hidden.clear();
+        watchPoints.clear();
+    }
 }
