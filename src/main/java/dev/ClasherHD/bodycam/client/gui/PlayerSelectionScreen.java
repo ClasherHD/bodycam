@@ -32,6 +32,12 @@ public class PlayerSelectionScreen extends Screen {
     private int guiX;
     private int guiY;
 
+    private int colorObserving;
+    private int colorBlocked;
+    private int colorOtherDimension;
+    private int colorOutOfRange;
+    private int colorStandard;
+
     public PlayerSelectionScreen(int reachLevel, boolean isOnHologram) {
         super(Component.translatable("gui.bodycam.select_player"));
         this.reachLevel = reachLevel;
@@ -77,6 +83,12 @@ public class PlayerSelectionScreen extends Screen {
         this.guiHeight = (int) (this.height * 0.7);
         this.guiX = (this.width - this.guiWidth) / 2;
         this.guiY = (this.height - this.guiHeight) / 2;
+
+        this.colorObserving = 0xFF000000 | ModClientConfig.parseHexColor(ModClientConfig.COLOR_OBSERVING.get(), 0x5555FF);
+        this.colorBlocked = 0xFF000000 | ModClientConfig.parseHexColor(ModClientConfig.COLOR_BLOCKED.get(), 0xFF5555);
+        this.colorOtherDimension = 0xFF000000 | ModClientConfig.parseHexColor(ModClientConfig.COLOR_OTHER_DIMENSION.get(), 0xFFAA00);
+        this.colorOutOfRange = 0xFF000000 | ModClientConfig.parseHexColor(ModClientConfig.COLOR_OUT_OF_RANGE.get(), 0xFFFF55);
+        this.colorStandard = 0xFF000000 | ModClientConfig.parseHexColor(ModClientConfig.COLOR_STANDARD.get(), 0xFFFFFF);
 
         int listX = this.guiX + 20;
         int listY = this.guiY + 30;
@@ -139,7 +151,7 @@ public class PlayerSelectionScreen extends Screen {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(graphics);
-        drawNineSlice(graphics, WINDOW_TEXTURE, this.guiX, this.guiY, this.guiWidth, this.guiHeight, 32, 32, 32, 32, 256, 256);
+        GuiRenderUtils.drawNineSlice(graphics, WINDOW_TEXTURE, this.guiX, this.guiY, this.guiWidth, this.guiHeight, 32, 32, 32, 32, 256, 256);
 
         if (this.listWidget != null) {
             this.listWidget.render(graphics, mouseX, mouseY, partialTick);
@@ -148,18 +160,6 @@ public class PlayerSelectionScreen extends Screen {
         Component headerTitle = Component.translatable(this.showingWatchPoints ? "gui.bodycam.select_watch_point" : "gui.bodycam.select_player");
         graphics.drawCenteredString(this.font, headerTitle, this.width / 2, this.guiY + 10, 0xFFFFFFFF);
         super.render(graphics, mouseX, mouseY, partialTick);
-    }
-
-    private void drawNineSlice(GuiGraphics graphics, ResourceLocation texture, int x, int y, int width, int height, int rCW, int rCH, int uvCW, int uvCH, int texW, int texH) {
-        graphics.blit(texture, x, y, rCW, rCH, 0, 0, uvCW, uvCH, texW, texH);
-        graphics.blit(texture, x + width - rCW, y, rCW, rCH, texW - uvCW, 0, uvCW, uvCH, texW, texH);
-        graphics.blit(texture, x, y + height - rCH, rCW, rCH, 0, texH - uvCH, uvCW, uvCH, texW, texH);
-        graphics.blit(texture, x + width - rCW, y + height - rCH, rCW, rCH, texW - uvCW, texH - uvCH, uvCW, uvCH, texW, texH);
-        graphics.blit(texture, x + rCW, y, width - 2 * rCW, rCH, uvCW, 0, texW - 2 * uvCW, uvCH, texW, texH);
-        graphics.blit(texture, x + rCW, y + height - rCH, width - 2 * rCW, rCH, uvCW, texH - uvCH, texW - 2 * uvCW, uvCH, texW, texH);
-        graphics.blit(texture, x, y + rCH, rCW, height - 2 * rCH, 0, uvCH, uvCW, texH - 2 * uvCH, texW, texH);
-        graphics.blit(texture, x + width - rCW, y + rCH, rCW, height - 2 * rCH, texW - uvCW, uvCH, uvCW, texH - 2 * uvCH, texW, texH);
-        graphics.blit(texture, x + rCW, y + rCH, width - 2 * rCW, height - 2 * rCH, uvCW, uvCH, texW - 2 * uvCW, texH - 2 * uvCH, texW, texH);
     }
 
     @Override
@@ -292,15 +292,15 @@ public class PlayerSelectionScreen extends Screen {
 
             int nameColor;
             if (!hasAnonymizer && observingMe.contains(this.targetId)) {
-                nameColor = 0xFF000000 | ModClientConfig.parseHexColor(ModClientConfig.COLOR_OBSERVING.get(), 0x5555FF);
+                nameColor = PlayerSelectionScreen.this.colorObserving;
             } else if (isBlocked) {
-                nameColor = 0xFF000000 | ModClientConfig.parseHexColor(ModClientConfig.COLOR_BLOCKED.get(), 0xFF5555);
+                nameColor = PlayerSelectionScreen.this.colorBlocked;
             } else if (PlayerSelectionScreen.this.isOtherDimensionWithReach(this.targetId)) {
-                nameColor = 0xFF000000 | ModClientConfig.parseHexColor(ModClientConfig.COLOR_OTHER_DIMENSION.get(), 0xFFAA00);
+                nameColor = PlayerSelectionScreen.this.colorOtherDimension;
             } else if (PlayerSelectionScreen.this.isBeyondReach(this.targetId)) {
-                nameColor = 0xFF000000 | ModClientConfig.parseHexColor(ModClientConfig.COLOR_OUT_OF_RANGE.get(), 0xFFFF55);
+                nameColor = PlayerSelectionScreen.this.colorOutOfRange;
             } else {
-                nameColor = 0xFF000000 | ModClientConfig.parseHexColor(ModClientConfig.COLOR_STANDARD.get(), 0xFFFFFF);
+                nameColor = PlayerSelectionScreen.this.colorStandard;
             }
 
             graphics.drawString(PlayerSelectionScreen.this.font, this.displayName, left + 40, top + 16, nameColor);

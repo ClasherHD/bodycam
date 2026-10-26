@@ -55,7 +55,7 @@ public class DimensionLocatorScreen extends Screen {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(graphics);
-        drawNineSlice(graphics, WINDOW_TEXTURE, this.guiX, this.guiY, this.guiWidth, this.guiHeight, 32, 32, 32, 32, 256, 256);
+        GuiRenderUtils.drawNineSlice(graphics, WINDOW_TEXTURE, this.guiX, this.guiY, this.guiWidth, this.guiHeight, 32, 32, 32, 32, 256, 256);
         
         if (this.listWidget != null) {
             this.listWidget.render(graphics, mouseX, mouseY, partialTick);
@@ -63,18 +63,6 @@ public class DimensionLocatorScreen extends Screen {
 
         graphics.drawCenteredString(this.font, this.title, this.width / 2, this.guiY + 10, 0xFFFFFFFF);
         super.render(graphics, mouseX, mouseY, partialTick);
-    }
-
-    private void drawNineSlice(GuiGraphics graphics, ResourceLocation texture, int x, int y, int width, int height, int rCW, int rCH, int uvCW, int uvCH, int texW, int texH) {
-        graphics.blit(texture, x, y, rCW, rCH, 0, 0, uvCW, uvCH, texW, texH);
-        graphics.blit(texture, x + width - rCW, y, rCW, rCH, texW - uvCW, 0, uvCW, uvCH, texW, texH);
-        graphics.blit(texture, x, y + height - rCH, rCW, rCH, 0, texH - uvCH, uvCW, uvCH, texW, texH);
-        graphics.blit(texture, x + width - rCW, y + height - rCH, rCW, rCH, texW - uvCW, texH - uvCH, uvCW, uvCH, texW, texH);
-        graphics.blit(texture, x + rCW, y, width - 2 * rCW, rCH, uvCW, 0, texW - 2 * uvCW, uvCH, texW, texH);
-        graphics.blit(texture, x + rCW, y + height - rCH, width - 2 * rCW, rCH, uvCW, texH - uvCH, texW - 2 * uvCW, uvCH, texW, texH);
-        graphics.blit(texture, x, y + rCH, rCW, height - 2 * rCH, 0, uvCH, uvCW, texH - 2 * uvCH, texW, texH);
-        graphics.blit(texture, x + width - rCW, y + rCH, rCW, height - 2 * rCH, texW - uvCW, uvCH, uvCW, texH - 2 * uvCH, texW, texH);
-        graphics.blit(texture, x + rCW, y + rCH, width - 2 * rCW, height - 2 * rCH, uvCW, uvCH, texW - 2 * uvCW, texH - 2 * uvCH, texW, texH);
     }
 
     @Override
@@ -114,11 +102,13 @@ public class DimensionLocatorScreen extends Screen {
         private final String dimensionPath;
         private final String formattedDimensionText;
         private final boolean isScrambled;
+        private final int dimColor;
 
         public DimensionEntry(net.minecraft.client.multiplayer.PlayerInfo playerInfo, String displayName, String dimensionPath) {
             this.playerInfo = playerInfo;
             this.displayName = displayName;
             this.dimensionPath = dimensionPath;
+            this.dimColor = 0xFF000000 | ModClientConfig.parseHexColor(ModClientConfig.COLOR_DIMENSION.get(), 0x55FF55);
             this.isScrambled = dev.ClasherHD.bodycam.enchantment.EnchantmentLevels.SCRAMBLED_DIMENSION.equals(dimensionPath);
             if (this.isScrambled) {
                 this.formattedDimensionText = "";
@@ -150,13 +140,12 @@ public class DimensionLocatorScreen extends Screen {
             graphics.blit(skin, left, top + 4, 32, 32, 8.0F, 8.0F, 8, 8, 64, 64);
             graphics.blit(skin, left, top + 4, 32, 32, 40.0F, 8.0F, 8, 8, 64, 64);
             graphics.drawString(DimensionLocatorScreen.this.font, this.displayName, left + 40, top + 16, 0xFFFFFFFF);
-            int dimColor = 0xFF000000 | ModClientConfig.parseHexColor(ModClientConfig.COLOR_DIMENSION.get(), 0x55FF55);
             if (this.isScrambled) {
                 Component scrambled = Component.literal("0".repeat(10)).withStyle(net.minecraft.ChatFormatting.OBFUSCATED);
-                graphics.drawString(DimensionLocatorScreen.this.font, scrambled, left + width - 10 - DimensionLocatorScreen.this.font.width(scrambled), top + 16, dimColor);
+                graphics.drawString(DimensionLocatorScreen.this.font, scrambled, left + width - 10 - DimensionLocatorScreen.this.font.width(scrambled), top + 16, this.dimColor);
                 return;
             }
-            graphics.drawString(DimensionLocatorScreen.this.font, this.formattedDimensionText, left + width - 10 - DimensionLocatorScreen.this.font.width(this.formattedDimensionText), top + 16, dimColor);
+            graphics.drawString(DimensionLocatorScreen.this.font, this.formattedDimensionText, left + width - 10 - DimensionLocatorScreen.this.font.width(this.formattedDimensionText), top + 16, this.dimColor);
         }
 
         @Override

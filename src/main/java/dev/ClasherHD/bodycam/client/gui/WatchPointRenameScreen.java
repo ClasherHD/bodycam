@@ -70,23 +70,9 @@ public class WatchPointRenameScreen extends Screen {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(graphics);
-        drawNineSlice(graphics, WINDOW_TEXTURE, this.guiX, this.guiY, this.guiWidth, this.guiHeight, 32, 32, 32, 32, 256, 256);
+        GuiRenderUtils.drawNineSlice(graphics, WINDOW_TEXTURE, this.guiX, this.guiY, this.guiWidth, this.guiHeight, 32, 32, 32, 32, 256, 256);
         graphics.drawCenteredString(this.font, this.title, this.width / 2, this.guiY + 14, 0xFFFFFFFF);
         super.render(graphics, mouseX, mouseY, partialTick);
-    }
-
-    private void drawNineSlice(GuiGraphics graphics, ResourceLocation texture, int x, int y, int width, int height, int rCW, int rCH, int uvCW, int uvCH, int texW, int texH) {
-        int cW = Math.min(rCW, width / 2);
-        int cH = Math.min(rCH, height / 2);
-        graphics.blit(texture, x, y, cW, cH, 0, 0, uvCW, uvCH, texW, texH);
-        graphics.blit(texture, x + width - cW, y, cW, cH, texW - uvCW, 0, uvCW, uvCH, texW, texH);
-        graphics.blit(texture, x, y + height - cH, cW, cH, 0, texH - uvCH, uvCW, uvCH, texW, texH);
-        graphics.blit(texture, x + width - cW, y + height - cH, cW, cH, texW - uvCW, texH - uvCH, uvCW, uvCH, texW, texH);
-        graphics.blit(texture, x + cW, y, width - 2 * cW, cH, uvCW, 0, texW - 2 * uvCW, uvCH, texW, texH);
-        graphics.blit(texture, x + cW, y + height - cH, width - 2 * cW, cH, uvCW, texH - uvCH, texW - 2 * uvCW, uvCH, texW, texH);
-        graphics.blit(texture, x, y + cH, cW, height - 2 * cH, 0, uvCH, uvCW, texH - 2 * uvCH, texW, texH);
-        graphics.blit(texture, x + width - cW, y + cH, cW, height - 2 * cH, texW - uvCW, uvCH, uvCW, texH - 2 * uvCH, texW, texH);
-        graphics.blit(texture, x + cW, y + cH, width - 2 * cW, height - 2 * cH, uvCW, uvCH, texW - 2 * uvCW, texH - 2 * uvCH, texW, texH);
     }
 
     @Override
