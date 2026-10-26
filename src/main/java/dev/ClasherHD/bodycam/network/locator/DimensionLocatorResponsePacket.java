@@ -31,7 +31,7 @@ public class DimensionLocatorResponsePacket {
         Map<UUID, String> dims = new HashMap<>();
         int size = Math.max(0, Math.min(buf.readInt(), 1024));
         for (int i = 0; i < size; i++) {
-            dims.put(buf.readUUID(), buf.readUtf());
+            dims.put(buf.readUUID(), buf.readUtf(256));
         }
         return new DimensionLocatorResponsePacket(dims);
     }

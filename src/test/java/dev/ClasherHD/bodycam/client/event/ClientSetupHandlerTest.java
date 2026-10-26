@@ -1,7 +1,6 @@
 package dev.ClasherHD.bodycam.client.event;
 
 import dev.ClasherHD.bodycam.client.render.GlowingArmorTrimLayer;
-import dev.ClasherHD.bodycam.client.render.PodestBlockEntityRenderer;
 import dev.ClasherHD.bodycam.client.render.PortalChannelOverlay;
 import dev.ClasherHD.bodycam.item.ItemDurabilityHelper;
 import dev.ClasherHD.bodycam.item.PortableNetherPortalItem;
@@ -12,9 +11,6 @@ import dev.ClasherHD.bodycam.test.MinecraftTestEnvironment;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.GlobalPos;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.client.event.EntityRenderersEvent;
@@ -24,14 +20,11 @@ import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
-import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -42,6 +35,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 
+@SuppressWarnings("null")
 class ClientSetupHandlerTest {
 
     @BeforeAll
@@ -88,7 +82,6 @@ class ClientSetupHandlerTest {
         tryAdd.invoke(null, rendererWithoutArmor);
         assertThat(layersList).isEmpty();
 
-        @SuppressWarnings("unchecked")
         HumanoidArmorLayer<?, ?, ?> armorLayer = mock(HumanoidArmorLayer.class);
         layersList.add(armorLayer);
 

@@ -1,6 +1,5 @@
 package dev.ClasherHD.bodycam.client.render;
 
-import dev.ClasherHD.bodycam.item.PortableNetherPortalItem;
 import dev.ClasherHD.bodycam.registry.ModItems;
 import dev.ClasherHD.bodycam.test.MinecraftTestEnvironment;
 import net.minecraft.client.Minecraft;
@@ -25,6 +24,7 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings("null")
 class PortalChannelOverlayTest {
 
     @BeforeAll

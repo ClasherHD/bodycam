@@ -29,6 +29,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings("null")
 class BodycamDummyRendererTest {
 
     @BeforeAll

@@ -63,7 +63,7 @@ public class PlayerLocatorSyncS2CPacket {
         Map<UUID, String> dimensions = new HashMap<>();
         int dimensionsSize = Math.max(0, Math.min(buf.readInt(), 1024));
         for (int i = 0; i < dimensionsSize; i++) {
-            dimensions.put(buf.readUUID(), buf.readUtf());
+            dimensions.put(buf.readUUID(), buf.readUtf(256));
         }
 
         Map<UUID, BlockPos> positions = new HashMap<>();

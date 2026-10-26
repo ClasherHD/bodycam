@@ -279,14 +279,19 @@ public class BodycamDummyEntity extends LivingEntity {
                 }
             }
 
-            if (this.tickCount % 20 == 0 && !this.isInvulnerable()) {
-                java.util.List<net.minecraft.world.entity.Mob> mobs = this.level().getEntitiesOfClass(
-                        net.minecraft.world.entity.Mob.class,
-                        this.getBoundingBox().inflate(16.0D),
-                        e -> e instanceof net.minecraft.world.entity.monster.Enemy);
-                for (net.minecraft.world.entity.Mob mob : mobs) {
-                    if (mob.getTarget() == null) {
-                        mob.setTarget(this);
+            if (this.tickCount % 20 == 0 && !this.isInvulnerable() && this.isLinkedToOwnerHealth()) {
+                int origGm = dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_GAMEMODE
+                        .getOrDefault(this.getOwnerUUID(), owner.getPersistentData().getInt("bodycam_original_gamemode"));
+                if (origGm == net.minecraft.world.level.GameType.SURVIVAL.getId()
+                        || origGm == net.minecraft.world.level.GameType.ADVENTURE.getId()) {
+                    java.util.List<net.minecraft.world.entity.Mob> mobs = this.level().getEntitiesOfClass(
+                            net.minecraft.world.entity.Mob.class,
+                            this.getBoundingBox().inflate(16.0D),
+                            e -> e instanceof net.minecraft.world.entity.monster.Enemy);
+                    for (net.minecraft.world.entity.Mob mob : mobs) {
+                        if (mob.getTarget() == null && mob.getSensing().hasLineOfSight(this)) {
+                            mob.setTarget(this);
+                        }
                     }
                 }
             }

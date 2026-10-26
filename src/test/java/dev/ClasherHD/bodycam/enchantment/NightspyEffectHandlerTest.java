@@ -3,7 +3,6 @@ package dev.ClasherHD.bodycam.enchantment;
 import dev.ClasherHD.bodycam.config.ModServerConfig;
 import dev.ClasherHD.bodycam.test.MinecraftTestEnvironment;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -25,6 +24,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings("null")
 class NightspyEffectHandlerTest {
 
     @BeforeAll

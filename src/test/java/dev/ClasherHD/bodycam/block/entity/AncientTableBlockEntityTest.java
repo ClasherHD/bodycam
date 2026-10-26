@@ -1,6 +1,5 @@
 package dev.ClasherHD.bodycam.block.entity;
 
-import dev.ClasherHD.bodycam.item.ItemDurabilityHelper;
 import dev.ClasherHD.bodycam.registry.ModBlocks;
 import dev.ClasherHD.bodycam.registry.ModItems;
 import dev.ClasherHD.bodycam.test.MinecraftTestEnvironment;
@@ -21,6 +20,7 @@ import java.lang.reflect.Method;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@SuppressWarnings("null")
 class AncientTableBlockEntityTest {
 
     @BeforeAll

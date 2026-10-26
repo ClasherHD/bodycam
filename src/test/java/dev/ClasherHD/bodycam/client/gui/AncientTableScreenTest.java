@@ -3,11 +3,9 @@ package dev.ClasherHD.bodycam.client.gui;
 import dev.ClasherHD.bodycam.block.entity.AncientTableBlockEntity;
 import dev.ClasherHD.bodycam.menu.AncientTableMenu;
 import dev.ClasherHD.bodycam.test.MinecraftTestEnvironment;
-import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.entity.player.Player;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,6 +14,7 @@ import java.lang.reflect.Field;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@SuppressWarnings("null")
 class AncientTableScreenTest {
 
     @BeforeAll

@@ -32,6 +32,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings("null")
 class ServerEventsTest {
 
     @BeforeAll

@@ -21,6 +21,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@SuppressWarnings("null")
 class PodestBlockTest {
 
     private static PodestBlock block;

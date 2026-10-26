@@ -73,14 +73,12 @@ repositories {
 
 dependencies {
     minecraft 'net.minecraftforge:forge:1.20.1-47.3.0'
-    compileOnly "de.maxhenkel.voicechat:voicechat-api:2.5.0"
     compileOnly fg.deobf("top.theillusivec4.curios:curios-forge:5.14.1+1.20.1:api")
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
     testImplementation 'org.assertj:assertj-core:3.25.3'
     testImplementation 'org.mockito:mockito-core:5.11.0'
     testImplementation 'org.mockito:mockito-junit-jupiter:5.11.0'
-    testImplementation 'de.maxhenkel.voicechat:voicechat-api:2.5.0'
     testImplementation fg.deobf("top.theillusivec4.curios:curios-forge:5.14.1+1.20.1:api")
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }

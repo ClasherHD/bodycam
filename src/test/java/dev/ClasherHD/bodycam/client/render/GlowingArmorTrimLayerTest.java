@@ -23,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings("null")
 class GlowingArmorTrimLayerTest {
 
     @BeforeAll
@@ -33,7 +34,6 @@ class GlowingArmorTrimLayerTest {
     @Test
     @DisplayName("render terminates safely when models or atlas are null")
     void render_withNullFields_returnsEarlyWithoutException() {
-        @SuppressWarnings("unchecked")
         GlowingArmorTrimLayer<?, ?, ?> layer =
                 MinecraftTestEnvironment.allocateInstance(GlowingArmorTrimLayer.class);
 
@@ -83,7 +83,6 @@ class GlowingArmorTrimLayerTest {
         GlowingArmorTrimLayer<?, ?, HumanoidModel<?>> layer =
                 MinecraftTestEnvironment.allocateInstance(GlowingArmorTrimLayer.class);
 
-        @SuppressWarnings("unchecked")
         HumanoidModel<?> model = MinecraftTestEnvironment.allocateInstance(HumanoidModel.class);
 
         MinecraftTestEnvironment.setField(model, "head", new ModelPart(Collections.emptyList(), Collections.emptyMap()));

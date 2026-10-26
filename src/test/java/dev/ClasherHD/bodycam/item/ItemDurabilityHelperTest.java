@@ -8,6 +8,7 @@ import dev.ClasherHD.bodycam.test.MinecraftTestEnvironment;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@SuppressWarnings("null")
 class ItemDurabilityHelperTest {
 
     @BeforeAll

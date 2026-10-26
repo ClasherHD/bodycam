@@ -15,6 +15,7 @@ import dev.ClasherHD.bodycam.test.MinecraftTestEnvironment;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@SuppressWarnings("null")
 class ClientLocatorCacheTest {
 
     @BeforeAll

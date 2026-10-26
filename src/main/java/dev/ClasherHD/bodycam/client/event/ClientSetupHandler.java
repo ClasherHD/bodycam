@@ -112,7 +112,7 @@ public class ClientSetupHandler {
         for (String skinType : new String[]{"default", "slim"}) {
             net.minecraft.client.renderer.entity.player.PlayerRenderer renderer = event.getSkin(skinType);
             if (renderer != null) {
-                renderer.layers.removeIf(layer -> layer instanceof net.minecraft.client.renderer.entity.layers.PlayerItemInHandLayer);
+                renderer.layers.removeIf(layer -> layer.getClass() == net.minecraft.client.renderer.entity.layers.PlayerItemInHandLayer.class);
                 renderer.addLayer(new dev.ClasherHD.bodycam.client.render.BodycamItemInHandLayer<>(renderer, net.minecraft.client.Minecraft.getInstance().getEntityRenderDispatcher().getItemInHandRenderer()));
                 tryAddGlowingTrimLayer(renderer);
             }

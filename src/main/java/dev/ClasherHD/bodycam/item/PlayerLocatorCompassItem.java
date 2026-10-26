@@ -83,7 +83,8 @@ public class PlayerLocatorCompassItem extends Item {
                     BlockPos targetPos = getTargetPosition(p);
                     boolean sameDim = myDim.equals(targetDim);
                     double distSq = sPlayer.blockPosition().distSqr(targetPos);
-                    boolean isJammed = (jammerMode == 1) || (jammerMode == 2 && (!sameDim || distSq > maxDistSq));
+                    boolean withinBaseDist = sameDim && (distSq <= maxDistSq);
+                    boolean isJammed = (jammerMode == 1) || (jammerMode == 2 && !withinBaseDist);
 
                     boolean inReach;
                     if (reachLevel >= 2) {
@@ -91,13 +92,17 @@ public class PlayerLocatorCompassItem extends Item {
                     } else if (reachLevel >= 1) {
                         inReach = sameDim;
                     } else {
-                        inReach = sameDim && (distSq <= maxDistSq);
+                        inReach = withinBaseDist;
                     }
 
                     jammers.put(p.getUUID(), jammerMode);
-                    dimensions.put(p.getUUID(), targetDim);
+                    if (isJammed || EnchantmentLevels.isDimensionScrambled(p)) {
+                        dimensions.put(p.getUUID(), myDim);
+                    } else {
+                        dimensions.put(p.getUUID(), targetDim);
+                    }
                     if (!isJammed && inReach) {
-                        positions.put(p.getUUID(), targetPos);
+                        positions.put(p.getUUID(), withinBaseDist ? sPlayer.blockPosition() : new BlockPos(30_000_000, 0, 30_000_000));
                     }
                 }
             }

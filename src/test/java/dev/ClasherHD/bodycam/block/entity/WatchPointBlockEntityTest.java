@@ -1,13 +1,11 @@
 package dev.ClasherHD.bodycam.block.entity;
 
 import dev.ClasherHD.bodycam.config.ModServerConfig;
-import dev.ClasherHD.bodycam.entity.WatchPointDummyEntity;
 import dev.ClasherHD.bodycam.registry.ModBlocks;
 import dev.ClasherHD.bodycam.test.MinecraftTestEnvironment;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import org.junit.jupiter.api.BeforeAll;
@@ -26,6 +24,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings("null")
 class WatchPointBlockEntityTest {
 
     @BeforeAll

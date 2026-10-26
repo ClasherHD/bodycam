@@ -2,7 +2,6 @@ package dev.ClasherHD.bodycam.client.render;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.ClasherHD.bodycam.entity.BodycamDummyEntity;
-import dev.ClasherHD.bodycam.item.BodycamMonitorItem;
 import dev.ClasherHD.bodycam.registry.ModItems;
 import dev.ClasherHD.bodycam.test.MinecraftTestEnvironment;
 import net.minecraft.client.model.ArmedModel;
@@ -17,21 +16,19 @@ import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings("null")
 class BodycamItemInHandLayerTest {
 
     interface TestModelInterface extends ArmedModel, HeadedModel {}
@@ -108,7 +105,6 @@ class BodycamItemInHandLayerTest {
         RenderLayerParent<LivingEntity, TestEntityModel<LivingEntity>> parent = mock(RenderLayerParent.class);
         @SuppressWarnings("unchecked")
         TestEntityModel<LivingEntity> model = mock(TestEntityModel.class);
-        ModelPart armPart = new ModelPart(Collections.emptyList(), Collections.emptyMap());
         when(parent.getModel()).thenReturn(model);
 
         ItemInHandRenderer itemInHandRenderer = mock(ItemInHandRenderer.class);

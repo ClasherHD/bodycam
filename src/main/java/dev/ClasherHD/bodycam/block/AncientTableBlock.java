@@ -74,6 +74,9 @@ public class AncientTableBlock extends BaseEntityBlock {
             if (dev.ClasherHD.bodycam.config.ModServerConfig.OP_ONLY_MODE.get() && !serverPlayer.hasPermissions(2)) {
                 return InteractionResult.sidedSuccess(level.isClientSide());
             }
+            if (dev.ClasherHD.bodycam.config.ModServerConfig.isDimensionBlacklisted(level)) {
+                return InteractionResult.sidedSuccess(level.isClientSide());
+            }
             NetworkHooks.openScreen(serverPlayer, table, pos);
         }
         return InteractionResult.sidedSuccess(level.isClientSide());

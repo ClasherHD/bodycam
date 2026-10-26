@@ -112,11 +112,36 @@ public class DimensionLocatorScreen extends Screen {
         private final net.minecraft.client.multiplayer.PlayerInfo playerInfo;
         private final String displayName;
         private final String dimensionPath;
+        private final String formattedDimensionText;
+        private final boolean isScrambled;
 
         public DimensionEntry(net.minecraft.client.multiplayer.PlayerInfo playerInfo, String displayName, String dimensionPath) {
             this.playerInfo = playerInfo;
             this.displayName = displayName;
             this.dimensionPath = dimensionPath;
+            this.isScrambled = dev.ClasherHD.bodycam.enchantment.EnchantmentLevels.SCRAMBLED_DIMENSION.equals(dimensionPath);
+            if (this.isScrambled) {
+                this.formattedDimensionText = "";
+            } else {
+                String translationKey = "dimension." + dimensionPath.replace(":", ".");
+                net.minecraft.network.chat.MutableComponent dimComponent = net.minecraft.network.chat.Component.translatable(translationKey);
+                String dimText = dimComponent.getString();
+                if (dimText.equals(translationKey)) {
+                    String pathOnly = dimensionPath;
+                    if (dimensionPath.contains(":")) {
+                        pathOnly = dimensionPath.split(":")[1];
+                    }
+                    String[] words = pathOnly.split("_");
+                    StringBuilder formatted = new StringBuilder();
+                    for (String word : words) {
+                        if (word.length() > 0) {
+                            formatted.append(Character.toUpperCase(word.charAt(0))).append(word.substring(1)).append(" ");
+                        }
+                    }
+                    dimText = formatted.toString().trim();
+                }
+                this.formattedDimensionText = dimText;
+            }
         }
 
         @Override
@@ -125,31 +150,13 @@ public class DimensionLocatorScreen extends Screen {
             graphics.blit(skin, left, top + 4, 32, 32, 8.0F, 8.0F, 8, 8, 64, 64);
             graphics.blit(skin, left, top + 4, 32, 32, 40.0F, 8.0F, 8, 8, 64, 64);
             graphics.drawString(DimensionLocatorScreen.this.font, this.displayName, left + 40, top + 16, 0xFFFFFFFF);
-            if (dev.ClasherHD.bodycam.enchantment.EnchantmentLevels.SCRAMBLED_DIMENSION.equals(this.dimensionPath)) {
+            int dimColor = 0xFF000000 | ModClientConfig.parseHexColor(ModClientConfig.COLOR_DIMENSION.get(), 0x55FF55);
+            if (this.isScrambled) {
                 Component scrambled = Component.literal("0".repeat(10)).withStyle(net.minecraft.ChatFormatting.OBFUSCATED);
-                graphics.drawString(DimensionLocatorScreen.this.font, scrambled, left + width - 10 - DimensionLocatorScreen.this.font.width(scrambled), top + 16, 0xFF000000 | ModClientConfig.parseHexColor(ModClientConfig.COLOR_DIMENSION.get(), 0x55FF55));
+                graphics.drawString(DimensionLocatorScreen.this.font, scrambled, left + width - 10 - DimensionLocatorScreen.this.font.width(scrambled), top + 16, dimColor);
                 return;
             }
-            String translationKey = "dimension." + this.dimensionPath.replace(":", ".");
-            net.minecraft.network.chat.MutableComponent dimComponent = net.minecraft.network.chat.Component.translatable(translationKey);
-            String dimText = dimComponent.getString();
-            
-            if (dimText.equals(translationKey)) {
-                String pathOnly = this.dimensionPath;
-                if (this.dimensionPath.contains(":")) {
-                    pathOnly = this.dimensionPath.split(":")[1];
-                }
-                String[] words = pathOnly.split("_");
-                StringBuilder formatted = new StringBuilder();
-                for (String word : words) {
-                    if (word.length() > 0) {
-                        formatted.append(Character.toUpperCase(word.charAt(0))).append(word.substring(1)).append(" ");
-                    }
-                }
-                dimText = formatted.toString().trim();
-            }
-
-            graphics.drawString(DimensionLocatorScreen.this.font, dimText, left + width - 10 - DimensionLocatorScreen.this.font.width(dimText), top + 16, 0xFF000000 | ModClientConfig.parseHexColor(ModClientConfig.COLOR_DIMENSION.get(), 0x55FF55));
+            graphics.drawString(DimensionLocatorScreen.this.font, this.formattedDimensionText, left + width - 10 - DimensionLocatorScreen.this.font.width(this.formattedDimensionText), top + 16, dimColor);
         }
 
         @Override

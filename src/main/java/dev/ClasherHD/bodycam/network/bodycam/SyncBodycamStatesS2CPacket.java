@@ -100,7 +100,7 @@ public class SyncBodycamStatesS2CPacket {
         Map<UUID, String> dimensions = new HashMap<>();
         int dimensionsSize = Math.max(0, Math.min(buf.readInt(), 1024));
         for (int i = 0; i < dimensionsSize; i++)
-            dimensions.put(buf.readUUID(), buf.readUtf());
+            dimensions.put(buf.readUUID(), buf.readUtf(256));
 
         Map<UUID, BlockPos> positions = new HashMap<>();
         int positionsSize = Math.max(0, Math.min(buf.readInt(), 1024));
@@ -120,7 +120,7 @@ public class SyncBodycamStatesS2CPacket {
         Map<UUID, String> watchPoints = new LinkedHashMap<>();
         int wpSize = Math.max(0, Math.min(buf.readInt(), 1024));
         for (int i = 0; i < wpSize; i++)
-            watchPoints.put(buf.readUUID(), buf.readUtf());
+            watchPoints.put(buf.readUUID(), buf.readUtf(256));
 
         return new SyncBodycamStatesS2CPacket(jammers, targets, dimensions, positions, anonymizers, hidden, watchPoints,
                 buf.readInt(), buf.readBoolean());

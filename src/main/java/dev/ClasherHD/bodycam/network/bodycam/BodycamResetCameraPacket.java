@@ -45,7 +45,11 @@ public class BodycamResetCameraPacket {
                 }
             }
 
-            int gameModeId = dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_GAMEMODE.getOrDefault(sender.getUUID(), net.minecraft.world.level.GameType.SURVIVAL.getId());
+            int defaultGm = data.contains("bodycam_original_gamemode")
+                    ? data.getInt("bodycam_original_gamemode")
+                    : net.minecraft.world.level.GameType.SURVIVAL.getId();
+            int gameModeId = dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_GAMEMODE
+                    .getOrDefault(sender.getUUID(), defaultGm);
             net.minecraft.world.level.GameType originalGameType = net.minecraft.world.level.GameType.byId(gameModeId);
             sender.setGameMode(originalGameType != null ? originalGameType : net.minecraft.world.level.GameType.SURVIVAL);
             sender.setCamera(sender);
@@ -103,12 +107,14 @@ public class BodycamResetCameraPacket {
                 dummy.discard();
             } else {
                 String dimStr = dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_DIM
-                        .getOrDefault(sender.getUUID(), "");
+                        .getOrDefault(sender.getUUID(), data.getString("bodycam_orig_dim"));
                 if (!dimStr.isEmpty()) {
-                    net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> dimKey = net.minecraft.resources.ResourceKey
-                            .create(net.minecraft.core.registries.Registries.DIMENSION,
-                                    new net.minecraft.resources.ResourceLocation(dimStr));
-                    originalLevel = sender.server.getLevel(dimKey);
+                    net.minecraft.resources.ResourceLocation rl = net.minecraft.resources.ResourceLocation.tryParse(dimStr);
+                    if (rl != null) {
+                        net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> dimKey = net.minecraft.resources.ResourceKey
+                                .create(net.minecraft.core.registries.Registries.DIMENSION, rl);
+                        originalLevel = sender.server.getLevel(dimKey);
+                    }
                     if (originalLevel == null) {
                         originalLevel = sender.server.overworld();
                     }
@@ -120,12 +126,19 @@ public class BodycamResetCameraPacket {
                     x = origPos.x;
                     y = origPos.y;
                     z = origPos.z;
+                } else if (data.contains("bodycam_orig_x")) {
+                    x = data.getDouble("bodycam_orig_x");
+                    y = data.getDouble("bodycam_orig_y");
+                    z = data.getDouble("bodycam_orig_z");
                 }
                 net.minecraft.world.phys.Vec2 origRot = dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_ROT
                         .get(sender.getUUID());
                 if (origRot != null) {
                     xRot = origRot.x;
                     yRot = origRot.y;
+                } else if (data.contains("bodycam_orig_yrot")) {
+                    yRot = data.getFloat("bodycam_orig_yrot");
+                    xRot = data.getFloat("bodycam_orig_xrot");
                 }
                 lastPos = dev.ClasherHD.bodycam.entity.BodycamDummyEntity.DUMMY_POS
                         .getOrDefault(sender.getUUID(), new net.minecraft.world.phys.Vec3(x, y, z));
@@ -163,7 +176,11 @@ public class BodycamResetCameraPacket {
             sender.hurtMarked = true;
             sender.fallDistance = lastFall;
 
-            int gameModeId = dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_GAMEMODE.getOrDefault(sender.getUUID(), net.minecraft.world.level.GameType.SURVIVAL.getId());
+            int defaultGm = data.contains("bodycam_original_gamemode")
+                    ? data.getInt("bodycam_original_gamemode")
+                    : net.minecraft.world.level.GameType.SURVIVAL.getId();
+            int gameModeId = dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_GAMEMODE
+                    .getOrDefault(sender.getUUID(), defaultGm);
             net.minecraft.world.level.GameType originalGameType = net.minecraft.world.level.GameType.byId(gameModeId);
             sender.setGameMode(originalGameType != null ? originalGameType : net.minecraft.world.level.GameType.SURVIVAL);
 
