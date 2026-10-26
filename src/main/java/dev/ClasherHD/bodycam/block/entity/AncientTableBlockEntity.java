@@ -60,6 +60,7 @@ public class AncientTableBlockEntity extends BlockEntity implements MenuProvider
     private final ItemStackHandler items = new ItemStackHandler(SLOT_COUNT) {
         @Override
         protected void onContentsChanged(int slot) {
+            inputDirty = true;
             setChanged();
         }
 
@@ -84,6 +85,9 @@ public class AncientTableBlockEntity extends BlockEntity implements MenuProvider
     private int activeRepairAmount;
     private ResourceLocation activeRecipeId;
     private int activeFuelCost;
+    private AncientTableRecipe cachedRecipe;
+    private int[] cachedPermutation;
+    private boolean inputDirty = true;
 
     public static int getFuelPerCrystal() {
         return ModServerConfig.SPEC.isLoaded()
@@ -263,7 +267,8 @@ public class AncientTableBlockEntity extends BlockEntity implements MenuProvider
                 .getAllRecipesFor(ModRecipes.ANCIENT_TABLE_CRAFTING_TYPE.get());
         for (AncientTableRecipe recipe : recipes) {
             int requiredFuel = recipe.getCrystalsRequired() * perCrystal;
-            if (fuelUnits >= requiredFuel && recipe.matchSlots(items) != null) {
+            int[] match = recipe.matchSlots(items);
+            if (fuelUnits >= requiredFuel && match != null) {
                 this.processType = PROCESS_CRAFT;
                 this.activeRecipeId = recipe.getId();
                 this.activeRepairSlot = -1;
@@ -271,6 +276,9 @@ public class AncientTableBlockEntity extends BlockEntity implements MenuProvider
                 this.activeFuelCost = requiredFuel;
                 this.progress = 0;
                 this.maxProgress = recipe.getDurationTicks();
+                this.cachedRecipe = recipe;
+                this.cachedPermutation = match;
+                this.inputDirty = false;
                 return true;
             }
         }
@@ -315,30 +323,36 @@ public class AncientTableBlockEntity extends BlockEntity implements MenuProvider
                 setChanged();
             }
         } else if (processType == PROCESS_CRAFT) {
-            AncientTableRecipe recipe = getActiveCraftRecipe();
-            if (recipe == null) {
+            if (cachedRecipe == null || (activeRecipeId != null && !activeRecipeId.equals(cachedRecipe.getId()))) {
+                cachedRecipe = getActiveCraftRecipe();
+                inputDirty = true;
+            }
+            if (cachedRecipe == null) {
                 cancelProcess();
                 setChanged();
                 return;
             }
-            int[] perm = recipe.matchSlots(items);
-            if (perm == null || !items.getStackInSlot(OUTPUT_SLOT).isEmpty() || fuelUnits < activeFuelCost) {
+            if (inputDirty) {
+                cachedPermutation = cachedRecipe.matchSlots(items);
+                inputDirty = false;
+            }
+            if (cachedPermutation == null || !items.getStackInSlot(OUTPUT_SLOT).isEmpty() || fuelUnits < activeFuelCost) {
                 cancelProcess();
                 setChanged();
                 return;
             }
             progress++;
             if (progress >= maxProgress) {
-                if (recipe.getReq0().count() > 0) {
-                    items.extractItem(perm[0], recipe.getReq0().count(), false);
+                if (cachedRecipe.getReq0().count() > 0) {
+                    items.extractItem(cachedPermutation[0], cachedRecipe.getReq0().count(), false);
                 }
-                if (recipe.getReq1().count() > 0) {
-                    items.extractItem(perm[1], recipe.getReq1().count(), false);
+                if (cachedRecipe.getReq1().count() > 0) {
+                    items.extractItem(cachedPermutation[1], cachedRecipe.getReq1().count(), false);
                 }
-                if (recipe.getReq2().count() > 0) {
-                    items.extractItem(perm[2], recipe.getReq2().count(), false);
+                if (cachedRecipe.getReq2().count() > 0) {
+                    items.extractItem(cachedPermutation[2], cachedRecipe.getReq2().count(), false);
                 }
-                items.setStackInSlot(OUTPUT_SLOT, recipe.createOutputStack());
+                items.setStackInSlot(OUTPUT_SLOT, cachedRecipe.createOutputStack());
                 fuelUnits = Math.max(0, fuelUnits - activeFuelCost);
                 if (this.level != null && !this.level.isClientSide()) {
                     this.level.playSound(null, this.worldPosition, ModSounds.ANCIENT_TABLE_USE.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
@@ -377,6 +391,9 @@ public class AncientTableBlockEntity extends BlockEntity implements MenuProvider
         this.activeRepairAmount = 0;
         this.activeRecipeId = null;
         this.activeFuelCost = 0;
+        this.cachedRecipe = null;
+        this.cachedPermutation = null;
+        this.inputDirty = true;
     }
 
     private boolean hasNoInput() {

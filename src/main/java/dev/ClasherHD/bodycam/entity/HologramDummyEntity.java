@@ -12,6 +12,11 @@ public class HologramDummyEntity extends BodycamDummyEntity {
     }
 
     @Override
+    protected boolean isLinkedToOwnerHealth() {
+        return false;
+    }
+
+    @Override
     public boolean hurt(DamageSource source, float amount) {
         return false;
     }

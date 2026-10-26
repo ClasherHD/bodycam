@@ -49,6 +49,13 @@ public class SyncBodycamRequestC2SPacket {
                 return;
             }
 
+            long now = sender.level().getGameTime();
+            long lastCd = sender.getPersistentData().getLong("bodycam_sync_req_cd");
+            if (now - lastCd < 5L && now >= lastCd) {
+                return;
+            }
+            sender.getPersistentData().putLong("bodycam_sync_req_cd", now);
+
             if (dev.ClasherHD.bodycam.config.ModServerConfig.OP_ONLY_MODE.get() && !sender.hasPermissions(2)) {
                 sender.sendSystemMessage(Component.translatable("message.bodycam.op_only").withStyle(ChatFormatting.RED));
                 return;
@@ -169,11 +176,10 @@ public class SyncBodycamRequestC2SPacket {
                     targetPos = p.blockPosition();
                 }
 
-                dimensions.put(p.getUUID(), targetDim);
-
                 boolean sameDim = senderDim.equals(targetDim);
                 double distSq = sender.blockPosition().distSqr(targetPos);
-                boolean isJammed = (mode == 1) || (mode == 2 && (!sameDim || distSq > maxDistSq));
+                boolean withinBaseDist = sameDim && (distSq <= maxDistSq);
+                boolean isJammed = (mode == 1) || (mode == 2 && !withinBaseDist);
 
                 boolean inReach;
                 if (reachLevel >= 2) {
@@ -181,11 +187,17 @@ public class SyncBodycamRequestC2SPacket {
                 } else if (reachLevel >= 1) {
                     inReach = sameDim;
                 } else {
-                    inReach = sameDim && (distSq <= maxDistSq);
+                    inReach = withinBaseDist;
+                }
+
+                if (isJammed || EnchantmentLevels.isDimensionScrambled(p)) {
+                    dimensions.put(p.getUUID(), senderDim);
+                } else {
+                    dimensions.put(p.getUUID(), targetDim);
                 }
 
                 if (!isJammed && inReach) {
-                    positions.put(p.getUUID(), targetPos);
+                    positions.put(p.getUUID(), withinBaseDist ? sender.blockPosition() : new BlockPos(30_000_000, 0, 30_000_000));
                 }
             }
 

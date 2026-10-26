@@ -35,6 +35,7 @@ bin/main/
 .DS_Store
 Thumbs.db
 
-test
+/test
+!src/test/
 run_client2/
 .agents/

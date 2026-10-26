@@ -54,6 +54,15 @@ public class PlayerLocatorSelectC2SPacket {
             if (sender == null) {
                 return;
             }
+            if (dev.ClasherHD.bodycam.config.ModServerConfig.OP_ONLY_MODE.get() && !sender.hasPermissions(2)) {
+                return;
+            }
+            if (!dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_PLAYER_LOCATOR.get()) {
+                return;
+            }
+            if (dev.ClasherHD.bodycam.config.ModServerConfig.isDimensionBlacklisted(sender.level())) {
+                return;
+            }
 
             long currentTick = sender.level().getGameTime();
             Long lastTick = LAST_SELECT_TICK.get(sender.getUUID());

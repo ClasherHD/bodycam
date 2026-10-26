@@ -1,6 +1,5 @@
 package dev.ClasherHD.bodycam.network.locator;
 
-
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
@@ -56,19 +55,19 @@ public class PlayerLocatorSyncS2CPacket {
 
     public static PlayerLocatorSyncS2CPacket decode(FriendlyByteBuf buf) {
         Map<UUID, Integer> jammers = new HashMap<>();
-        int jammerSize = buf.readInt();
+        int jammerSize = Math.max(0, Math.min(buf.readInt(), 1024));
         for (int i = 0; i < jammerSize; i++) {
             jammers.put(buf.readUUID(), buf.readInt());
         }
 
         Map<UUID, String> dimensions = new HashMap<>();
-        int dimensionsSize = buf.readInt();
+        int dimensionsSize = Math.max(0, Math.min(buf.readInt(), 1024));
         for (int i = 0; i < dimensionsSize; i++) {
             dimensions.put(buf.readUUID(), buf.readUtf());
         }
 
         Map<UUID, BlockPos> positions = new HashMap<>();
-        int positionsSize = buf.readInt();
+        int positionsSize = Math.max(0, Math.min(buf.readInt(), 1024));
         for (int i = 0; i < positionsSize; i++) {
             positions.put(buf.readUUID(), buf.readBlockPos());
         }

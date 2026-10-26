@@ -88,37 +88,37 @@ public class SyncBodycamStatesS2CPacket {
 
     public static SyncBodycamStatesS2CPacket decode(FriendlyByteBuf buf) {
         Map<UUID, Integer> jammers = new HashMap<>();
-        int jammerSize = buf.readInt();
+        int jammerSize = Math.max(0, Math.min(buf.readInt(), 1024));
         for (int i = 0; i < jammerSize; i++)
             jammers.put(buf.readUUID(), buf.readInt());
 
         Map<UUID, UUID> targets = new HashMap<>();
-        int targetsSize = buf.readInt();
+        int targetsSize = Math.max(0, Math.min(buf.readInt(), 1024));
         for (int i = 0; i < targetsSize; i++)
             targets.put(buf.readUUID(), buf.readUUID());
 
         Map<UUID, String> dimensions = new HashMap<>();
-        int dimensionsSize = buf.readInt();
+        int dimensionsSize = Math.max(0, Math.min(buf.readInt(), 1024));
         for (int i = 0; i < dimensionsSize; i++)
             dimensions.put(buf.readUUID(), buf.readUtf());
 
         Map<UUID, BlockPos> positions = new HashMap<>();
-        int positionsSize = buf.readInt();
+        int positionsSize = Math.max(0, Math.min(buf.readInt(), 1024));
         for (int i = 0; i < positionsSize; i++)
             positions.put(buf.readUUID(), buf.readBlockPos());
 
         Map<UUID, Boolean> anonymizers = new HashMap<>();
-        int anonymizerSize = buf.readInt();
+        int anonymizerSize = Math.max(0, Math.min(buf.readInt(), 1024));
         for (int i = 0; i < anonymizerSize; i++)
             anonymizers.put(buf.readUUID(), buf.readBoolean());
 
         Set<UUID> hidden = new HashSet<>();
-        int hiddenSize = buf.readInt();
+        int hiddenSize = Math.max(0, Math.min(buf.readInt(), 1024));
         for (int i = 0; i < hiddenSize; i++)
             hidden.add(buf.readUUID());
 
         Map<UUID, String> watchPoints = new LinkedHashMap<>();
-        int wpSize = buf.readInt();
+        int wpSize = Math.max(0, Math.min(buf.readInt(), 1024));
         for (int i = 0; i < wpSize; i++)
             watchPoints.put(buf.readUUID(), buf.readUtf());
 

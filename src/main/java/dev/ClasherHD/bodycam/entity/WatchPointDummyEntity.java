@@ -98,19 +98,18 @@ public class WatchPointDummyEntity extends BodycamDummyEntity {
         return this.entityData.get(WATCH_POINT_POS).orElse(null);
     }
 
+    @Override
+    public void onAddedToWorld() {
+        super.onAddedToWorld();
+        if (!this.level().isClientSide()) {
+            ACTIVE_WATCH_POINTS.add(this);
+        }
+    }
+
     public static List<WatchPointDummyEntity> getAllActive(MinecraftServer server) {
         ACTIVE_WATCH_POINTS.removeIf(e -> e == null || e.isRemoved() || !e.isAlive());
-        if (server != null) {
-            for (ServerLevel lvl : server.getAllLevels()) {
-                for (Entity e : lvl.getAllEntities()) {
-                    if (e instanceof WatchPointDummyEntity wp && wp.isAlive() && !wp.isRemoved()) {
-                        ACTIVE_WATCH_POINTS.add(wp);
-                    }
-                }
-            }
-        }
         List<WatchPointDummyEntity> list = new ArrayList<>(ACTIVE_WATCH_POINTS);
-        list.sort(java.util.Comparator.comparing(e -> e.getUUID().toString()));
+        list.sort(java.util.Comparator.comparing(Entity::getUUID));
         return list;
     }
 

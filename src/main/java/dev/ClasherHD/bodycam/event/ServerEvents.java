@@ -165,6 +165,13 @@ public class ServerEvents {
                 && event.getEntity() instanceof ServerPlayer player) {
             dev.ClasherHD.bodycam.network.locator.PlayerLocatorSelectC2SPacket.clearCooldown(player.getUUID());
             POSITION_LOCKS.remove(player.getUUID());
+            BodycamSetCameraPacket.ORIGINAL_GAMEMODE.remove(player.getUUID());
+            BodycamSetCameraPacket.ORIGINAL_DIM.remove(player.getUUID());
+            BodycamSetCameraPacket.ORIGINAL_POS.remove(player.getUUID());
+            BodycamSetCameraPacket.ORIGINAL_ROT.remove(player.getUUID());
+            BodycamDummyEntity.DUMMY_POS.remove(player.getUUID());
+            BodycamDummyEntity.DUMMY_FALL.remove(player.getUUID());
+            BodycamDummyEntity.DUMMY_MOTION.remove(player.getUUID());
             if (player.getPersistentData().contains("bodycam_target_uuid")
                     || player.getPersistentData().contains("bodycam_dummy_uuid")) {
                 if (player.getPersistentData().contains("bodycam_dummy_uuid")) {

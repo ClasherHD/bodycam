@@ -20,29 +20,52 @@ public class BodycamResetCameraPacket {
     }
 
     public static void executeReset(ServerPlayer sender) {
-        if (sender != null && sender.server != null) {
-            if (!sender.isAlive()) {
-                int gameModeId = dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_GAMEMODE.getOrDefault(sender.getUUID(), net.minecraft.world.level.GameType.SURVIVAL.getId());
-                net.minecraft.world.level.GameType originalGameType = net.minecraft.world.level.GameType.byId(gameModeId);
-                sender.setGameMode(originalGameType != null ? originalGameType : net.minecraft.world.level.GameType.SURVIVAL);
-                sender.setCamera(sender);
+        if (sender == null || sender.server == null) {
+            return;
+        }
 
-                if (sender.getPersistentData().contains("bodycam_target_uuid")) {
-                    java.util.UUID oldTargetId = sender.getPersistentData().getUUID("bodycam_target_uuid");
-                    if (oldTargetId != null) {
-                        net.minecraft.server.level.ServerPlayer oldTarget = sender.server.getPlayerList().getPlayer(oldTargetId);
-                        if (oldTarget != null) {
-                            dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
-                                    net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> oldTarget),
-                                    new dev.ClasherHD.bodycam.network.bodycam.CrossObservationSyncPacket(sender.getUUID(), false)
-                            );
-                        }
+        net.minecraft.nbt.CompoundTag data = sender.getPersistentData();
+        boolean hasActiveSession = data.getBoolean("bodycam_active")
+                || data.contains("bodycam_dummy_uuid")
+                || data.contains("bodycam_target_uuid")
+                || dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_POS.containsKey(sender.getUUID());
+        if (!hasActiveSession) {
+            return;
+        }
+
+        if (!sender.isAlive()) {
+            if (data.contains("bodycam_dummy_uuid")) {
+                java.util.UUID dummyId = data.getUUID("bodycam_dummy_uuid");
+                for (net.minecraft.server.level.ServerLevel lvl : sender.server.getAllLevels()) {
+                    net.minecraft.world.entity.Entity e = lvl.getEntity(dummyId);
+                    if (e instanceof dev.ClasherHD.bodycam.entity.BodycamDummyEntity d) {
+                        d.discard();
+                        break;
                     }
                 }
-
-                cleanupPlayerNbtAndMaps(sender);
-                return;
             }
+
+            int gameModeId = dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_GAMEMODE.getOrDefault(sender.getUUID(), net.minecraft.world.level.GameType.SURVIVAL.getId());
+            net.minecraft.world.level.GameType originalGameType = net.minecraft.world.level.GameType.byId(gameModeId);
+            sender.setGameMode(originalGameType != null ? originalGameType : net.minecraft.world.level.GameType.SURVIVAL);
+            sender.setCamera(sender);
+
+            if (data.contains("bodycam_target_uuid")) {
+                java.util.UUID oldTargetId = data.getUUID("bodycam_target_uuid");
+                if (oldTargetId != null) {
+                    net.minecraft.server.level.ServerPlayer oldTarget = sender.server.getPlayerList().getPlayer(oldTargetId);
+                    if (oldTarget != null) {
+                        dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
+                                net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> oldTarget),
+                                new dev.ClasherHD.bodycam.network.bodycam.CrossObservationSyncPacket(sender.getUUID(), false)
+                        );
+                    }
+                }
+            }
+
+            cleanupPlayerNbtAndMaps(sender);
+            return;
+        }
 
             double x = sender.getX();
             double y = sender.getY();
@@ -164,7 +187,6 @@ public class BodycamResetCameraPacket {
                     new dev.ClasherHD.bodycam.network.bodycam.BodycamForceClosePacket()
             );
         }
-    }
 
     public static void cleanupPlayerNbtAndMaps(ServerPlayer player) {
         if (player == null) {

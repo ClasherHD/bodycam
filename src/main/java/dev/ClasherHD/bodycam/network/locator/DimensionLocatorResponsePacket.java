@@ -1,6 +1,5 @@
 package dev.ClasherHD.bodycam.network.locator;
 
-
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
 
@@ -30,7 +29,7 @@ public class DimensionLocatorResponsePacket {
 
     public static DimensionLocatorResponsePacket decode(FriendlyByteBuf buf) {
         Map<UUID, String> dims = new HashMap<>();
-        int size = buf.readInt();
+        int size = Math.max(0, Math.min(buf.readInt(), 1024));
         for (int i = 0; i < size; i++) {
             dims.put(buf.readUUID(), buf.readUtf());
         }

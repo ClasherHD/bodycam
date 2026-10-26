@@ -71,6 +71,9 @@ public class AncientTableBlock extends BaseEntityBlock {
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer
                 && level.getBlockEntity(pos) instanceof AncientTableBlockEntity table) {
+            if (dev.ClasherHD.bodycam.config.ModServerConfig.OP_ONLY_MODE.get() && !serverPlayer.hasPermissions(2)) {
+                return InteractionResult.sidedSuccess(level.isClientSide());
+            }
             NetworkHooks.openScreen(serverPlayer, table, pos);
         }
         return InteractionResult.sidedSuccess(level.isClientSide());

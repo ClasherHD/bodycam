@@ -12,12 +12,9 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 
-@OnlyIn(Dist.CLIENT)
 @SuppressWarnings("null")
 public class PortalChannelOverlay implements IGuiOverlay {
 
@@ -61,6 +58,7 @@ public class PortalChannelOverlay implements IGuiOverlay {
                 graphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
                 RenderSystem.depthMask(true);
                 RenderSystem.enableDepthTest();
+                RenderSystem.disableBlend();
                 return;
             }
         }
@@ -76,7 +74,6 @@ public class PortalChannelOverlay implements IGuiOverlay {
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
     public static class PortalChannelSoundInstance extends AbstractTickableSoundInstance {
         private final Player player;
 

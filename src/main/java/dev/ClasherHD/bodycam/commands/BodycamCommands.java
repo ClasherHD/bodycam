@@ -71,6 +71,7 @@ public class BodycamCommands {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(
             Commands.literal("bodycam")
+                .requires(source -> source.hasPermission(2))
                 .then(Commands.literal("config")
                     .requires(source -> source.hasPermission(2))
                     .executes(context -> {
@@ -227,6 +228,7 @@ public class BodycamCommands {
                         )
                     )
                     .then(Commands.literal("cam")
+                        .requires(source -> source.hasPermission(2))
                         .then(Commands.argument("target", EntityArgument.player())
                             .executes(context -> {
                                 ServerPlayer sourcePlayer = context.getSource().getPlayerOrException();
