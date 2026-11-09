@@ -25,10 +25,17 @@ public class SyncBodycamStatesS2CPacket {
     public final Map<UUID, String> watchPoints;
     public final int reachLevel;
     public final boolean isOnHologram;
+    public final boolean isAllSeeingEye;
 
     public SyncBodycamStatesS2CPacket(Map<UUID, Integer> jammers, Map<UUID, UUID> targets, Map<UUID, String> dimensions,
             Map<UUID, BlockPos> positions, Map<UUID, Boolean> anonymizers, Set<UUID> hidden, Map<UUID, String> watchPoints,
             int reachLevel, boolean isOnHologram) {
+        this(jammers, targets, dimensions, positions, anonymizers, hidden, watchPoints, reachLevel, isOnHologram, false);
+    }
+
+    public SyncBodycamStatesS2CPacket(Map<UUID, Integer> jammers, Map<UUID, UUID> targets, Map<UUID, String> dimensions,
+            Map<UUID, BlockPos> positions, Map<UUID, Boolean> anonymizers, Set<UUID> hidden, Map<UUID, String> watchPoints,
+            int reachLevel, boolean isOnHologram, boolean isAllSeeingEye) {
         this.jammers = jammers;
         this.targets = targets;
         this.dimensions = dimensions;
@@ -38,6 +45,7 @@ public class SyncBodycamStatesS2CPacket {
         this.watchPoints = watchPoints;
         this.reachLevel = reachLevel;
         this.isOnHologram = isOnHologram;
+        this.isAllSeeingEye = isAllSeeingEye;
     }
 
     public static void encode(SyncBodycamStatesS2CPacket msg, FriendlyByteBuf buf) {
@@ -84,6 +92,7 @@ public class SyncBodycamStatesS2CPacket {
 
         buf.writeInt(msg.reachLevel);
         buf.writeBoolean(msg.isOnHologram);
+        buf.writeBoolean(msg.isAllSeeingEye);
     }
 
     public static SyncBodycamStatesS2CPacket decode(FriendlyByteBuf buf) {
@@ -123,7 +132,7 @@ public class SyncBodycamStatesS2CPacket {
             watchPoints.put(buf.readUUID(), buf.readUtf(256));
 
         return new SyncBodycamStatesS2CPacket(jammers, targets, dimensions, positions, anonymizers, hidden, watchPoints,
-                buf.readInt(), buf.readBoolean());
+                buf.readInt(), buf.readBoolean(), buf.readBoolean());
     }
 
     public static void handle(SyncBodycamStatesS2CPacket msg, Supplier<NetworkEvent.Context> ctx) {

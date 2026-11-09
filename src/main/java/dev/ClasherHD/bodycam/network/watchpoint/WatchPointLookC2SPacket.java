@@ -40,7 +40,8 @@ public class WatchPointLookC2SPacket {
             }
             UUID targetId = player.getPersistentData().getUUID("bodycam_target_uuid");
             WatchPointDummyEntity dummy = WatchPointDummyEntity.findByUUID(player.server, targetId);
-            if (dummy != null && player.getUUID().equals(dummy.getOwnerUUID())) {
+            if (dummy != null && (player.getUUID().equals(dummy.getOwnerUUID())
+                    || player.getPersistentData().getBoolean("bodycam_all_seeing_active"))) {
                 float clampedPitch = Mth.clamp(msg.xRot, -90.0F, 90.0F);
                 float wrappedYaw = Mth.wrapDegrees(msg.yRot);
                 dummy.setYRot(wrappedYaw);

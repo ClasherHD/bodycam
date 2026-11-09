@@ -1,6 +1,7 @@
 package dev.ClasherHD.bodycam.registry;
 
 import dev.ClasherHD.bodycam.bodycam;
+import dev.ClasherHD.bodycam.item.AllSeeingEyeItem;
 import dev.ClasherHD.bodycam.item.ItemDurabilityHelper;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -36,6 +37,8 @@ public class ModCreativeTabs {
                         output.accept(ModItems.LOGGER.get());
                         output.accept(ModItems.LOG_PAPER.get());
                         output.accept(ModItems.LOG_BOOK.get());
+                        output.accept(AllSeeingEyeItem.createActivatedStack());
+                        output.accept(AllSeeingEyeItem.createDeactivatedStack());
                         for (int level = 1; level <= 2; level++) {
                             output.accept(EnchantedBookItem.createForEnchantment(
                                     new EnchantmentInstance(ModEnchantments.REACH_ENCHANTMENT.get(), level)));

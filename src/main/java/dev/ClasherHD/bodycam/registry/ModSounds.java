@@ -55,4 +55,8 @@ public class ModSounds {
             () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(bodycam.MODID, "logger_stop")));
     public static final RegistryObject<SoundEvent> LOGGER_CANCEL = SOUND_EVENTS.register("logger_cancel",
             () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(bodycam.MODID, "logger_cancel")));
+    public static final RegistryObject<SoundEvent> ALL_SEEING_EYE_USE = SOUND_EVENTS.register("all_seeing_eye_use",
+            () -> SoundEvent.createFixedRangeEvent(new ResourceLocation(bodycam.MODID, "all_seeing_eye_use"), 50.0F));
+    public static final RegistryObject<SoundEvent> ALL_SEEING_EYE_EXPIRE = SOUND_EVENTS.register("all_seeing_eye_expire",
+            () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(bodycam.MODID, "all_seeing_eye_expire")));
 }

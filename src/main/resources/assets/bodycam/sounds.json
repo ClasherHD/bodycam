@@ -196,5 +196,24 @@
         "type": "event"
       }
     ]
+  },
+  "all_seeing_eye_use": {
+    "subtitle": "subtitles.bodycam.all_seeing_eye_use",
+    "sounds": [
+      {
+        "name": "minecraft:block.end_portal.spawn",
+        "type": "event",
+        "attenuation_distance": 50
+      }
+    ]
+  },
+  "all_seeing_eye_expire": {
+    "subtitle": "subtitles.bodycam.all_seeing_eye_expire",
+    "sounds": [
+      {
+        "name": "minecraft:entity.ender_eye.death",
+        "type": "event"
+      }
+    ]
   }
 }

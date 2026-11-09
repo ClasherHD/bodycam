@@ -9,6 +9,7 @@ import dev.ClasherHD.bodycam.enchantment.EnchantmentLevels;
 import dev.ClasherHD.bodycam.enchantment.NightspyEffectHandler;
 import dev.ClasherHD.bodycam.entity.BodycamDummyEntity;
 import dev.ClasherHD.bodycam.entity.WatchPointDummyEntity;
+import dev.ClasherHD.bodycam.item.AllSeeingEyeItem;
 import dev.ClasherHD.bodycam.item.AnonymizerItem;
 import dev.ClasherHD.bodycam.item.ItemDurabilityHelper;
 import dev.ClasherHD.bodycam.item.JammerItem;
@@ -22,6 +23,7 @@ import dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket;
 import dev.ClasherHD.bodycam.network.bodycam.CrossObservationSyncPacket;
 import dev.ClasherHD.bodycam.registry.ModItems;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
@@ -238,6 +240,11 @@ public class ServerEvents {
                     }
                 }
             }
+            if (player.getPersistentData().getBoolean("bodycam_all_seeing_active")
+                    || player.getPersistentData().getBoolean("bodycam_all_seeing_pending")) {
+                player.getPersistentData().remove("bodycam_all_seeing_active");
+                player.getPersistentData().remove("bodycam_all_seeing_pending");
+            }
         }
     }
 
@@ -250,6 +257,26 @@ public class ServerEvents {
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
         if (event.phase == TickEvent.Phase.END && !event.player.level().isClientSide()
                 && event.player instanceof ServerPlayer observer) {
+
+            int fogTicks = observer.getPersistentData().getInt("bodycam_all_seeing_fog_ticks");
+            if (fogTicks > 0) {
+                observer.getPersistentData().putInt("bodycam_all_seeing_fog_ticks", fogTicks - 1);
+                String fogDimStr = observer.getPersistentData().getString("bodycam_fog_dim");
+                ServerLevel fogLevel = observer.serverLevel();
+                if (!fogDimStr.isEmpty()) {
+                    ResourceLocation rl = ResourceLocation.tryParse(fogDimStr);
+                    if (rl != null) {
+                        ServerLevel found = observer.server.getLevel(ResourceKey.create(Registries.DIMENSION, rl));
+                        if (found != null) {
+                            fogLevel = found;
+                        }
+                    }
+                }
+                double fx = observer.getPersistentData().getDouble("bodycam_fog_x");
+                double fy = observer.getPersistentData().getDouble("bodycam_fog_y");
+                double fz = observer.getPersistentData().getDouble("bodycam_fog_z");
+                fogLevel.sendParticles(ParticleTypes.END_ROD, fx, fy + 1.0D, fz, 25, 0.85D, 0.85D, 0.85D, 0.03D);
+            }
 
             ItemStack carried = observer.containerMenu.getCarried();
 
@@ -427,7 +454,9 @@ public class ServerEvents {
                 if (target != null && target.isAlive() && !target.isRemoved()) {
                     observer.getPersistentData().putInt("bodycam_disconnect_ticks", 0);
 
-                    if (EnchantmentLevels.isHiddenFromSelection(target)) {
+                    boolean isAllSeeing = observer.getPersistentData().getBoolean("bodycam_all_seeing_active");
+
+                    if (!isAllSeeing && EnchantmentLevels.isHiddenFromSelection(target)) {
                         BodycamResetCameraPacket.executeReset(observer);
                         PacketHandler.INSTANCE.send(
                                 PacketDistributor.PLAYER.with(() -> observer),
@@ -444,7 +473,7 @@ public class ServerEvents {
                     }
                     currentJammerMode = PodestBlockEntity.combineJammerModes(currentJammerMode, PodestBlockEntity.getPodestJammerMode(target));
 
-                    if (currentJammerMode == 2) {
+                    if (!isAllSeeing && currentJammerMode == 2) {
                         boolean outOfRange = dummyDim != target.level().dimension();
                         if (!outOfRange && dummyPosVal != null) {
                             double maxDist = ModServerConfig.MAX_MONITOR_DISTANCE.get();
@@ -461,7 +490,7 @@ public class ServerEvents {
                                     .withStyle(ChatFormatting.RED));
                             return;
                         }
-                    } else if (currentJammerMode == 1) {
+                    } else if (!isAllSeeing && currentJammerMode == 1) {
                         BodycamResetCameraPacket.executeReset(observer);
                         PacketHandler.INSTANCE.send(
                                 PacketDistributor.PLAYER.with(() -> observer),
@@ -473,8 +502,8 @@ public class ServerEvents {
                         return;
                     }
 
-                    int reachLevel = ModServerConfig.ENABLE_REACH_ENCHANTMENT.get()
-                            ? observer.getPersistentData().getInt("bodycam_reach_level") : 0;
+                    int reachLevel = isAllSeeing ? 2 : (ModServerConfig.ENABLE_REACH_ENCHANTMENT.get()
+                            ? observer.getPersistentData().getInt("bodycam_reach_level") : 0);
 
                     if (reachLevel < 2) {
                         boolean outOfRange2 = dummyDim != target.level().dimension();

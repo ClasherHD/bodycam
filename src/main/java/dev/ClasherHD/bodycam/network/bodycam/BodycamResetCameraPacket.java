@@ -1,5 +1,6 @@
 package dev.ClasherHD.bodycam.network.bodycam;
 
+import dev.ClasherHD.bodycam.item.AllSeeingEyeItem;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
@@ -30,6 +31,7 @@ public class BodycamResetCameraPacket {
                 || data.contains("bodycam_target_uuid")
                 || dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket.ORIGINAL_POS.containsKey(sender.getUUID());
         if (!hasActiveSession) {
+            data.remove("bodycam_all_seeing_pending");
             return;
         }
 
@@ -224,6 +226,15 @@ public class BodycamResetCameraPacket {
         player.getPersistentData().remove("bodycam_orig_xrot");
         player.getPersistentData().remove("bodycam_original_dimension");
         player.getPersistentData().remove("bodycam_on_hologram");
+        if (player.getPersistentData().getBoolean("bodycam_all_seeing_active")) {
+            player.getPersistentData().remove("bodycam_all_seeing_active");
+            player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+                    dev.ClasherHD.bodycam.registry.ModSounds.ALL_SEEING_EYE_EXPIRE.get(),
+                    net.minecraft.sounds.SoundSource.PLAYERS, 0.9F, 1.2F);
+            player.sendSystemMessage(net.minecraft.network.chat.Component.translatable(
+                    "message.bodycam.all_seeing_eye.expired").withStyle(net.minecraft.ChatFormatting.GOLD));
+        }
+        player.getPersistentData().remove("bodycam_all_seeing_pending");
         dev.ClasherHD.bodycam.enchantment.NightspyEffectHandler.clear(player);
 
         java.util.UUID uuid = player.getUUID();

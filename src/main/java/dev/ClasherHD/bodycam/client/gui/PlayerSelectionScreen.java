@@ -2,7 +2,10 @@ package dev.ClasherHD.bodycam.client.gui;
 
 import dev.ClasherHD.bodycam.client.cache.ClientBodycamCache;
 import dev.ClasherHD.bodycam.config.ModClientConfig;
+import dev.ClasherHD.bodycam.network.PacketHandler;
+import dev.ClasherHD.bodycam.network.bodycam.BodycamResetCameraPacket;
 import dev.ClasherHD.bodycam.registry.ModSounds;
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.ObjectSelectionList;
@@ -24,6 +27,8 @@ public class PlayerSelectionScreen extends Screen {
     private static final ResourceLocation WINDOW_TEXTURE = new ResourceLocation("bodycam", "textures/gui/gui_window.png");
     private final int reachLevel;
     private final boolean isOnHologram;
+    private final boolean isAllSeeingEye;
+    private boolean targetSelected = false;
     private PlayerListWidget listWidget;
     private net.minecraft.client.gui.components.Button modeToggleButton;
     private boolean showingWatchPoints = false;
@@ -39,13 +44,18 @@ public class PlayerSelectionScreen extends Screen {
     private int colorStandard;
 
     public PlayerSelectionScreen(int reachLevel, boolean isOnHologram) {
+        this(reachLevel, isOnHologram, false);
+    }
+
+    public PlayerSelectionScreen(int reachLevel, boolean isOnHologram, boolean isAllSeeingEye) {
         super(Component.translatable("gui.bodycam.select_player"));
         this.reachLevel = reachLevel;
         this.isOnHologram = isOnHologram;
+        this.isAllSeeingEye = isAllSeeingEye;
     }
 
     private boolean isBeyondReach(UUID targetId) {
-        if (this.reachLevel >= 2) {
+        if (this.isAllSeeingEye || this.reachLevel >= 2) {
             return false;
         }
         Minecraft mc = Minecraft.getInstance();
@@ -132,7 +142,8 @@ public class PlayerSelectionScreen extends Screen {
         if (!this.showingWatchPoints) {
             for (net.minecraft.client.multiplayer.PlayerInfo info : this.minecraft.getConnection().getOnlinePlayers()) {
                 UUID infoId = info.getProfile().getId();
-                if (this.minecraft.player != null && !infoId.equals(this.minecraft.player.getUUID()) && !ClientBodycamCache.hidden.contains(infoId)) {
+                if (this.minecraft.player != null && !infoId.equals(this.minecraft.player.getUUID())
+                        && (this.isAllSeeingEye || !ClientBodycamCache.hidden.contains(infoId))) {
                     this.listWidget.addPlayerEntry(new PlayerEntry(infoId, info.getProfile().getName(), info.getSkinLocation(), false));
                 }
             }
@@ -149,15 +160,32 @@ public class PlayerSelectionScreen extends Screen {
     }
 
     @Override
+    public void removed() {
+        super.removed();
+        if (this.isAllSeeingEye && !this.targetSelected && !BodycamViewScreen.isMonitoring) {
+            PacketHandler.INSTANCE.sendToServer(new BodycamResetCameraPacket());
+        }
+    }
+
+    @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(graphics);
+        if (this.isAllSeeingEye) {
+            RenderSystem.setShaderColor(1.0F, 0.85F, 0.3F, 1.0F);
+        }
         GuiRenderUtils.drawNineSlice(graphics, WINDOW_TEXTURE, this.guiX, this.guiY, this.guiWidth, this.guiHeight, 32, 32, 32, 32, 256, 256);
+        if (this.isAllSeeingEye) {
+            RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        }
 
         if (this.listWidget != null) {
             this.listWidget.render(graphics, mouseX, mouseY, partialTick);
         }
 
         Component headerTitle = Component.translatable(this.showingWatchPoints ? "gui.bodycam.select_watch_point" : "gui.bodycam.select_player");
+        if (this.isAllSeeingEye) {
+            headerTitle = Component.literal("\u25c9 ").append(headerTitle).append(Component.literal(" \u25c9"));
+        }
         graphics.drawCenteredString(this.font, headerTitle, this.width / 2, this.guiY + 10, 0xFFFFFFFF);
         super.render(graphics, mouseX, mouseY, partialTick);
     }
@@ -239,14 +267,15 @@ public class PlayerSelectionScreen extends Screen {
                             PlayerSelectionScreen.this.minecraft.getSoundManager().playDelayed(SimpleSoundInstance.forUI(ModSounds.MONITOR_SELECT_RESONATE3.get(), 2.0F, 0.06F), 20);
                             PlayerSelectionScreen.this.minecraft.getSoundManager().playDelayed(SimpleSoundInstance.forUI(ModSounds.MONITOR_SELECT_RESONATE4.get(), 2.0F, 0.06F), 30);
                             PlayerSelectionScreen.this.minecraft.getSoundManager().play(SimpleSoundInstance.forUI(ModSounds.MONITOR_SELECT_SHIMMER.get(), 2.0F, 0.25F));
+                            PlayerSelectionScreen.this.targetSelected = true;
                             PlayerSelectionScreen.this.minecraft.setScreen(new BodycamViewScreen(
-                                    this.targetId, this.displayName, PlayerSelectionScreen.this.isOnHologram, this.isWatchPoint));
+                                    this.targetId, this.displayName, PlayerSelectionScreen.this.isOnHologram, this.isWatchPoint, PlayerSelectionScreen.this.isAllSeeingEye));
                         } catch (Exception e) {
                         }
                     }
             ).bounds(0, 0, 80, 20).build();
 
-            if (Minecraft.getInstance().level != null) {
+            if (!PlayerSelectionScreen.this.isAllSeeingEye && Minecraft.getInstance().level != null) {
                 int jammerMode = ClientBodycamCache.jammers.getOrDefault(this.targetId, 0);
 
                 if (jammerMode == 1) {
@@ -291,7 +320,9 @@ public class PlayerSelectionScreen extends Screen {
             boolean isBlocked = jammerMode == 1 || (jammerMode == 2 && isOutOfRangeOrDimension);
 
             int nameColor;
-            if (!hasAnonymizer && observingMe.contains(this.targetId)) {
+            if (PlayerSelectionScreen.this.isAllSeeingEye) {
+                nameColor = 0xFFFFFFFF;
+            } else if (!hasAnonymizer && observingMe.contains(this.targetId)) {
                 nameColor = PlayerSelectionScreen.this.colorObserving;
             } else if (isBlocked) {
                 nameColor = PlayerSelectionScreen.this.colorBlocked;

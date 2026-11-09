@@ -2,6 +2,7 @@ package dev.ClasherHD.bodycam.block.entity;
 
 import dev.ClasherHD.bodycam.block.AncientTableBlock;
 import dev.ClasherHD.bodycam.config.ModServerConfig;
+import dev.ClasherHD.bodycam.item.AllSeeingEyeItem;
 import dev.ClasherHD.bodycam.item.ItemDurabilityHelper;
 import dev.ClasherHD.bodycam.menu.AncientTableMenu;
 import dev.ClasherHD.bodycam.recipe.AncientTableRecipe;
@@ -218,6 +219,19 @@ public class AncientTableBlockEntity extends BlockEntity implements MenuProvider
         }
 
         ItemStack stack = items.getStackInSlot(foundSlot);
+        if (stack.getItem() instanceof AllSeeingEyeItem) {
+            if (AllSeeingEyeItem.isActivated(stack) || fuelUnits < getMaxFuelUnits()) {
+                return false;
+            }
+            this.processType = PROCESS_REPAIR;
+            this.activeRepairSlot = foundSlot;
+            this.activeRepairAmount = 1;
+            this.activeRecipeId = null;
+            this.activeFuelCost = getMaxFuelUnits();
+            this.progress = 0;
+            this.maxProgress = getTicksPerCrystalRepair();
+            return true;
+        }
         if (ItemDurabilityHelper.isUnbreakable(stack)
                 || !ItemDurabilityHelper.isRepairableModItem(stack)
                 || stack.getDamageValue() <= 0) {
@@ -310,7 +324,11 @@ public class AncientTableBlockEntity extends BlockEntity implements MenuProvider
             if (progress >= maxProgress) {
                 ItemStack input = items.getStackInSlot(activeRepairSlot);
                 ItemStack repaired = input.copy();
-                repaired.setDamageValue(Math.max(0, repaired.getDamageValue() - activeRepairAmount));
+                if (repaired.getItem() instanceof AllSeeingEyeItem) {
+                    AllSeeingEyeItem.setActivated(repaired, true);
+                } else {
+                    repaired.setDamageValue(Math.max(0, repaired.getDamageValue() - activeRepairAmount));
+                }
                 items.setStackInSlot(activeRepairSlot, ItemStack.EMPTY);
                 items.setStackInSlot(OUTPUT_SLOT, repaired);
                 fuelUnits = Math.max(0, fuelUnits - activeFuelCost);
@@ -378,6 +396,9 @@ public class AncientTableBlockEntity extends BlockEntity implements MenuProvider
             }
         }
         ItemStack stack = items.getStackInSlot(activeRepairSlot);
+        if (stack.getItem() instanceof AllSeeingEyeItem) {
+            return !AllSeeingEyeItem.isActivated(stack);
+        }
         return !ItemDurabilityHelper.isUnbreakable(stack)
                 && ItemDurabilityHelper.isRepairableModItem(stack)
                 && stack.getDamageValue() >= activeRepairAmount;

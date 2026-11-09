@@ -24,7 +24,7 @@ public class ClientPacketHandler {
     public static void handleSyncStates(SyncBodycamStatesS2CPacket msg) {
         dev.ClasherHD.bodycam.client.cache.ClientBodycamCache.update(
                 msg.jammers, msg.targets, msg.dimensions, msg.positions, msg.anonymizers, msg.hidden, msg.watchPoints);
-        Minecraft.getInstance().setScreen(new dev.ClasherHD.bodycam.client.gui.PlayerSelectionScreen(msg.reachLevel, msg.isOnHologram));
+        Minecraft.getInstance().setScreen(new dev.ClasherHD.bodycam.client.gui.PlayerSelectionScreen(msg.reachLevel, msg.isOnHologram, msg.isAllSeeingEye));
     }
 
     public static void handleCrossSync(CrossObservationSyncPacket msg) {

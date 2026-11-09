@@ -217,4 +217,78 @@ public class SyncBodycamRequestC2SPacket {
         });
         ctx.get().setPacketHandled(true);
     }
+
+    public static void sendAllSeeingEyeState(ServerPlayer sender) {
+        if (sender == null || sender.server == null) {
+            return;
+        }
+        Map<UUID, Integer> jammers = new HashMap<>();
+        Map<UUID, UUID> targets = new HashMap<>();
+        Map<UUID, String> dimensions = new HashMap<>();
+        Map<UUID, BlockPos> positions = new HashMap<>();
+        Map<UUID, Boolean> anonymizers = new HashMap<>();
+        Set<UUID> hidden = new HashSet<>();
+        Map<UUID, String> watchPoints = new LinkedHashMap<>();
+
+        for (ServerPlayer p : sender.server.getPlayerList().getPlayers()) {
+            jammers.put(p.getUUID(), 0);
+            anonymizers.put(p.getUUID(), false);
+
+            if (p.getPersistentData().getBoolean("bodycam_active") && p.getPersistentData().contains("bodycam_target_uuid")) {
+                targets.put(p.getUUID(), p.getPersistentData().getUUID("bodycam_target_uuid"));
+            }
+
+            BlockPos targetPos;
+            String targetDim;
+            if (p.getPersistentData().getBoolean("bodycam_active")) {
+                net.minecraft.world.phys.Vec3 dummyVec = dev.ClasherHD.bodycam.entity.BodycamDummyEntity.DUMMY_POS.get(p.getUUID());
+                if (dummyVec != null) {
+                    targetPos = BlockPos.containing(dummyVec);
+                } else {
+                    net.minecraft.world.phys.Vec3 origVec = BodycamSetCameraPacket.ORIGINAL_POS.get(p.getUUID());
+                    if (origVec != null) {
+                        targetPos = BlockPos.containing(origVec);
+                    } else if (p.getPersistentData().contains("bodycam_orig_x")) {
+                        targetPos = BlockPos.containing(
+                                p.getPersistentData().getDouble("bodycam_orig_x"),
+                                p.getPersistentData().getDouble("bodycam_orig_y"),
+                                p.getPersistentData().getDouble("bodycam_orig_z")
+                        );
+                    } else {
+                        targetPos = p.blockPosition();
+                    }
+                }
+                String origDim = BodycamSetCameraPacket.ORIGINAL_DIM.get(p.getUUID());
+                if (origDim == null && p.getPersistentData().contains("bodycam_orig_dim")) {
+                    origDim = p.getPersistentData().getString("bodycam_orig_dim");
+                }
+                targetDim = origDim != null ? origDim : p.level().dimension().location().toString();
+            } else {
+                targetDim = p.level().dimension().location().toString();
+                targetPos = p.blockPosition();
+            }
+
+            dimensions.put(p.getUUID(), targetDim);
+            positions.put(p.getUUID(), targetPos);
+        }
+
+        if (dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_WATCH_POINT.get()) {
+            for (WatchPointDummyEntity wp : WatchPointDummyEntity.getAllActive(sender.server)) {
+                UUID wpId = wp.getUUID();
+                String ownerName = wp.getOwnerName();
+                String wpName = wp.getSelectionDisplayName();
+                String display = (ownerName != null && !ownerName.isEmpty() && !sender.getUUID().equals(wp.getOwnerUUID()))
+                        ? ownerName + ": " + wpName
+                        : wpName;
+                watchPoints.put(wpId, display);
+                dimensions.put(wpId, wp.level().dimension().location().toString());
+                positions.put(wpId, wp.blockPosition());
+            }
+        }
+
+        PacketHandler.INSTANCE.send(
+                PacketDistributor.PLAYER.with(() -> sender),
+                new SyncBodycamStatesS2CPacket(jammers, targets, dimensions, positions, anonymizers, hidden, watchPoints, 2, false, true)
+        );
+    }
 }

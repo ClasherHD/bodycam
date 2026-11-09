@@ -31,6 +31,7 @@ public class ModServerConfig {
     public static final ForgeConfigSpec.IntValue JAMMER_DURABILITY;
     public static final ForgeConfigSpec.IntValue LOGGER_DURABILITY;
     public static final ForgeConfigSpec.BooleanValue ENABLE_LOGGER;
+    public static final ForgeConfigSpec.BooleanValue ENABLE_ALL_SEEING_EYE;
     public static final ForgeConfigSpec.IntValue ANCIENT_TABLE_FUEL_PER_CRYSTAL;
     public static final ForgeConfigSpec.IntValue ANCIENT_TABLE_REPAIR_SECONDS_PER_CRYSTAL;
     public static final ForgeConfigSpec.IntValue ANCIENT_TABLE_CRAFT_SECONDS_PER_ITEM;
@@ -79,6 +80,8 @@ public class ModServerConfig {
                 .define("enablePodest", true);
         ENABLE_LOGGER = BUILDER.comment("Enable or Disable the Logger item")
                 .define("enableLogger", true);
+        ENABLE_ALL_SEEING_EYE = BUILDER.comment("Enable or Disable The All Seeing Eye item")
+                .define("enableAllSeeingEye", true);
         BUILDER.pop();
 
         BUILDER.push("durability");

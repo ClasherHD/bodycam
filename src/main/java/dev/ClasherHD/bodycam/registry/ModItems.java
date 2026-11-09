@@ -1,6 +1,7 @@
 package dev.ClasherHD.bodycam.registry;
 
 import dev.ClasherHD.bodycam.bodycam;
+import dev.ClasherHD.bodycam.item.AllSeeingEyeItem;
 import dev.ClasherHD.bodycam.item.AnonymizerItem;
 import dev.ClasherHD.bodycam.item.BodycamMonitorItem;
 import dev.ClasherHD.bodycam.item.DimensionLocatorItem;
@@ -41,6 +42,8 @@ public class ModItems {
             () -> new LogPaperItem(new Item.Properties().stacksTo(16)));
     public static final RegistryObject<Item> LOG_BOOK = ITEMS.register("log_book",
             () -> new LogBookItem(new Item.Properties()));
+    public static final RegistryObject<Item> ALL_SEEING_EYE = ITEMS.register("all_seeing_eye",
+            () -> new AllSeeingEyeItem(new Item.Properties()));
     public static final RegistryObject<Item> HOLOGRAM_BLOCK_ITEM = ITEMS.register("hologram_block",
             () -> new BlockItem(ModBlocks.HOLOGRAM_BLOCK.get(), new Item.Properties()));
     public static final RegistryObject<Item> OBSERVATION_CRYSTAL_BLOCK_ITEM = ITEMS.register("observation_crystal_block",

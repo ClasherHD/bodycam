@@ -4,6 +4,7 @@ import dev.ClasherHD.bodycam.block.entity.PodestBlockEntity;
 import dev.ClasherHD.bodycam.enchantment.EnchantmentLevels;
 import dev.ClasherHD.bodycam.enchantment.NightspyEffectHandler;
 import dev.ClasherHD.bodycam.entity.WatchPointDummyEntity;
+import dev.ClasherHD.bodycam.item.AllSeeingEyeItem;
 import dev.ClasherHD.bodycam.item.ItemDurabilityHelper;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
@@ -26,19 +27,26 @@ public class BodycamSetCameraPacket {
 
     public final UUID targetId;
     public final boolean isOnHologram;
+    public final boolean isAllSeeingEye;
 
     public BodycamSetCameraPacket(UUID targetId, boolean isOnHologram) {
+        this(targetId, isOnHologram, false);
+    }
+
+    public BodycamSetCameraPacket(UUID targetId, boolean isOnHologram, boolean isAllSeeingEye) {
         this.targetId = targetId;
         this.isOnHologram = isOnHologram;
+        this.isAllSeeingEye = isAllSeeingEye;
     }
 
     public static void encode(BodycamSetCameraPacket msg, FriendlyByteBuf buf) {
         buf.writeUUID(msg.targetId);
         buf.writeBoolean(msg.isOnHologram);
+        buf.writeBoolean(msg.isAllSeeingEye);
     }
 
     public static BodycamSetCameraPacket decode(FriendlyByteBuf buf) {
-        return new BodycamSetCameraPacket(buf.readUUID(), buf.readBoolean());
+        return new BodycamSetCameraPacket(buf.readUUID(), buf.readBoolean(), buf.readBoolean());
     }
 
     public static void handle(BodycamSetCameraPacket msg, Supplier<NetworkEvent.Context> ctx) {
@@ -57,6 +65,22 @@ public class BodycamSetCameraPacket {
             boolean alreadyActive = player.getPersistentData().getBoolean("bodycam_active");
             if (player.isSpectator() && !alreadyActive) {
                 ctx.get().setPacketHandled(true);
+                return;
+            }
+
+            boolean isAllSeeingEye;
+            if (alreadyActive) {
+                isAllSeeingEye = player.getPersistentData().getBoolean("bodycam_all_seeing_active");
+            } else {
+                isAllSeeingEye = msg.isAllSeeingEye
+                        && dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_ALL_SEEING_EYE.get()
+                        && player.getPersistentData().getBoolean("bodycam_all_seeing_pending")
+                        && AllSeeingEyeItem.hasActivatedEye(player);
+            }
+            if (msg.isAllSeeingEye && !isAllSeeingEye) {
+                dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
+                        net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
+                        new BodycamForceClosePacket());
                 return;
             }
 
@@ -87,7 +111,7 @@ public class BodycamSetCameraPacket {
             if (target == null) {
                 if (dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_WATCH_POINT.get()) {
                     targetWatchPoint = WatchPointDummyEntity.findByUUID(player.server, msg.targetId);
-                    if (targetWatchPoint != null && !player.getUUID().equals(targetWatchPoint.getOwnerUUID())) {
+                    if (targetWatchPoint != null && !isAllSeeingEye && !player.getUUID().equals(targetWatchPoint.getOwnerUUID())) {
                         targetWatchPoint = null;
                     }
                 }
@@ -111,7 +135,7 @@ public class BodycamSetCameraPacket {
                 return;
             }
 
-            if (target != null) {
+            if (target != null && !isAllSeeingEye) {
                 if (EnchantmentLevels.isHiddenFromSelection(target)) {
                     dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
                             net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
@@ -161,7 +185,9 @@ public class BodycamSetCameraPacket {
             }
 
             boolean isOnHologram;
-            if (alreadyActive) {
+            if (isAllSeeingEye) {
+                isOnHologram = false;
+            } else if (alreadyActive) {
                 isOnHologram = player.getPersistentData().getBoolean("bodycam_on_hologram");
             } else {
                 isOnHologram = msg.isOnHologram;
@@ -178,9 +204,9 @@ public class BodycamSetCameraPacket {
                 }
             }
 
-            int reachLevel = EnchantmentLevels.sessionReach(player, isOnHologram);
+            int reachLevel = isAllSeeingEye ? 2 : EnchantmentLevels.sessionReach(player, isOnHologram);
 
-            if (reachLevel < 2) {
+            if (!isAllSeeingEye && reachLevel < 2) {
                 String targetDim = targetEntity.level().dimension().location().toString();
                 if (!observerDim.equals(targetDim) || (reachLevel < 1 && observerPos.distanceTo(targetEntity.position()) > (double) dev.ClasherHD.bodycam.config.ModServerConfig.MAX_MONITOR_DISTANCE.get())) {
                     player.sendSystemMessage(net.minecraft.network.chat.Component.translatable(
@@ -192,7 +218,7 @@ public class BodycamSetCameraPacket {
                 }
             }
 
-            if (!isOnHologram && !alreadyActive) {
+            if (!isAllSeeingEye && !isOnHologram && !alreadyActive) {
                 ItemStack spyglassStack = EnchantmentLevels.heldBodycam(player);
                 if (spyglassStack.isEmpty() || ItemDurabilityHelper.isEmpty(spyglassStack)) {
                     dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
@@ -204,6 +230,41 @@ public class BodycamSetCameraPacket {
             }
 
             if (!alreadyActive) {
+                if (isAllSeeingEye) {
+                    player.getPersistentData().remove("bodycam_all_seeing_pending");
+                    player.getPersistentData().putBoolean("bodycam_all_seeing_active", true);
+
+                    AllSeeingEyeItem.consumeOne(player);
+
+                    player.level().playSound(
+                            null,
+                            player.getX(),
+                            player.getY(),
+                            player.getZ(),
+                            dev.ClasherHD.bodycam.registry.ModSounds.ALL_SEEING_EYE_USE.get(),
+                            net.minecraft.sounds.SoundSource.PLAYERS,
+                            3.125F,
+                            1.65F
+                    );
+
+                    player.getPersistentData().putInt("bodycam_all_seeing_fog_ticks", AllSeeingEyeItem.FOG_DURATION_TICKS);
+                    player.getPersistentData().putDouble("bodycam_fog_x", player.getX());
+                    player.getPersistentData().putDouble("bodycam_fog_y", player.getY());
+                    player.getPersistentData().putDouble("bodycam_fog_z", player.getZ());
+                    player.getPersistentData().putString("bodycam_fog_dim", player.level().dimension().location().toString());
+                    player.serverLevel().sendParticles(
+                            net.minecraft.core.particles.ParticleTypes.END_ROD,
+                            player.getX(),
+                            player.getY() + 1.0D,
+                            player.getZ(),
+                            35,
+                            0.75D,
+                            0.85D,
+                            0.75D,
+                            0.02D
+                    );
+                }
+
                 if (player.getPersistentData().contains("bodycam_dummy_uuid")) {
                     UUID oldId = player.getPersistentData().getUUID("bodycam_dummy_uuid");
                     for (net.minecraft.server.level.ServerLevel lvl : player.server.getAllLevels()) {

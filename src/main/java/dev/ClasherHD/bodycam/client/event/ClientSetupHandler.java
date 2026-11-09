@@ -43,6 +43,9 @@ public class ClientSetupHandler {
             ItemProperties.register(ModItems.LOG_BOOK.get(),
                     new ResourceLocation("bodycam", "locked"),
                     (stack, level, entity, seed) -> dev.ClasherHD.bodycam.item.LogBookItem.hasPin(stack) ? 1.0F : 0.0F);
+            ItemProperties.register(ModItems.ALL_SEEING_EYE.get(),
+                    new ResourceLocation("bodycam", "deactivated"),
+                    (stack, level, entity, seed) -> dev.ClasherHD.bodycam.item.AllSeeingEyeItem.isActivated(stack) ? 0.0F : 1.0F);
 
             ItemProperties.register(ModItems.JAMMER.get(),
                     new ResourceLocation("bodycam", "mode"),

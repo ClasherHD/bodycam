@@ -19,11 +19,13 @@ public class BodycamViewScreen extends Screen {
     private final String targetName;
     private final boolean isOnHologram;
     private final boolean isWatchPoint;
+    private final boolean isAllSeeingEye;
     public static boolean isMonitoring = false;
     public static java.util.UUID targetUuid;
     public static String targetNameStatic;
     public static boolean lastIsOnHologram = false;
     public static boolean lastIsWatchPoint = false;
+    public static boolean lastIsAllSeeingEye = false;
 
     private boolean hasMousePos = false;
     private double lastMouseX;
@@ -33,19 +35,25 @@ public class BodycamViewScreen extends Screen {
     private boolean pendingLookPacket = false;
 
     public BodycamViewScreen(java.util.UUID targetId, String targetName, boolean isOnHologram) {
-        this(targetId, targetName, isOnHologram, false);
+        this(targetId, targetName, isOnHologram, false, false);
     }
 
     public BodycamViewScreen(java.util.UUID targetId, String targetName, boolean isOnHologram, boolean isWatchPoint) {
+        this(targetId, targetName, isOnHologram, isWatchPoint, false);
+    }
+
+    public BodycamViewScreen(java.util.UUID targetId, String targetName, boolean isOnHologram, boolean isWatchPoint, boolean isAllSeeingEye) {
         super(Component.translatable("item.bodycam.bodycam_monitor"));
         this.targetId = targetId;
         this.targetName = targetName;
         this.isOnHologram = isOnHologram;
         this.isWatchPoint = isWatchPoint;
+        this.isAllSeeingEye = isAllSeeingEye;
         BodycamViewScreen.targetUuid = targetId;
         BodycamViewScreen.targetNameStatic = targetName;
         BodycamViewScreen.lastIsOnHologram = isOnHologram;
         BodycamViewScreen.lastIsWatchPoint = isWatchPoint;
+        BodycamViewScreen.lastIsAllSeeingEye = isAllSeeingEye;
 
         this.cachedExitText = Component.translatable("gui.bodycam.exit_message", Minecraft.getInstance().options.keyShift.getTranslatedKeyMessage()).getString();
     }
@@ -71,7 +79,7 @@ public class BodycamViewScreen extends Screen {
         BodycamViewScreen.isMonitoring = true;
         this.hasMousePos = false;
         if (!this.packetSent) {
-            PacketHandler.INSTANCE.sendToServer(new dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket(this.targetId, this.isOnHologram));
+            PacketHandler.INSTANCE.sendToServer(new dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket(this.targetId, this.isOnHologram, this.isAllSeeingEye));
             this.packetSent = true;
         }
         if (mc.level != null) {
@@ -182,19 +190,30 @@ public class BodycamViewScreen extends Screen {
             com.mojang.blaze3d.systems.RenderSystem.enableBlend();
             com.mojang.blaze3d.systems.RenderSystem.defaultBlendFunc();
 
-            graphics.fill(0, 0, this.width, frameThickY, 0x99000000);
-            graphics.fill(0, this.height - frameThickY, this.width, this.height, 0x99000000);
-            graphics.fill(0, frameThickY, frameThickX, this.height - frameThickY, 0x99000000);
-            graphics.fill(this.width - frameThickX, frameThickY, this.width, this.height - frameThickY, 0x99000000);
+            int barColor = this.isAllSeeingEye ? 0xAA221800 : 0x99000000;
+            graphics.fill(0, 0, this.width, frameThickY, barColor);
+            graphics.fill(0, this.height - frameThickY, this.width, this.height, barColor);
+            graphics.fill(0, frameThickY, frameThickX, this.height - frameThickY, barColor);
+            graphics.fill(this.width - frameThickX, frameThickY, this.width, this.height - frameThickY, barColor);
+            if (this.isAllSeeingEye) {
+                int borderCol = 0xCCFFAA00;
+                graphics.fill(frameThickX - 2, frameThickY - 2, this.width - frameThickX + 2, frameThickY, borderCol);
+                graphics.fill(frameThickX - 2, this.height - frameThickY, this.width - frameThickX + 2, this.height - frameThickY + 2, borderCol);
+                graphics.fill(frameThickX - 2, frameThickY, frameThickX, this.height - frameThickY, borderCol);
+                graphics.fill(this.width - frameThickX, frameThickY, this.width - frameThickX + 2, this.height - frameThickY, borderCol);
+            }
 
             com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 
             if (dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_NAME_OVERLAY.get()) {
                 Component recComp = Component.translatable("gui.bodycam.rec", this.targetName);
+                String dotChar = this.isAllSeeingEye ? "\u25c9" : "\u25cf";
+                int dotColor = this.isAllSeeingEye ? 0xFFFFAA00 : 0xFFFF0000;
+                int textColor = 0xFFFFFFFF;
                 if ((System.currentTimeMillis() % 1000L) >= 500L) {
-                    graphics.drawString(this.font, "\u25cf", 10, 10, 0xFFFF0000, true);
+                    graphics.drawString(this.font, dotChar, 10, 10, dotColor, true);
                 }
-                graphics.drawString(this.font, recComp, 10 + this.font.width("\u25cf "), 10, 0xFFFFFFFF, true);
+                graphics.drawString(this.font, recComp, 10 + this.font.width(dotChar + " "), 10, textColor, true);
             }
 
             if (dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_SHIFT_OVERLAY.get()) {
