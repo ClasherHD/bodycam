@@ -29,6 +29,8 @@ public class ModServerConfig {
     public static final ForgeConfigSpec.IntValue PLAYER_LOCATOR_DURABILITY;
     public static final ForgeConfigSpec.IntValue ANONYMIZER_DURABILITY;
     public static final ForgeConfigSpec.IntValue JAMMER_DURABILITY;
+    public static final ForgeConfigSpec.IntValue LOGGER_DURABILITY;
+    public static final ForgeConfigSpec.BooleanValue ENABLE_LOGGER;
     public static final ForgeConfigSpec.IntValue ANCIENT_TABLE_FUEL_PER_CRYSTAL;
     public static final ForgeConfigSpec.IntValue ANCIENT_TABLE_REPAIR_SECONDS_PER_CRYSTAL;
     public static final ForgeConfigSpec.IntValue ANCIENT_TABLE_CRAFT_SECONDS_PER_ITEM;
@@ -75,6 +77,8 @@ public class ModServerConfig {
                 .define("enableWatchPoint", true);
         ENABLE_PODEST = BUILDER.comment("Enable or Disable the Podest Block")
                 .define("enablePodest", true);
+        ENABLE_LOGGER = BUILDER.comment("Enable or Disable the Logger item")
+                .define("enableLogger", true);
         BUILDER.pop();
 
         BUILDER.push("durability");
@@ -88,6 +92,8 @@ public class ModServerConfig {
                 .defineInRange("anonymizerDurability", 448, 1, 100000);
         JAMMER_DURABILITY = BUILDER.comment("Max durability points for the Jammer")
                 .defineInRange("jammerDurability", 336, 1, 100000);
+        LOGGER_DURABILITY = BUILDER.comment("Max durability (log sheets) for the Logger")
+                .defineInRange("loggerDurability", 8, 1, 100000);
         ANCIENT_TABLE_FUEL_PER_CRYSTAL = BUILDER.comment("Durability points restored to per-time items by 1 Observation Crystal")
                 .defineInRange("ancientTableFuelPerCrystal", 112, 1, 100000);
         ANCIENT_TABLE_REPAIR_SECONDS_PER_CRYSTAL = BUILDER.comment("Seconds required to repair 1 full Observation Crystal worth of durability")

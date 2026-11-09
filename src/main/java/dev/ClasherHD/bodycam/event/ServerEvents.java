@@ -12,6 +12,8 @@ import dev.ClasherHD.bodycam.entity.WatchPointDummyEntity;
 import dev.ClasherHD.bodycam.item.AnonymizerItem;
 import dev.ClasherHD.bodycam.item.ItemDurabilityHelper;
 import dev.ClasherHD.bodycam.item.JammerItem;
+import dev.ClasherHD.bodycam.item.LogBookItem;
+import dev.ClasherHD.bodycam.item.LogPaperItem;
 import dev.ClasherHD.bodycam.item.PortableNetherPortalItem;
 import dev.ClasherHD.bodycam.network.PacketHandler;
 import dev.ClasherHD.bodycam.network.bodycam.BodycamForceClosePacket;
@@ -27,12 +29,18 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.EnchantedBookItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ShearsItem;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.AnvilUpdateEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
@@ -78,6 +86,39 @@ public class ServerEvents {
             this.z = z;
             this.yaw = yaw;
             this.pitch = pitch;
+        }
+    }
+
+    @SubscribeEvent
+    public static void onCartographyTableInteract(PlayerInteractEvent.RightClickBlock event) {
+        if (event.getHand() != InteractionHand.MAIN_HAND) {
+            return;
+        }
+        Player player = event.getEntity();
+        Level level = event.getLevel();
+        if (!level.getBlockState(event.getPos()).is(Blocks.CARTOGRAPHY_TABLE)) {
+            return;
+        }
+        ItemStack mainHand = player.getMainHandItem();
+        ItemStack offHand = player.getOffhandItem();
+        ItemStack book;
+        ItemStack other;
+        if (mainHand.getItem() instanceof LogBookItem) {
+            book = mainHand;
+            other = offHand;
+        } else if (offHand.getItem() instanceof LogBookItem) {
+            book = offHand;
+            other = mainHand;
+        } else {
+            return;
+        }
+        if (!(other.getItem() instanceof LogPaperItem) && !(other.getItem() instanceof ShearsItem)) {
+            return;
+        }
+        event.setCanceled(true);
+        event.setCancellationResult(InteractionResult.sidedSuccess(level.isClientSide()));
+        if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer) {
+            LogBookItem.handleCartographyInteraction(serverPlayer, book, other);
         }
     }
 

@@ -283,17 +283,22 @@ public class BodycamSetCameraPacket {
                 player.getPersistentData().putUUID("bodycam_dummy_uuid", dummy.getUUID());
             }
 
-            if (player.getPersistentData().contains("bodycam_target_uuid")) {
-                UUID oldTargetId = player.getPersistentData().getUUID("bodycam_target_uuid");
-                if (oldTargetId != null && !oldTargetId.equals(msg.targetId)) {
-                    ServerPlayer oldTarget = player.server.getPlayerList().getPlayer(oldTargetId);
-                    if (oldTarget != null) {
-                        dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
-                                net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> oldTarget),
-                                new CrossObservationSyncPacket(player.getUUID(), false));
-                    }
+            UUID oldTargetId = player.getPersistentData().contains("bodycam_target_uuid")
+                    ? player.getPersistentData().getUUID("bodycam_target_uuid")
+                    : null;
+            if (oldTargetId != null && !oldTargetId.equals(msg.targetId)) {
+                ServerPlayer oldTarget = player.server.getPlayerList().getPlayer(oldTargetId);
+                if (oldTarget != null) {
+                    dev.ClasherHD.bodycam.network.PacketHandler.INSTANCE.send(
+                            net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> oldTarget),
+                            new CrossObservationSyncPacket(player.getUUID(), false));
                 }
             }
+
+            if (target != null && (!alreadyActive || oldTargetId == null || !oldTargetId.equals(msg.targetId))) {
+                dev.ClasherHD.bodycam.item.LoggerItem.recordObservation(target, player, observerDim, observerPos);
+            }
+
             player.getPersistentData().putBoolean("bodycam_active", true);
             player.getPersistentData().putBoolean("bodycam_watching_watchpoint", targetWatchPoint != null);
             player.getPersistentData().putUUID("bodycam_target_uuid", msg.targetId);

@@ -43,6 +43,14 @@ public class ClientPacketHandler {
         Minecraft.getInstance().setScreen(new dev.ClasherHD.bodycam.client.gui.WatchPointRenameScreen(msg.pos, msg.currentName));
     }
 
+    public static void handleOpenLogBook(dev.ClasherHD.bodycam.network.logbook.OpenLogBookS2CPacket msg) {
+        Minecraft.getInstance().setScreen(new dev.ClasherHD.bodycam.client.gui.LogBookScreen(msg.data));
+    }
+
+    public static void handleOpenLogBookPinScreen(dev.ClasherHD.bodycam.network.logbook.OpenLogBookPinScreenS2CPacket msg) {
+        Minecraft.getInstance().setScreen(new dev.ClasherHD.bodycam.client.gui.LogBookPinScreen(msg.mode, msg.offHand));
+    }
+
     public static void handlePlayerLocatorSync(dev.ClasherHD.bodycam.network.locator.PlayerLocatorSyncS2CPacket msg) {
         dev.ClasherHD.bodycam.client.cache.ClientBodycamCache.positions.clear();
         dev.ClasherHD.bodycam.client.cache.ClientBodycamCache.dimensions.clear();

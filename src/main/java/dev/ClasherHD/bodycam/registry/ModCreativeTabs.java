@@ -33,6 +33,9 @@ public class ModCreativeTabs {
                         output.accept(ModItems.JAMMER.get());
                         output.accept(ModItems.ANONYMIZER.get());
                         output.accept(ModItems.PORTABLE_NETHER_PORTAL.get());
+                        output.accept(ModItems.LOGGER.get());
+                        output.accept(ModItems.LOG_PAPER.get());
+                        output.accept(ModItems.LOG_BOOK.get());
                         for (int level = 1; level <= 2; level++) {
                             output.accept(EnchantedBookItem.createForEnchantment(
                                     new EnchantmentInstance(ModEnchantments.REACH_ENCHANTMENT.get(), level)));
@@ -59,6 +62,7 @@ public class ModCreativeTabs {
                         output.accept(ItemDurabilityHelper.createUnbreakableStack(ModItems.DIMENSION_LOCATOR.get()));
                         output.accept(ItemDurabilityHelper.createUnbreakableStack(ModItems.JAMMER.get()));
                         output.accept(ItemDurabilityHelper.createUnbreakableStack(ModItems.ANONYMIZER.get()));
+                        output.accept(ItemDurabilityHelper.createUnbreakableStack(ModItems.LOGGER.get()));
                     })
                     .build());
 }

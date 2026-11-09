@@ -43,4 +43,16 @@ public class ModSounds {
             () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(bodycam.MODID, "watch_point_activate")));
     public static final RegistryObject<SoundEvent> WATCH_POINT_DEACTIVATE = SOUND_EVENTS.register("watch_point_deactivate",
             () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(bodycam.MODID, "watch_point_deactivate")));
+    public static final RegistryObject<SoundEvent> LOG_BOOK_LOCK = SOUND_EVENTS.register("log_book_lock",
+            () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(bodycam.MODID, "log_book_lock")));
+    public static final RegistryObject<SoundEvent> LOG_BOOK_UNLOCK = SOUND_EVENTS.register("log_book_unlock",
+            () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(bodycam.MODID, "log_book_unlock")));
+    public static final RegistryObject<SoundEvent> LOG_BOOK_WRONG_PIN = SOUND_EVENTS.register("log_book_wrong_pin",
+            () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(bodycam.MODID, "log_book_wrong_pin")));
+    public static final RegistryObject<SoundEvent> LOGGER_START = SOUND_EVENTS.register("logger_start",
+            () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(bodycam.MODID, "logger_start")));
+    public static final RegistryObject<SoundEvent> LOGGER_STOP = SOUND_EVENTS.register("logger_stop",
+            () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(bodycam.MODID, "logger_stop")));
+    public static final RegistryObject<SoundEvent> LOGGER_CANCEL = SOUND_EVENTS.register("logger_cancel",
+            () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(bodycam.MODID, "logger_cancel")));
 }

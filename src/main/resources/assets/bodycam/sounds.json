@@ -142,5 +142,59 @@
         "type": "event"
       }
     ]
+  },
+  "log_book_lock": {
+    "subtitle": "subtitles.bodycam.log_book_lock",
+    "sounds": [
+      {
+        "name": "minecraft:block.iron_door.close",
+        "type": "event"
+      }
+    ]
+  },
+  "log_book_unlock": {
+    "subtitle": "subtitles.bodycam.log_book_unlock",
+    "sounds": [
+      {
+        "name": "minecraft:block.iron_door.open",
+        "type": "event"
+      }
+    ]
+  },
+  "log_book_wrong_pin": {
+    "subtitle": "subtitles.bodycam.log_book_wrong_pin",
+    "sounds": [
+      {
+        "name": "minecraft:entity.villager.no",
+        "type": "event"
+      }
+    ]
+  },
+  "logger_start": {
+    "subtitle": "subtitles.bodycam.logger_start",
+    "sounds": [
+      {
+        "name": "minecraft:ui.button.click",
+        "type": "event"
+      }
+    ]
+  },
+  "logger_stop": {
+    "subtitle": "subtitles.bodycam.logger_stop",
+    "sounds": [
+      {
+        "name": "minecraft:ui.cartography_table.take_result",
+        "type": "event"
+      }
+    ]
+  },
+  "logger_cancel": {
+    "subtitle": "subtitles.bodycam.logger_cancel",
+    "sounds": [
+      {
+        "name": "minecraft:ui.button.click",
+        "type": "event"
+      }
+    ]
   }
 }

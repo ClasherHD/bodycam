@@ -4,6 +4,7 @@ import dev.ClasherHD.bodycam.bodycam;
 import dev.ClasherHD.bodycam.network.bodycam.*;
 import dev.ClasherHD.bodycam.network.config.*;
 import dev.ClasherHD.bodycam.network.locator.*;
+import dev.ClasherHD.bodycam.network.logbook.*;
 import dev.ClasherHD.bodycam.network.watchpoint.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.network.NetworkDirection;
@@ -128,5 +129,23 @@ public class PacketHandler {
                 ReloadClientConfigS2CPacket::decode,
                 ReloadClientConfigS2CPacket::handle,
                 Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+
+        INSTANCE.registerMessage(id(), OpenLogBookS2CPacket.class,
+                OpenLogBookS2CPacket::encode,
+                OpenLogBookS2CPacket::decode,
+                OpenLogBookS2CPacket::handle,
+                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+
+        INSTANCE.registerMessage(id(), OpenLogBookPinScreenS2CPacket.class,
+                OpenLogBookPinScreenS2CPacket::encode,
+                OpenLogBookPinScreenS2CPacket::decode,
+                OpenLogBookPinScreenS2CPacket::handle,
+                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+
+        INSTANCE.registerMessage(id(), LogBookActionC2SPacket.class,
+                LogBookActionC2SPacket::encode,
+                LogBookActionC2SPacket::decode,
+                LogBookActionC2SPacket::handle,
+                Optional.of(NetworkDirection.PLAY_TO_SERVER));
     }
 }

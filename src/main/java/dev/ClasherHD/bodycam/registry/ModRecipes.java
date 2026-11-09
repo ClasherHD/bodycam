@@ -2,8 +2,10 @@ package dev.ClasherHD.bodycam.registry;
 
 import dev.ClasherHD.bodycam.bodycam;
 import dev.ClasherHD.bodycam.recipe.AncientTableRecipe;
+import dev.ClasherHD.bodycam.recipe.LoggerRefillRecipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.item.crafting.SimpleCraftingRecipeSerializer;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
@@ -25,4 +27,7 @@ public class ModRecipes {
 
     public static final RegistryObject<RecipeSerializer<AncientTableRecipe>> ANCIENT_TABLE_CRAFTING_SERIALIZER =
             SERIALIZERS.register("ancient_table_crafting", AncientTableRecipe.Serializer::new);
+
+    public static final RegistryObject<RecipeSerializer<LoggerRefillRecipe>> LOGGER_REFILL_SERIALIZER =
+            SERIALIZERS.register("logger_refill", () -> new SimpleCraftingRecipeSerializer<>(LoggerRefillRecipe::new));
 }

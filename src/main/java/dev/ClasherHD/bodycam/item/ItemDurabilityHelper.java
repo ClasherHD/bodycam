@@ -24,8 +24,13 @@ public final class ItemDurabilityHelper {
     public static final int PLAYER_LOCATOR_DURABILITY = 560;
     public static final int ANONYMIZER_DURABILITY = 448;
     public static final int JAMMER_DURABILITY = 336;
+    public static final int LOGGER_DURABILITY = 8;
 
     private ItemDurabilityHelper() {
+    }
+
+    public static int getLoggerMaxDurability() {
+        return ModServerConfig.SPEC.isLoaded() ? ModServerConfig.LOGGER_DURABILITY.get() : LOGGER_DURABILITY;
     }
 
     public static int getSpyglassMaxDurability() {

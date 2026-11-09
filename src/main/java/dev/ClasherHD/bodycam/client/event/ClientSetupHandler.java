@@ -33,6 +33,16 @@ public class ClientSetupHandler {
             ItemProperties.register(ModItems.JAMMER.get(), emptyProperty, emptyFunc);
             ItemProperties.register(ModItems.ANONYMIZER.get(), emptyProperty, emptyFunc);
             ItemProperties.register(ModItems.PLAYER_LOCATOR_COMPASS.get(), emptyProperty, emptyFunc);
+            ItemProperties.register(ModItems.LOGGER.get(), emptyProperty, emptyFunc);
+            ItemProperties.register(ModItems.LOGGER.get(),
+                    new ResourceLocation("bodycam", "active"),
+                    (stack, level, entity, seed) -> dev.ClasherHD.bodycam.item.LoggerItem.isActive(stack) ? 1.0F : 0.0F);
+            ItemProperties.register(ModItems.LOG_BOOK.get(),
+                    new ResourceLocation("bodycam", "pages_empty"),
+                    (stack, level, entity, seed) -> dev.ClasherHD.bodycam.item.LogBookItem.pageCount(stack) == 0 ? 1.0F : 0.0F);
+            ItemProperties.register(ModItems.LOG_BOOK.get(),
+                    new ResourceLocation("bodycam", "locked"),
+                    (stack, level, entity, seed) -> dev.ClasherHD.bodycam.item.LogBookItem.hasPin(stack) ? 1.0F : 0.0F);
 
             ItemProperties.register(ModItems.JAMMER.get(),
                     new ResourceLocation("bodycam", "mode"),

@@ -6,6 +6,9 @@ import dev.ClasherHD.bodycam.item.BodycamMonitorItem;
 import dev.ClasherHD.bodycam.item.DimensionLocatorItem;
 import dev.ClasherHD.bodycam.item.ItemDurabilityHelper;
 import dev.ClasherHD.bodycam.item.JammerItem;
+import dev.ClasherHD.bodycam.item.LogBookItem;
+import dev.ClasherHD.bodycam.item.LogPaperItem;
+import dev.ClasherHD.bodycam.item.LoggerItem;
 import dev.ClasherHD.bodycam.item.PlayerLocatorCompassItem;
 import dev.ClasherHD.bodycam.item.PortableNetherPortalItem;
 import net.minecraft.world.item.BlockItem;
@@ -32,6 +35,12 @@ public class ModItems {
             () -> new PlayerLocatorCompassItem(new Item.Properties().durability(ItemDurabilityHelper.PLAYER_LOCATOR_DURABILITY)));
     public static final RegistryObject<Item> PORTABLE_NETHER_PORTAL = ITEMS.register("portable_nether_portal",
             () -> new PortableNetherPortalItem(new Item.Properties().stacksTo(1)));
+    public static final RegistryObject<Item> LOGGER = ITEMS.register("logger",
+            () -> new LoggerItem(new Item.Properties().durability(ItemDurabilityHelper.LOGGER_DURABILITY)));
+    public static final RegistryObject<Item> LOG_PAPER = ITEMS.register("log_paper",
+            () -> new LogPaperItem(new Item.Properties().stacksTo(16)));
+    public static final RegistryObject<Item> LOG_BOOK = ITEMS.register("log_book",
+            () -> new LogBookItem(new Item.Properties()));
     public static final RegistryObject<Item> HOLOGRAM_BLOCK_ITEM = ITEMS.register("hologram_block",
             () -> new BlockItem(ModBlocks.HOLOGRAM_BLOCK.get(), new Item.Properties()));
     public static final RegistryObject<Item> OBSERVATION_CRYSTAL_BLOCK_ITEM = ITEMS.register("observation_crystal_block",
