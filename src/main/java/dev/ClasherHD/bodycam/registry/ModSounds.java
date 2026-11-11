@@ -59,4 +59,24 @@ public class ModSounds {
             () -> SoundEvent.createFixedRangeEvent(new ResourceLocation(bodycam.MODID, "all_seeing_eye_use"), 50.0F));
     public static final RegistryObject<SoundEvent> ALL_SEEING_EYE_EXPIRE = SOUND_EVENTS.register("all_seeing_eye_expire",
             () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(bodycam.MODID, "all_seeing_eye_expire")));
+    public static final RegistryObject<SoundEvent> CREEPING_DEATH_USE = SOUND_EVENTS.register("creeping_death_use",
+            () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(bodycam.MODID, "creeping_death_use")));
+    public static final RegistryObject<SoundEvent> CREEPING_DEATH_HEARTBEAT = SOUND_EVENTS.register("creeping_death_heartbeat",
+            () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(bodycam.MODID, "creeping_death_heartbeat")));
+    public static final RegistryObject<SoundEvent> CREEPING_DEATH_NUKE = SOUND_EVENTS.register("creeping_death_nuke",
+            () -> SoundEvent.createFixedRangeEvent(new ResourceLocation(bodycam.MODID, "creeping_death_nuke"), 100.0F));
+    public static final RegistryObject<SoundEvent> SCHOLAR_AMBIENT = SOUND_EVENTS.register("scholar_ambient",
+            () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(bodycam.MODID, "scholar_ambient")));
+    public static final RegistryObject<SoundEvent> SCHOLAR_YES = SOUND_EVENTS.register("scholar_yes",
+            () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(bodycam.MODID, "scholar_yes")));
+    public static final RegistryObject<SoundEvent> SCHOLAR_NO = SOUND_EVENTS.register("scholar_no",
+            () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(bodycam.MODID, "scholar_no")));
+    public static final RegistryObject<SoundEvent> SCHOLAR_CELEBRATE = SOUND_EVENTS.register("scholar_celebrate",
+            () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(bodycam.MODID, "scholar_celebrate")));
+    public static final RegistryObject<SoundEvent> SCHOLAR_HURT = SOUND_EVENTS.register("scholar_hurt",
+            () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(bodycam.MODID, "scholar_hurt")));
+    public static final RegistryObject<SoundEvent> SCHOLAR_DEATH = SOUND_EVENTS.register("scholar_death",
+            () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(bodycam.MODID, "scholar_death")));
+    public static final RegistryObject<SoundEvent> SCHOLAR_CURSE = SOUND_EVENTS.register("scholar_curse",
+            () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(bodycam.MODID, "scholar_curse")));
 }

@@ -139,6 +139,9 @@ public class AllSeeingEyeItem extends Item {
             sPlayer.sendSystemMessage(Component.translatable("message.bodycam.all_seeing_eye_disabled").withStyle(ChatFormatting.RED));
             return InteractionResultHolder.fail(stack);
         }
+        if (dev.ClasherHD.bodycam.entity.CreepingDeathEntity.blockObservationIfHunted(sPlayer)) {
+            return InteractionResultHolder.fail(stack);
+        }
 
         sPlayer.getPersistentData().putBoolean("bodycam_all_seeing_pending", true);
         SyncBodycamRequestC2SPacket.sendAllSeeingEyeState(sPlayer);

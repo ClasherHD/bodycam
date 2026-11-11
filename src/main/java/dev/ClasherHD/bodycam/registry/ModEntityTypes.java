@@ -2,7 +2,9 @@ package dev.ClasherHD.bodycam.registry;
 
 import dev.ClasherHD.bodycam.bodycam;
 import dev.ClasherHD.bodycam.entity.CompassDummyEntity;
+import dev.ClasherHD.bodycam.entity.CreepingDeathEntity;
 import dev.ClasherHD.bodycam.entity.HologramDummyEntity;
+import dev.ClasherHD.bodycam.entity.ScholarEntity;
 import dev.ClasherHD.bodycam.entity.WatchPointDummyEntity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
@@ -40,4 +42,22 @@ public class ModEntityTypes {
                                     MobCategory.MISC)
                             .sized(0.6F, 1.8F).clientTrackingRange(10)
                             .build("watch_point_dummy"));
+
+    public static final RegistryObject<EntityType<CreepingDeathEntity>> CREEPING_DEATH = ENTITY_TYPES
+            .register(
+                    "creeping_death",
+                    () -> EntityType.Builder.<CreepingDeathEntity>of(
+                                    CreepingDeathEntity::new,
+                                    MobCategory.MONSTER)
+                            .sized(0.6F, 1.8F).clientTrackingRange(10).fireImmune()
+                            .build("creeping_death"));
+
+    public static final RegistryObject<EntityType<ScholarEntity>> SCHOLAR = ENTITY_TYPES
+            .register(
+                    "scholar",
+                    () -> EntityType.Builder.<ScholarEntity>of(
+                                    ScholarEntity::new,
+                                    MobCategory.CREATURE)
+                            .sized(0.6F, 1.8F).clientTrackingRange(10)
+                            .build("scholar"));
 }

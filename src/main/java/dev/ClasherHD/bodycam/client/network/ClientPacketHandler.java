@@ -51,6 +51,11 @@ public class ClientPacketHandler {
         Minecraft.getInstance().setScreen(new dev.ClasherHD.bodycam.client.gui.LogBookPinScreen(msg.mode, msg.offHand));
     }
 
+    public static void handleOpenCreepingDeathScreen(dev.ClasherHD.bodycam.network.creepingdeath.OpenCreepingDeathScreenS2CPacket msg) {
+        Minecraft.getInstance().setScreen(new dev.ClasherHD.bodycam.client.gui.CreepingDeathScreen(
+                msg.mode, msg.offHand, msg.entries, msg.selectedSkinUUID));
+    }
+
     public static void handlePlayerLocatorSync(dev.ClasherHD.bodycam.network.locator.PlayerLocatorSyncS2CPacket msg) {
         dev.ClasherHD.bodycam.client.cache.ClientBodycamCache.positions.clear();
         dev.ClasherHD.bodycam.client.cache.ClientBodycamCache.dimensions.clear();

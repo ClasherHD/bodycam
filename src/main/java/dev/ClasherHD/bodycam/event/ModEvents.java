@@ -4,6 +4,8 @@ import dev.ClasherHD.bodycam.bodycam;
 import dev.ClasherHD.bodycam.config.ModClientConfig;
 import dev.ClasherHD.bodycam.config.ModServerConfig;
 import dev.ClasherHD.bodycam.entity.BodycamDummyEntity;
+import dev.ClasherHD.bodycam.entity.CreepingDeathEntity;
+import dev.ClasherHD.bodycam.entity.ScholarEntity;
 import dev.ClasherHD.bodycam.entity.WatchPointDummyEntity;
 import dev.ClasherHD.bodycam.network.PacketHandler;
 import dev.ClasherHD.bodycam.registry.ModEntityTypes;
@@ -53,6 +55,8 @@ public class ModEvents {
         event.put(ModEntityTypes.COMPASS_DUMMY.get(), BodycamDummyEntity.createAttributes().build());
         event.put(ModEntityTypes.HOLOGRAM_DUMMY.get(), BodycamDummyEntity.createAttributes().build());
         event.put(ModEntityTypes.WATCH_POINT_DUMMY.get(), BodycamDummyEntity.createAttributes().build());
+        event.put(ModEntityTypes.CREEPING_DEATH.get(), CreepingDeathEntity.createAttributes().build());
+        event.put(ModEntityTypes.SCHOLAR.get(), ScholarEntity.createAttributes().build());
     }
 
     @SubscribeEvent

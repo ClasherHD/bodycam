@@ -62,6 +62,10 @@ public class BodycamSetCameraPacket {
                 ctx.get().setPacketHandled(true);
                 return;
             }
+            if (dev.ClasherHD.bodycam.entity.CreepingDeathEntity.blockObservationIfHunted(player)) {
+                ctx.get().setPacketHandled(true);
+                return;
+            }
             boolean alreadyActive = player.getPersistentData().getBoolean("bodycam_active");
             if (player.isSpectator() && !alreadyActive) {
                 ctx.get().setPacketHandled(true);

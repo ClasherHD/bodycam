@@ -4,6 +4,7 @@ import dev.ClasherHD.bodycam.bodycam;
 import dev.ClasherHD.bodycam.item.AllSeeingEyeItem;
 import dev.ClasherHD.bodycam.item.AnonymizerItem;
 import dev.ClasherHD.bodycam.item.BodycamMonitorItem;
+import dev.ClasherHD.bodycam.item.CreepingDeathItem;
 import dev.ClasherHD.bodycam.item.DimensionLocatorItem;
 import dev.ClasherHD.bodycam.item.ItemDurabilityHelper;
 import dev.ClasherHD.bodycam.item.JammerItem;
@@ -14,6 +15,7 @@ import dev.ClasherHD.bodycam.item.PlayerLocatorCompassItem;
 import dev.ClasherHD.bodycam.item.PortableNetherPortalItem;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
+import net.minecraftforge.common.ForgeSpawnEggItem;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
@@ -44,6 +46,8 @@ public class ModItems {
             () -> new LogBookItem(new Item.Properties()));
     public static final RegistryObject<Item> ALL_SEEING_EYE = ITEMS.register("all_seeing_eye",
             () -> new AllSeeingEyeItem(new Item.Properties()));
+    public static final RegistryObject<Item> CREEPING_DEATH = ITEMS.register("creeping_death",
+            () -> new CreepingDeathItem(new Item.Properties()));
     public static final RegistryObject<Item> HOLOGRAM_BLOCK_ITEM = ITEMS.register("hologram_block",
             () -> new BlockItem(ModBlocks.HOLOGRAM_BLOCK.get(), new Item.Properties()));
     public static final RegistryObject<Item> OBSERVATION_CRYSTAL_BLOCK_ITEM = ITEMS.register("observation_crystal_block",
@@ -54,4 +58,6 @@ public class ModItems {
             () -> new BlockItem(ModBlocks.WATCH_POINT.get(), new Item.Properties()));
     public static final RegistryObject<Item> PODEST_ITEM = ITEMS.register("podest",
             () -> new BlockItem(ModBlocks.PODEST.get(), new Item.Properties()));
+    public static final RegistryObject<Item> SCHOLAR_SPAWN_EGG = ITEMS.register("scholar_spawn_egg",
+            () -> new ForgeSpawnEggItem(ModEntityTypes.SCHOLAR, 0x3B2B28, 0xE6A8C2, new Item.Properties()));
 }

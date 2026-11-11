@@ -116,6 +116,10 @@ public class ClientSetupHandler {
                 dev.ClasherHD.bodycam.client.render.BodycamDummyRenderer::new);
         event.registerEntityRenderer(dev.ClasherHD.bodycam.registry.ModEntityTypes.WATCH_POINT_DUMMY.get(),
                 dev.ClasherHD.bodycam.client.render.BodycamDummyRenderer::new);
+        event.registerEntityRenderer(dev.ClasherHD.bodycam.registry.ModEntityTypes.CREEPING_DEATH.get(),
+                dev.ClasherHD.bodycam.client.render.CreepingDeathRenderer::new);
+        event.registerEntityRenderer(dev.ClasherHD.bodycam.registry.ModEntityTypes.SCHOLAR.get(),
+                dev.ClasherHD.bodycam.client.render.ScholarRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.PODEST.get(),
                 PodestBlockEntityRenderer::new);
     }

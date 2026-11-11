@@ -215,5 +215,96 @@
         "type": "event"
       }
     ]
+  },
+  "creeping_death_use": {
+    "subtitle": "subtitles.bodycam.creeping_death_use",
+    "sounds": [
+      {
+        "name": "minecraft:block.sculk_shrieker.shriek",
+        "type": "event"
+      }
+    ]
+  },
+  "creeping_death_heartbeat": {
+    "subtitle": "subtitles.bodycam.creeping_death_heartbeat",
+    "sounds": [
+      {
+        "name": "minecraft:entity.warden.heartbeat",
+        "type": "event"
+      }
+    ]
+  },
+  "creeping_death_nuke": {
+    "subtitle": "subtitles.bodycam.creeping_death_nuke",
+    "sounds": [
+      {
+        "name": "minecraft:block.end_portal.spawn",
+        "type": "event",
+        "attenuation_distance": 100
+      }
+    ]
+  },
+  "scholar_ambient": {
+    "subtitle": "subtitles.bodycam.scholar_ambient",
+    "sounds": [
+      {
+        "name": "minecraft:entity.villager.ambient",
+        "type": "event"
+      }
+    ]
+  },
+  "scholar_yes": {
+    "subtitle": "subtitles.bodycam.scholar_yes",
+    "sounds": [
+      {
+        "name": "minecraft:entity.villager.yes",
+        "type": "event"
+      }
+    ]
+  },
+  "scholar_no": {
+    "subtitle": "subtitles.bodycam.scholar_no",
+    "sounds": [
+      {
+        "name": "minecraft:entity.villager.no",
+        "type": "event"
+      }
+    ]
+  },
+  "scholar_celebrate": {
+    "subtitle": "subtitles.bodycam.scholar_celebrate",
+    "sounds": [
+      {
+        "name": "minecraft:entity.villager.celebrate",
+        "type": "event"
+      }
+    ]
+  },
+  "scholar_hurt": {
+    "subtitle": "subtitles.bodycam.scholar_hurt",
+    "sounds": [
+      {
+        "name": "minecraft:entity.villager.hurt",
+        "type": "event"
+      }
+    ]
+  },
+  "scholar_death": {
+    "subtitle": "subtitles.bodycam.scholar_death",
+    "sounds": [
+      {
+        "name": "minecraft:entity.villager.death",
+        "type": "event"
+      }
+    ]
+  },
+  "scholar_curse": {
+    "subtitle": "subtitles.bodycam.scholar_curse",
+    "sounds": [
+      {
+        "name": "minecraft:block.sculk_shrieker.shriek",
+        "type": "event"
+      }
+    ]
   }
 }

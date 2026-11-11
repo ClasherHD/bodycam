@@ -3,6 +3,7 @@ package dev.ClasherHD.bodycam.network;
 import dev.ClasherHD.bodycam.bodycam;
 import dev.ClasherHD.bodycam.network.bodycam.*;
 import dev.ClasherHD.bodycam.network.config.*;
+import dev.ClasherHD.bodycam.network.creepingdeath.*;
 import dev.ClasherHD.bodycam.network.locator.*;
 import dev.ClasherHD.bodycam.network.logbook.*;
 import dev.ClasherHD.bodycam.network.watchpoint.*;
@@ -146,6 +147,18 @@ public class PacketHandler {
                 LogBookActionC2SPacket::encode,
                 LogBookActionC2SPacket::decode,
                 LogBookActionC2SPacket::handle,
+                Optional.of(NetworkDirection.PLAY_TO_SERVER));
+
+        INSTANCE.registerMessage(id(), OpenCreepingDeathScreenS2CPacket.class,
+                OpenCreepingDeathScreenS2CPacket::encode,
+                OpenCreepingDeathScreenS2CPacket::decode,
+                OpenCreepingDeathScreenS2CPacket::handle,
+                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+
+        INSTANCE.registerMessage(id(), CreepingDeathActionC2SPacket.class,
+                CreepingDeathActionC2SPacket::encode,
+                CreepingDeathActionC2SPacket::decode,
+                CreepingDeathActionC2SPacket::handle,
                 Optional.of(NetworkDirection.PLAY_TO_SERVER));
     }
 }

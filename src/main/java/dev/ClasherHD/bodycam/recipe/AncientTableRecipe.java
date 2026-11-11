@@ -42,7 +42,14 @@ public class AncientTableRecipe implements Recipe<SimpleContainer> {
             if (ingredient.isEmpty() || count <= 0) {
                 return stack.isEmpty();
             }
-            return !stack.isEmpty() && ingredient.test(stack) && stack.getCount() >= count;
+            if (stack.isEmpty() || !ingredient.test(stack) || stack.getCount() < count) {
+                return false;
+            }
+            if (stack.getItem() instanceof dev.ClasherHD.bodycam.item.AllSeeingEyeItem
+                    && !dev.ClasherHD.bodycam.item.AllSeeingEyeItem.isActivated(stack)) {
+                return false;
+            }
+            return true;
         }
     }
 

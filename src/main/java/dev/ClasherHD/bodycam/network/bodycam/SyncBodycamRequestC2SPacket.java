@@ -64,6 +64,9 @@ public class SyncBodycamRequestC2SPacket {
                 sender.sendSystemMessage(Component.translatable("message.bodycam.dimension_blacklisted").withStyle(ChatFormatting.RED));
                 return;
             }
+            if (dev.ClasherHD.bodycam.entity.CreepingDeathEntity.blockObservationIfHunted(sender)) {
+                return;
+            }
             boolean isOnHologram = msg.isOnHologram;
             if (isOnHologram) {
                 if (!dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_HOLOGRAM_BLOCK.get()) {

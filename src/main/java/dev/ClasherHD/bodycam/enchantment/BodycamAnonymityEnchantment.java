@@ -36,6 +36,11 @@ public class BodycamAnonymityEnchantment extends Enchantment {
     }
 
     @Override
+    public boolean isTradeable() {
+        return false;
+    }
+
+    @Override
     public Component getFullname(int level) {
         String key = level >= EnchantmentLevels.TRUE_ANONYMITY_LEVEL
                 ? "enchantment.bodycam.true_anonymity"

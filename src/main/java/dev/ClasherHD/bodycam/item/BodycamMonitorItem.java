@@ -22,6 +22,10 @@ public class BodycamMonitorItem extends Item {
         if (ItemDurabilityHelper.isEmpty(stack)) {
             return InteractionResultHolder.fail(stack);
         }
+        if (!level.isClientSide() && player instanceof net.minecraft.server.level.ServerPlayer sp
+                && dev.ClasherHD.bodycam.entity.CreepingDeathEntity.blockObservationIfHunted(sp)) {
+            return InteractionResultHolder.fail(stack);
+        }
         player.startUsingItem(hand);
         level.playSound(null, player.getX(), player.getY(), player.getZ(),
                 net.minecraft.sounds.SoundEvents.SPYGLASS_USE,

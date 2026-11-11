@@ -1,0 +1,7 @@
+{
+  "type": "bodycam:cherry_house",
+  "biomes": "#bodycam:has_structure/cherry_house",
+  "step": "surface_structures",
+  "spawn_overrides": {},
+  "terrain_adaptation": "none"
+}

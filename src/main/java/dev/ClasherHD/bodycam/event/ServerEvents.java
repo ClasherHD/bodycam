@@ -8,6 +8,8 @@ import dev.ClasherHD.bodycam.config.ModServerConfig;
 import dev.ClasherHD.bodycam.enchantment.EnchantmentLevels;
 import dev.ClasherHD.bodycam.enchantment.NightspyEffectHandler;
 import dev.ClasherHD.bodycam.entity.BodycamDummyEntity;
+import dev.ClasherHD.bodycam.entity.CreepingDeathEntity;
+import dev.ClasherHD.bodycam.entity.ScholarEntity;
 import dev.ClasherHD.bodycam.entity.WatchPointDummyEntity;
 import dev.ClasherHD.bodycam.item.AllSeeingEyeItem;
 import dev.ClasherHD.bodycam.item.AnonymizerItem;
@@ -21,6 +23,7 @@ import dev.ClasherHD.bodycam.network.bodycam.BodycamForceClosePacket;
 import dev.ClasherHD.bodycam.network.bodycam.BodycamResetCameraPacket;
 import dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket;
 import dev.ClasherHD.bodycam.network.bodycam.CrossObservationSyncPacket;
+import dev.ClasherHD.bodycam.registry.ModEnchantments;
 import dev.ClasherHD.bodycam.registry.ModItems;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.particles.ParticleTypes;
@@ -31,17 +34,27 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.EnchantedBookItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ShearsItem;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.EnchantmentInstance;
+import net.minecraft.world.item.trading.MerchantOffer;
+import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.AnvilUpdateEvent;
+import net.minecraftforge.event.entity.living.LivingChangeTargetEvent;
+import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.TickEvent;
@@ -70,6 +83,13 @@ public class ServerEvents {
         BodycamDummyEntity.DUMMY_MOTION.clear();
         WatchPointDummyEntity.ACTIVE_WATCH_POINTS.clear();
         PodestBlockEntity.LOADED_PODESTS.clear();
+        CreepingDeathEntity.ACTIVE_HUNTS_BY_TARGET.clear();
+        synchronized (CreepingDeathEntity.PENDING_SPAWNS) {
+            CreepingDeathEntity.PENDING_SPAWNS.clear();
+        }
+        synchronized (CreepingDeathEntity.PENDING_OSC_NUKES) {
+            CreepingDeathEntity.PENDING_OSC_NUKES.clear();
+        }
         dev.ClasherHD.bodycam.network.locator.PlayerLocatorSelectC2SPacket.clearCooldowns();
     }
 
@@ -254,6 +274,110 @@ public class ServerEvents {
     }
 
     @SubscribeEvent
+    public static void onServerTick(TickEvent.ServerTickEvent event) {
+        if (event.phase == TickEvent.Phase.END && event.getServer() != null) {
+            CreepingDeathEntity.tickServer(event.getServer());
+        }
+    }
+
+    @SubscribeEvent
+    public static void onLivingDeath(LivingDeathEvent event) {
+        if (!event.getEntity().level().isClientSide() && event.getEntity() instanceof ServerPlayer deadPlayer) {
+            UUID assassinId = CreepingDeathEntity.ACTIVE_HUNTS_BY_TARGET.remove(deadPlayer.getUUID());
+            if (assassinId != null && deadPlayer.server != null) {
+                for (ServerLevel lvl : deadPlayer.server.getAllLevels()) {
+                    Entity e = lvl.getEntity(assassinId);
+                    if (e instanceof CreepingDeathEntity assassin) {
+                        assassin.onTargetKilled();
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onLivingChangeTarget(LivingChangeTargetEvent event) {
+        if (event.getNewTarget() instanceof ScholarEntity) {
+            event.setCanceled(true);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
+        if (!event.getLevel().isClientSide() && event.getTarget() instanceof Villager villager) {
+            clampLibrarianEnchantmentOffers(villager);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onLivingTick(LivingEvent.LivingTickEvent event) {
+        if (!event.getEntity().level().isClientSide()
+                && event.getEntity() instanceof Villager villager
+                && villager.tickCount % 40 == 0
+                && villager.getVillagerData().getProfession() == VillagerProfession.LIBRARIAN) {
+            clampLibrarianEnchantmentOffers(villager);
+        }
+    }
+
+    private static void clampLibrarianEnchantmentOffers(Villager villager) {
+        MerchantOffers offers = villager.getOffers();
+        if (offers == null || offers.isEmpty()) {
+            return;
+        }
+        Enchantment nightspy = ModEnchantments.NIGHTSPY_ENCHANTMENT.get();
+        Enchantment anonymity = ModEnchantments.ANONYMITY_ENCHANTMENT.get();
+        for (int i = 0; i < offers.size(); i++) {
+            MerchantOffer offer = offers.get(i);
+            ItemStack result = offer.getResult();
+            if (!(result.getItem() instanceof EnchantedBookItem)) {
+                continue;
+            }
+            java.util.Map<Enchantment, Integer> enchants = EnchantmentHelper.getEnchantments(result);
+            boolean needsReplace = false;
+            if (enchants.containsKey(nightspy) && enchants.get(nightspy) > 1) {
+                needsReplace = true;
+            } else if (enchants.containsKey(anonymity)) {
+                needsReplace = true;
+            }
+            if (needsReplace) {
+                ItemStack clampedBook = EnchantedBookItem.createForEnchantment(new EnchantmentInstance(nightspy, 1));
+                ItemStack costA = offer.getBaseCostA().copy();
+                if (costA.getCount() > 19) {
+                    costA.setCount(14);
+                }
+                MerchantOffer replacement = new MerchantOffer(
+                        costA,
+                        offer.getCostB().copy(),
+                        clampedBook,
+                        offer.getUses(),
+                        offer.getMaxUses(),
+                        offer.getXp(),
+                        offer.getPriceMultiplier(),
+                        offer.getDemand()
+                );
+                offers.set(i, replacement);
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onPlayerChangedDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
+        if (!event.getEntity().level().isClientSide() && event.getEntity() instanceof ServerPlayer targetPlayer) {
+            UUID assassinId = CreepingDeathEntity.ACTIVE_HUNTS_BY_TARGET.get(targetPlayer.getUUID());
+            if (assassinId != null && targetPlayer.server != null) {
+                for (ServerLevel lvl : targetPlayer.server.getAllLevels()) {
+                    Entity e = lvl.getEntity(assassinId);
+                    if (e instanceof CreepingDeathEntity assassin && assassin.isAlive() && !assassin.isDeadOrDying()) {
+                        assassin.teleportToTargetDimension(targetPlayer.serverLevel(), targetPlayer);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    @SubscribeEvent
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
         if (event.phase == TickEvent.Phase.END && !event.player.level().isClientSide()
                 && event.player instanceof ServerPlayer observer) {
@@ -276,6 +400,28 @@ public class ServerEvents {
                 double fy = observer.getPersistentData().getDouble("bodycam_fog_y");
                 double fz = observer.getPersistentData().getDouble("bodycam_fog_z");
                 fogLevel.sendParticles(ParticleTypes.END_ROD, fx, fy + 1.0D, fz, 25, 0.85D, 0.85D, 0.85D, 0.03D);
+            }
+
+            int cdFogTicks = observer.getPersistentData().getInt("bodycam_creeping_death_fog_ticks");
+            if (cdFogTicks > 0) {
+                observer.getPersistentData().putInt("bodycam_creeping_death_fog_ticks", cdFogTicks - 1);
+                String fogDimStr = observer.getPersistentData().getString("bodycam_cd_fog_dim");
+                ServerLevel fogLevel = observer.serverLevel();
+                if (!fogDimStr.isEmpty()) {
+                    ResourceLocation rl = ResourceLocation.tryParse(fogDimStr);
+                    if (rl != null) {
+                        ServerLevel found = observer.server.getLevel(ResourceKey.create(Registries.DIMENSION, rl));
+                        if (found != null) {
+                            fogLevel = found;
+                        }
+                    }
+                }
+                double fx = observer.getPersistentData().getDouble("bodycam_cd_fog_x");
+                double fy = observer.getPersistentData().getDouble("bodycam_cd_fog_y");
+                double fz = observer.getPersistentData().getDouble("bodycam_cd_fog_z");
+                fogLevel.sendParticles(ParticleTypes.LARGE_SMOKE, fx, fy + 1.0D, fz, 18, 0.75D, 0.85D, 0.75D, 0.02D);
+                fogLevel.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, fx, fy + 1.0D, fz, 8, 0.65D, 0.75D, 0.65D, 0.01D);
+                fogLevel.sendParticles(ParticleTypes.SCULK_SOUL, fx, fy + 1.0D, fz, 12, 0.75D, 0.85D, 0.75D, 0.03D);
             }
 
             ItemStack carried = observer.containerMenu.getCarried();

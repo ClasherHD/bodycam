@@ -39,6 +39,8 @@ public class ModCreativeTabs {
                         output.accept(ModItems.LOG_BOOK.get());
                         output.accept(AllSeeingEyeItem.createActivatedStack());
                         output.accept(AllSeeingEyeItem.createDeactivatedStack());
+                        output.accept(ModItems.CREEPING_DEATH.get());
+                        output.accept(ModItems.SCHOLAR_SPAWN_EGG.get());
                         for (int level = 1; level <= 2; level++) {
                             output.accept(EnchantedBookItem.createForEnchantment(
                                     new EnchantmentInstance(ModEnchantments.REACH_ENCHANTMENT.get(), level)));

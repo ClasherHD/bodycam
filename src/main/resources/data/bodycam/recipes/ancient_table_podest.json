@@ -1,0 +1,23 @@
+{
+  "type": "bodycam:ancient_table_crafting",
+  "crystals": 1,
+  "ingredients": [
+    {
+      "item": "minecraft:cobbled_deepslate",
+      "count": 1
+    },
+    {
+      "item": "minecraft:lectern",
+      "count": 1
+    },
+    {
+      "item": "minecraft:lodestone",
+      "count": 1
+    }
+  ],
+  "result": {
+    "item": "bodycam:podest",
+    "count": 1,
+    "start_empty": false
+  }
+}
