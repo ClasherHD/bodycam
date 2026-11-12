@@ -76,7 +76,8 @@ public class CherryHouseExplorerMapItem extends MapItem {
 
     @Override
     public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
-        if (!level.isClientSide() && level instanceof ServerLevel sLevel) {
+        if (!level.isClientSide() && entity.tickCount % 20 == 0
+                && level.dimension() == Level.OVERWORLD && level instanceof ServerLevel sLevel) {
             CompoundTag tag = stack.getTag();
             if (tag == null || (!tag.contains("map", 99) && !tag.getBoolean(TAG_SEARCHED))) {
                 bindToNearestCherryHouse(stack, sLevel, entity.blockPosition());

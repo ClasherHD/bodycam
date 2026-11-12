@@ -52,7 +52,16 @@ public class LogBookItem extends Item {
     }
 
     public static boolean isValidPin(String pin) {
-        return pin != null && pin.length() == PIN_LENGTH && pin.chars().allMatch(Character::isDigit);
+        if (pin == null || pin.length() != PIN_LENGTH) {
+            return false;
+        }
+        for (int i = 0; i < PIN_LENGTH; i++) {
+            char c = pin.charAt(i);
+            if (c < '0' || c > '9') {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static String hashPin(String pin) {
@@ -73,7 +82,7 @@ public class LogBookItem extends Item {
         if (!hasPin(stack)) {
             return true;
         }
-        return pin != null && stack.getTag().getString(TAG_PIN).equals(hashPin(pin));
+        return isValidPin(pin) && stack.getTag().getString(TAG_PIN).equals(hashPin(pin));
     }
 
     public static boolean addPage(ItemStack book, CompoundTag pageData) {
@@ -108,6 +117,10 @@ public class LogBookItem extends Item {
     public static void sendBook(ServerPlayer player, ItemStack book) {
         player.level().playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.BOOK_PAGE_TURN, SoundSource.PLAYERS, 1.0F, 1.0F);
         PacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new OpenLogBookS2CPacket(buildViewData(book)));
+    }
+
+    public static void clearStaticState() {
+        LAST_ATTEMPT.clear();
     }
 
     public static boolean isOnCooldown(ServerPlayer player) {

@@ -100,6 +100,8 @@ public class ServerEvents {
             CreepingDeathEntity.PENDING_OSC_NUKES.clear();
         }
         dev.ClasherHD.bodycam.network.locator.PlayerLocatorSelectC2SPacket.clearCooldowns();
+        LogBookItem.clearStaticState();
+        dev.ClasherHD.bodycam.item.CreepingDeathItem.invalidateKnownPlayersCache();
     }
 
     public static final ConcurrentHashMap<UUID, LockData> POSITION_LOCKS = new ConcurrentHashMap<>();

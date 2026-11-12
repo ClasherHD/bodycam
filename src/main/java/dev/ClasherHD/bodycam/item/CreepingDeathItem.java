@@ -165,12 +165,39 @@ public class CreepingDeathItem extends Item {
         return InteractionResultHolder.success(stack);
     }
 
+    private static final long KNOWN_PLAYERS_CACHE_TTL_MS = 30_000L;
+    private static volatile Map<UUID, String> cachedOfflinePlayers = Map.of();
+    private static volatile long lastOfflineScanMs = 0L;
+
+    public static void invalidateKnownPlayersCache() {
+        cachedOfflinePlayers = Map.of();
+        lastOfflineScanMs = 0L;
+    }
+
     public static List<OpenCreepingDeathScreenS2CPacket.PlayerEntryData> collectAllKnownPlayers(MinecraftServer server) {
         Map<UUID, String> known = new LinkedHashMap<>();
 
         for (ServerPlayer online : server.getPlayerList().getPlayers()) {
             known.put(online.getUUID(), online.getGameProfile().getName());
         }
+
+        long nowMs = System.currentTimeMillis();
+        if (lastOfflineScanMs == 0L || nowMs - lastOfflineScanMs >= KNOWN_PLAYERS_CACHE_TTL_MS) {
+            cachedOfflinePlayers = scanOfflinePlayers(server);
+            lastOfflineScanMs = nowMs;
+        }
+        cachedOfflinePlayers.forEach(known::putIfAbsent);
+
+        List<OpenCreepingDeathScreenS2CPacket.PlayerEntryData> result = new ArrayList<>();
+        for (Map.Entry<UUID, String> entry : known.entrySet()) {
+            result.add(new OpenCreepingDeathScreenS2CPacket.PlayerEntryData(entry.getKey(), entry.getValue(), false));
+        }
+        result.sort(Comparator.comparing(e -> e.name().toLowerCase()));
+        return result;
+    }
+
+    private static Map<UUID, String> scanOfflinePlayers(MinecraftServer server) {
+        Map<UUID, String> known = new LinkedHashMap<>();
 
         try {
             File userCacheFile = new File(server.getServerDirectory(), "usercache.json");
@@ -222,12 +249,7 @@ public class CreepingDeathItem extends Item {
         } catch (Exception ignored) {
         }
 
-        List<OpenCreepingDeathScreenS2CPacket.PlayerEntryData> result = new ArrayList<>();
-        for (Map.Entry<UUID, String> entry : known.entrySet()) {
-            result.add(new OpenCreepingDeathScreenS2CPacket.PlayerEntryData(entry.getKey(), entry.getValue(), false));
-        }
-        result.sort(Comparator.comparing(e -> e.name().toLowerCase()));
-        return result;
+        return known;
     }
 
     @Override
