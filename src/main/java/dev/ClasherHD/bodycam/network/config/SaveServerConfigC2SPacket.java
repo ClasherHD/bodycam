@@ -19,11 +19,19 @@ public class SaveServerConfigC2SPacket {
     public final boolean enableWatchPoint;
     public final boolean enablePodest;
     public final boolean opOnlyMode;
+    public final boolean enableLogger;
+    public final boolean enablePortablePortal;
+    public final boolean enableAllSeeingEye;
+    public final boolean enableCreepingDeath;
+    public final boolean enableScholarCurse;
+    public final boolean enableCreepingDeathNuke;
 
     public SaveServerConfigC2SPacket(int maxMonitorDistance, int maxWatchPointsPerPlayer, int maxWatchPointsTotal,
             boolean enableReachEnchantment, boolean enableJammer, boolean enableDimensionLocator,
             boolean enableHologramBlock, boolean enableAnonymizer, boolean enablePlayerLocator,
-            boolean enableWatchPoint, boolean enablePodest, boolean opOnlyMode) {
+            boolean enableWatchPoint, boolean enablePodest, boolean opOnlyMode,
+            boolean enableLogger, boolean enablePortablePortal, boolean enableAllSeeingEye,
+            boolean enableCreepingDeath, boolean enableScholarCurse, boolean enableCreepingDeathNuke) {
         this.maxMonitorDistance = maxMonitorDistance;
         this.maxWatchPointsPerPlayer = maxWatchPointsPerPlayer;
         this.maxWatchPointsTotal = maxWatchPointsTotal;
@@ -36,6 +44,12 @@ public class SaveServerConfigC2SPacket {
         this.enableWatchPoint = enableWatchPoint;
         this.enablePodest = enablePodest;
         this.opOnlyMode = opOnlyMode;
+        this.enableLogger = enableLogger;
+        this.enablePortablePortal = enablePortablePortal;
+        this.enableAllSeeingEye = enableAllSeeingEye;
+        this.enableCreepingDeath = enableCreepingDeath;
+        this.enableScholarCurse = enableScholarCurse;
+        this.enableCreepingDeathNuke = enableCreepingDeathNuke;
     }
 
     public static void encode(SaveServerConfigC2SPacket msg, FriendlyByteBuf buf) {
@@ -51,6 +65,12 @@ public class SaveServerConfigC2SPacket {
         buf.writeBoolean(msg.enableWatchPoint);
         buf.writeBoolean(msg.enablePodest);
         buf.writeBoolean(msg.opOnlyMode);
+        buf.writeBoolean(msg.enableLogger);
+        buf.writeBoolean(msg.enablePortablePortal);
+        buf.writeBoolean(msg.enableAllSeeingEye);
+        buf.writeBoolean(msg.enableCreepingDeath);
+        buf.writeBoolean(msg.enableScholarCurse);
+        buf.writeBoolean(msg.enableCreepingDeathNuke);
     }
 
     public static SaveServerConfigC2SPacket decode(FriendlyByteBuf buf) {
@@ -58,6 +78,12 @@ public class SaveServerConfigC2SPacket {
                 buf.readInt(),
                 buf.readInt(),
                 buf.readInt(),
+                buf.readBoolean(),
+                buf.readBoolean(),
+                buf.readBoolean(),
+                buf.readBoolean(),
+                buf.readBoolean(),
+                buf.readBoolean(),
                 buf.readBoolean(),
                 buf.readBoolean(),
                 buf.readBoolean(),
@@ -86,6 +112,12 @@ public class SaveServerConfigC2SPacket {
                 dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_WATCH_POINT.set(msg.enableWatchPoint);
                 dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_PODEST.set(msg.enablePodest);
                 dev.ClasherHD.bodycam.config.ModServerConfig.OP_ONLY_MODE.set(msg.opOnlyMode);
+                dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_LOGGER.set(msg.enableLogger);
+                dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_PORTABLE_NETHER_PORTAL.set(msg.enablePortablePortal);
+                dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_ALL_SEEING_EYE.set(msg.enableAllSeeingEye);
+                dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_CREEPING_DEATH.set(msg.enableCreepingDeath);
+                dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_SCHOLAR_CURSE.set(msg.enableScholarCurse);
+                dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_CREEPING_DEATH_NUKE.set(msg.enableCreepingDeathNuke);
                 dev.ClasherHD.bodycam.config.ModServerConfig.SPEC.save();
             }
         });

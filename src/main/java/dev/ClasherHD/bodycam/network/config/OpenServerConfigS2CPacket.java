@@ -20,11 +20,19 @@ public class OpenServerConfigS2CPacket {
     public final boolean enableWatchPoint;
     public final boolean enablePodest;
     public final boolean opOnlyMode;
+    public final boolean enableLogger;
+    public final boolean enablePortablePortal;
+    public final boolean enableAllSeeingEye;
+    public final boolean enableCreepingDeath;
+    public final boolean enableScholarCurse;
+    public final boolean enableCreepingDeathNuke;
 
     public OpenServerConfigS2CPacket(int maxMonitorDistance, int maxWatchPointsPerPlayer, int maxWatchPointsTotal,
             boolean enableReachEnchantment, boolean enableJammer, boolean enableDimensionLocator,
             boolean enableHologramBlock, boolean enableAnonymizer, boolean enablePlayerLocator,
-            boolean enableWatchPoint, boolean enablePodest, boolean opOnlyMode) {
+            boolean enableWatchPoint, boolean enablePodest, boolean opOnlyMode,
+            boolean enableLogger, boolean enablePortablePortal, boolean enableAllSeeingEye,
+            boolean enableCreepingDeath, boolean enableScholarCurse, boolean enableCreepingDeathNuke) {
         this.maxMonitorDistance = maxMonitorDistance;
         this.maxWatchPointsPerPlayer = maxWatchPointsPerPlayer;
         this.maxWatchPointsTotal = maxWatchPointsTotal;
@@ -37,6 +45,12 @@ public class OpenServerConfigS2CPacket {
         this.enableWatchPoint = enableWatchPoint;
         this.enablePodest = enablePodest;
         this.opOnlyMode = opOnlyMode;
+        this.enableLogger = enableLogger;
+        this.enablePortablePortal = enablePortablePortal;
+        this.enableAllSeeingEye = enableAllSeeingEye;
+        this.enableCreepingDeath = enableCreepingDeath;
+        this.enableScholarCurse = enableScholarCurse;
+        this.enableCreepingDeathNuke = enableCreepingDeathNuke;
     }
 
     public static void encode(OpenServerConfigS2CPacket msg, FriendlyByteBuf buf) {
@@ -52,6 +66,12 @@ public class OpenServerConfigS2CPacket {
         buf.writeBoolean(msg.enableWatchPoint);
         buf.writeBoolean(msg.enablePodest);
         buf.writeBoolean(msg.opOnlyMode);
+        buf.writeBoolean(msg.enableLogger);
+        buf.writeBoolean(msg.enablePortablePortal);
+        buf.writeBoolean(msg.enableAllSeeingEye);
+        buf.writeBoolean(msg.enableCreepingDeath);
+        buf.writeBoolean(msg.enableScholarCurse);
+        buf.writeBoolean(msg.enableCreepingDeathNuke);
     }
 
     public static OpenServerConfigS2CPacket decode(FriendlyByteBuf buf) {
@@ -59,6 +79,12 @@ public class OpenServerConfigS2CPacket {
                 buf.readInt(),
                 buf.readInt(),
                 buf.readInt(),
+                buf.readBoolean(),
+                buf.readBoolean(),
+                buf.readBoolean(),
+                buf.readBoolean(),
+                buf.readBoolean(),
+                buf.readBoolean(),
                 buf.readBoolean(),
                 buf.readBoolean(),
                 buf.readBoolean(),

@@ -1339,6 +1339,9 @@ public class CreepingDeathEntity extends PathfinderMob {
     }
 
     public static void scheduleOscNuke(ResourceKey<Level> dimension, Vec3 pos) {
+        if (!dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_CREEPING_DEATH_NUKE.get()) {
+            return;
+        }
         synchronized (PENDING_OSC_NUKES) {
             PENDING_OSC_NUKES.add(new PendingOscNuke(dimension, pos, OSC_NUKE_DELAY_TICKS));
         }

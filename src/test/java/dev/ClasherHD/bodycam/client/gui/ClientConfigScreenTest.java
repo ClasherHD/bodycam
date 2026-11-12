@@ -39,6 +39,10 @@ class ClientConfigScreenTest {
         Field nameValField = ClientConfigScreen.class.getDeclaredField("nameVal");
         nameValField.setAccessible(true);
         assertThat(nameValField.getBoolean(screen)).isTrue();
+
+        Field vignetteValField = ClientConfigScreen.class.getDeclaredField("vignetteVal");
+        vignetteValField.setAccessible(true);
+        assertThat(vignetteValField.getBoolean(screen)).isTrue();
     }
 
     @Test
@@ -84,13 +88,15 @@ class ClientConfigScreenTest {
     }
 
     @Test
-    @DisplayName("mouseScrolled adjusts and clamps scrollY within valid range")
-    void mouseScrolled_clampsScrollRange() throws Exception {
+    @DisplayName("updateLayout positions widgets relative to guiY")
+    void updateLayout_positionsWidgetsRelativeToGuiY() throws Exception {
         ClientConfigScreen screen = new ClientConfigScreen(null);
         net.minecraft.client.gui.components.Button mockButton = mock(net.minecraft.client.gui.components.Button.class);
+        MinecraftTestEnvironment.setField(screen, "guiY", 40);
         MinecraftTestEnvironment.setField(screen, "btnName", mockButton);
         MinecraftTestEnvironment.setField(screen, "btnHealth", mockButton);
         MinecraftTestEnvironment.setField(screen, "btnShift", mockButton);
+        MinecraftTestEnvironment.setField(screen, "btnVignette", mockButton);
         MinecraftTestEnvironment.setField(screen, "btnColorStd", mockButton);
         MinecraftTestEnvironment.setField(screen, "btnColorBlk", mockButton);
         MinecraftTestEnvironment.setField(screen, "btnColorObs", mockButton);
@@ -100,14 +106,13 @@ class ClientConfigScreenTest {
         MinecraftTestEnvironment.setField(screen, "btnReset", mockButton);
         MinecraftTestEnvironment.setField(screen, "btnDone", mockButton);
 
-        Field scrollField = ClientConfigScreen.class.getDeclaredField("scrollY");
-        scrollField.setAccessible(true);
+        Method updateLayout = ClientConfigScreen.class.getDeclaredMethod("updateLayout");
+        updateLayout.setAccessible(true);
+        updateLayout.invoke(screen);
 
-        screen.mouseScrolled(0, 0, 5.0D);
-        assertThat(scrollField.getDouble(screen)).isEqualTo(0.0D);
-
-        screen.mouseScrolled(0, 0, -10.0D);
-        assertThat(scrollField.getDouble(screen)).isEqualTo(-70.0D);
+        assertThat(screen.isPauseScreen()).isFalse();
+        verify(mockButton, org.mockito.Mockito.atLeastOnce()).setY(68);
+        verify(mockButton, org.mockito.Mockito.atLeastOnce()).setY(194);
     }
 
     @Test

@@ -27,12 +27,15 @@ class BodycamCommandsTest {
         assertThat(bodycamNode.getChild("reload")).isNotNull();
         assertThat(bodycamNode.getChild("reset")).isNotNull();
         assertThat(bodycamNode.getChild("status")).isNotNull();
-        assertThat(bodycamNode.getChild("watchpoint")).isNotNull();
-        assertThat(bodycamNode.getChild("give")).isNotNull();
-        assertThat(bodycamNode.getChild("tp")).isNotNull();
-        assertThat(bodycamNode.getChild("remove")).isNotNull();
+        assertThat(bodycamNode.getChild("admin")).isNotNull();
 
-        CommandNode<CommandSourceStack> watchpoint = bodycamNode.getChild("watchpoint");
+        CommandNode<CommandSourceStack> admin = bodycamNode.getChild("admin");
+        assertThat(admin.getChild("watchpoint")).isNotNull();
+        assertThat(admin.getChild("give")).isNotNull();
+        assertThat(admin.getChild("tp")).isNotNull();
+        assertThat(admin.getChild("remove")).isNotNull();
+
+        CommandNode<CommandSourceStack> watchpoint = admin.getChild("watchpoint");
         assertThat(watchpoint.getChild("list")).isNotNull();
         assertThat(watchpoint.getChild("list").getChild("player")).isNotNull();
         assertThat(watchpoint.getChild("remove")).isNotNull();
@@ -42,12 +45,12 @@ class BodycamCommandsTest {
         assertThat(watchpoint.getChild("tp")).isNotNull();
         assertThat(watchpoint.getChild("tp").getChild("id")).isNotNull();
 
-        CommandNode<CommandSourceStack> give = bodycamNode.getChild("give");
+        CommandNode<CommandSourceStack> give = admin.getChild("give");
         CommandNode<CommandSourceStack> item = give.getChild("item");
         assertThat(item).isNotNull();
         assertThat(item.getChild("players")).isNotNull();
 
-        CommandNode<CommandSourceStack> tp = bodycamNode.getChild("tp");
+        CommandNode<CommandSourceStack> tp = admin.getChild("tp");
         CommandNode<CommandSourceStack> tpDummy = tp.getChild("dummy");
         assertThat(tpDummy).isNotNull();
         CommandNode<CommandSourceStack> dummyPlayer = tpDummy.getChild("dummyPlayer");
@@ -59,7 +62,7 @@ class BodycamCommandsTest {
         assertThat(tpCam).isNotNull();
         assertThat(tpCam.getChild("target")).isNotNull();
 
-        CommandNode<CommandSourceStack> remove = bodycamNode.getChild("remove");
+        CommandNode<CommandSourceStack> remove = admin.getChild("remove");
         CommandNode<CommandSourceStack> removeDummy = remove.getChild("dummy");
         assertThat(removeDummy).isNotNull();
         assertThat(removeDummy.getChild("dummyPlayer")).isNotNull();

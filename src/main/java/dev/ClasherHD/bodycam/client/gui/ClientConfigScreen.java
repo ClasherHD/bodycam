@@ -1,17 +1,22 @@
 package dev.ClasherHD.bodycam.client.gui;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 
 @SuppressWarnings("null")
 public class ClientConfigScreen extends Screen {
+    private static final ResourceLocation WINDOW_TEXTURE = new ResourceLocation("bodycam", "textures/gui/gui_window.png");
+
     private final Screen previous;
 
     private final boolean initialName;
     private final boolean initialHealth;
     private final boolean initialShift;
+    private final boolean initialVignette;
     private final String initialStd;
     private final String initialBlk;
     private final String initialObs;
@@ -22,6 +27,7 @@ public class ClientConfigScreen extends Screen {
     private boolean nameVal;
     private boolean healthVal;
     private boolean shiftVal;
+    private boolean vignetteVal;
     private int stdColorIdx;
     private int blkColorIdx;
     private int obsColorIdx;
@@ -32,6 +38,7 @@ public class ClientConfigScreen extends Screen {
     private Button btnName;
     private Button btnHealth;
     private Button btnShift;
+    private Button btnVignette;
     private Button btnReset;
     private Button btnColorStd;
     private Button btnColorBlk;
@@ -41,8 +48,10 @@ public class ClientConfigScreen extends Screen {
     private Button btnColorOtd;
     private Button btnDone;
 
-    private double scrollY = 0;
-    private int maxScroll = 70;
+    private int guiWidth;
+    private int guiHeight;
+    private int guiX;
+    private int guiY;
 
     private static class PresetColor {
         final String translationKey;
@@ -84,6 +93,7 @@ public class ClientConfigScreen extends Screen {
         this.initialName = dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_NAME_OVERLAY.get();
         this.initialHealth = dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_HEALTH_OVERLAY.get();
         this.initialShift = dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_SHIFT_OVERLAY.get();
+        this.initialVignette = dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_DAMAGE_VIGNETTE.get();
         this.initialStd = dev.ClasherHD.bodycam.config.ModClientConfig.COLOR_STANDARD.get();
         this.initialBlk = dev.ClasherHD.bodycam.config.ModClientConfig.COLOR_BLOCKED.get();
         this.initialObs = dev.ClasherHD.bodycam.config.ModClientConfig.COLOR_OBSERVING.get();
@@ -94,6 +104,7 @@ public class ClientConfigScreen extends Screen {
         this.nameVal = this.initialName;
         this.healthVal = this.initialHealth;
         this.shiftVal = this.initialShift;
+        this.vignetteVal = this.initialVignette;
         this.stdColorIdx = this.getClosestPresetIndex(this.initialStd);
         this.blkColorIdx = this.getClosestPresetIndex(this.initialBlk);
         this.obsColorIdx = this.getClosestPresetIndex(this.initialObs);
@@ -143,30 +154,44 @@ public class ClientConfigScreen extends Screen {
 
     @Override
     protected void init() {
-        this.scrollY = 0;
+        this.guiWidth = Math.min(430, this.width - 12);
+        this.guiHeight = 186;
+        this.guiX = (this.width - this.guiWidth) / 2;
+        this.guiY = (this.height - this.guiHeight) / 2;
+
+        int colWidth = (this.guiWidth - 30) / 2;
+        int leftColX = this.guiX + 12;
+        int rightColX = this.guiX + 12 + colWidth + 6;
 
         this.btnName = Button.builder(this.getToggleButtonMessage("gui.bodycam.config.name_overlay", this.nameVal), btn -> {
             this.nameVal = !this.nameVal;
             btn.setMessage(this.getToggleButtonMessage("gui.bodycam.config.name_overlay", this.nameVal));
-        }).bounds(this.width / 2 - 205, 0, 200, 20).build();
+        }).bounds(leftColX, 0, colWidth, 20).build();
         this.addRenderableWidget(this.btnName);
 
         this.btnHealth = Button.builder(this.getToggleButtonMessage("gui.bodycam.config.health_overlay", this.healthVal), btn -> {
             this.healthVal = !this.healthVal;
             btn.setMessage(this.getToggleButtonMessage("gui.bodycam.config.health_overlay", this.healthVal));
-        }).bounds(this.width / 2 + 5, 0, 200, 20).build();
+        }).bounds(rightColX, 0, colWidth, 20).build();
         this.addRenderableWidget(this.btnHealth);
 
         this.btnShift = Button.builder(this.getToggleButtonMessage("gui.bodycam.config.shift_overlay", this.shiftVal), btn -> {
             this.shiftVal = !this.shiftVal;
             btn.setMessage(this.getToggleButtonMessage("gui.bodycam.config.shift_overlay", this.shiftVal));
-        }).bounds(this.width / 2 - 100, 0, 200, 20).build();
+        }).bounds(leftColX, 0, colWidth, 20).build();
         this.addRenderableWidget(this.btnShift);
+
+        this.btnVignette = Button.builder(this.getToggleButtonMessage("gui.bodycam.config.damage_vignette", this.vignetteVal), btn -> {
+            this.vignetteVal = !this.vignetteVal;
+            btn.setMessage(this.getToggleButtonMessage("gui.bodycam.config.damage_vignette", this.vignetteVal));
+        }).bounds(rightColX, 0, colWidth, 20).build();
+        this.addRenderableWidget(this.btnVignette);
 
         this.btnReset = Button.builder(Component.translatable("gui.bodycam.config.reset"), btn -> {
             this.nameVal = true;
             this.healthVal = true;
             this.shiftVal = true;
+            this.vignetteVal = true;
             this.stdColorIdx = this.getClosestPresetIndex("FFFFFF");
             this.blkColorIdx = this.getClosestPresetIndex("FF5555");
             this.obsColorIdx = this.getClosestPresetIndex("5555FF");
@@ -177,55 +202,57 @@ public class ClientConfigScreen extends Screen {
             this.btnName.setMessage(this.getToggleButtonMessage("gui.bodycam.config.name_overlay", true));
             this.btnHealth.setMessage(this.getToggleButtonMessage("gui.bodycam.config.health_overlay", true));
             this.btnShift.setMessage(this.getToggleButtonMessage("gui.bodycam.config.shift_overlay", true));
+            this.btnVignette.setMessage(this.getToggleButtonMessage("gui.bodycam.config.damage_vignette", true));
             this.btnColorStd.setMessage(this.getColorButtonMessage("gui.bodycam.config.standard_color", this.stdColorIdx));
             this.btnColorBlk.setMessage(this.getColorButtonMessage("gui.bodycam.config.blocked_color", this.blkColorIdx));
             this.btnColorObs.setMessage(this.getColorButtonMessage("gui.bodycam.config.observing_color", this.obsColorIdx));
             this.btnColorDim.setMessage(this.getColorButtonMessage("gui.bodycam.config.dimension_color", this.dimColorIdx));
             this.btnColorOor.setMessage(this.getColorButtonMessage("gui.bodycam.config.out_of_range_color", this.oorColorIdx));
             this.btnColorOtd.setMessage(this.getColorButtonMessage("gui.bodycam.config.other_dimension_color", this.otdColorIdx));
-        }).bounds(this.width / 2 - 205, 0, 200, 20).build();
+        }).bounds(leftColX, 0, colWidth, 20).build();
         this.addRenderableWidget(this.btnReset);
 
         this.btnColorStd = Button.builder(this.getColorButtonMessage("gui.bodycam.config.standard_color", this.stdColorIdx), btn -> {
             this.stdColorIdx = (this.stdColorIdx + 1) % PRESET_COLORS.length;
             btn.setMessage(this.getColorButtonMessage("gui.bodycam.config.standard_color", this.stdColorIdx));
-        }).bounds(this.width / 2 - 205, 0, 200, 20).build();
+        }).bounds(leftColX, 0, colWidth, 20).build();
         this.addRenderableWidget(this.btnColorStd);
 
         this.btnColorBlk = Button.builder(this.getColorButtonMessage("gui.bodycam.config.blocked_color", this.blkColorIdx), btn -> {
             this.blkColorIdx = (this.blkColorIdx + 1) % PRESET_COLORS.length;
             btn.setMessage(this.getColorButtonMessage("gui.bodycam.config.blocked_color", this.blkColorIdx));
-        }).bounds(this.width / 2 + 5, 0, 200, 20).build();
+        }).bounds(rightColX, 0, colWidth, 20).build();
         this.addRenderableWidget(this.btnColorBlk);
 
         this.btnColorObs = Button.builder(this.getColorButtonMessage("gui.bodycam.config.observing_color", this.obsColorIdx), btn -> {
             this.obsColorIdx = (this.obsColorIdx + 1) % PRESET_COLORS.length;
             btn.setMessage(this.getColorButtonMessage("gui.bodycam.config.observing_color", this.obsColorIdx));
-        }).bounds(this.width / 2 - 205, 0, 200, 20).build();
+        }).bounds(leftColX, 0, colWidth, 20).build();
         this.addRenderableWidget(this.btnColorObs);
 
         this.btnColorDim = Button.builder(this.getColorButtonMessage("gui.bodycam.config.dimension_color", this.dimColorIdx), btn -> {
             this.dimColorIdx = (this.dimColorIdx + 1) % PRESET_COLORS.length;
             btn.setMessage(this.getColorButtonMessage("gui.bodycam.config.dimension_color", this.dimColorIdx));
-        }).bounds(this.width / 2 + 5, 0, 200, 20).build();
+        }).bounds(rightColX, 0, colWidth, 20).build();
         this.addRenderableWidget(this.btnColorDim);
 
         this.btnColorOor = Button.builder(this.getColorButtonMessage("gui.bodycam.config.out_of_range_color", this.oorColorIdx), btn -> {
             this.oorColorIdx = (this.oorColorIdx + 1) % PRESET_COLORS.length;
             btn.setMessage(this.getColorButtonMessage("gui.bodycam.config.out_of_range_color", this.oorColorIdx));
-        }).bounds(this.width / 2 - 205, 0, 200, 20).build();
+        }).bounds(leftColX, 0, colWidth, 20).build();
         this.addRenderableWidget(this.btnColorOor);
 
         this.btnColorOtd = Button.builder(this.getColorButtonMessage("gui.bodycam.config.other_dimension_color", this.otdColorIdx), btn -> {
             this.otdColorIdx = (this.otdColorIdx + 1) % PRESET_COLORS.length;
             btn.setMessage(this.getColorButtonMessage("gui.bodycam.config.other_dimension_color", this.otdColorIdx));
-        }).bounds(this.width / 2 + 5, 0, 200, 20).build();
+        }).bounds(rightColX, 0, colWidth, 20).build();
         this.addRenderableWidget(this.btnColorOtd);
 
         this.btnDone = Button.builder(Component.translatable("gui.done"), btn -> {
             dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_NAME_OVERLAY.set(this.nameVal);
             dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_HEALTH_OVERLAY.set(this.healthVal);
             dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_SHIFT_OVERLAY.set(this.shiftVal);
+            dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_DAMAGE_VIGNETTE.set(this.vignetteVal);
             dev.ClasherHD.bodycam.config.ModClientConfig.COLOR_STANDARD.set(PRESET_COLORS[this.stdColorIdx].hex);
             dev.ClasherHD.bodycam.config.ModClientConfig.COLOR_BLOCKED.set(PRESET_COLORS[this.blkColorIdx].hex);
             dev.ClasherHD.bodycam.config.ModClientConfig.COLOR_OBSERVING.set(PRESET_COLORS[this.obsColorIdx].hex);
@@ -234,54 +261,50 @@ public class ClientConfigScreen extends Screen {
             dev.ClasherHD.bodycam.config.ModClientConfig.COLOR_OTHER_DIMENSION.set(PRESET_COLORS[this.otdColorIdx].hex);
             dev.ClasherHD.bodycam.config.ModClientConfig.SPEC.save();
             this.onClose();
-        }).bounds(this.width / 2 + 5, 0, 200, 20).build();
+        }).bounds(rightColX, 0, colWidth, 20).build();
         this.addRenderableWidget(this.btnDone);
 
         this.updateLayout();
     }
 
     private void updateLayout() {
-        int yOffset = 54 + (int) this.scrollY;
+        this.btnName.setY(this.guiY + 28);
+        this.btnHealth.setY(this.guiY + 28);
 
-        this.btnName.setY(yOffset);
-        this.btnHealth.setY(yOffset);
+        this.btnShift.setY(this.guiY + 51);
+        this.btnVignette.setY(this.guiY + 51);
 
-        this.btnShift.setY(yOffset + 26);
+        this.btnColorStd.setY(this.guiY + 78);
+        this.btnColorBlk.setY(this.guiY + 78);
 
-        this.btnColorStd.setY(yOffset + 52);
-        this.btnColorBlk.setY(yOffset + 52);
+        this.btnColorObs.setY(this.guiY + 101);
+        this.btnColorDim.setY(this.guiY + 101);
 
-        this.btnColorObs.setY(yOffset + 78);
-        this.btnColorDim.setY(yOffset + 78);
+        this.btnColorOor.setY(this.guiY + 124);
+        this.btnColorOtd.setY(this.guiY + 124);
 
-        this.btnColorOor.setY(yOffset + 104);
-        this.btnColorOtd.setY(yOffset + 104);
-
-        this.btnReset.setY(yOffset + 136);
-        this.btnDone.setY(yOffset + 136);
-    }
-
-    @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        this.scrollY += delta * 20;
-        this.scrollY = net.minecraft.util.Mth.clamp(this.scrollY, -this.maxScroll, 0);
-        this.updateLayout();
-        return super.mouseScrolled(mouseX, mouseY, delta);
+        this.btnReset.setY(this.guiY + 154);
+        this.btnDone.setY(this.guiY + 154);
     }
 
     @Override
     public void render(GuiGraphics pGuiGraphics, int pMouseX, int pMouseY, float pPartialTick) {
-        this.renderBackground(pGuiGraphics);
+        if (this.minecraft != null && this.minecraft.level == null) {
+            this.renderDirtBackground(pGuiGraphics);
+        }
 
-        pGuiGraphics.pose().pushPose();
-        float scale = 1.5f;
-        pGuiGraphics.pose().scale(scale, scale, 1.0f);
-        float titleX = (this.width / 2f) / scale;
-        float titleY = (20f + (float) this.scrollY) / scale;
-        pGuiGraphics.drawCenteredString(this.font, this.title, (int) titleX, (int) titleY, 16777215);
-        pGuiGraphics.pose().popPose();
+        RenderSystem.setShaderColor(0.32F, 0.32F, 0.35F, 1.0F);
+        GuiRenderUtils.drawNineSlice(pGuiGraphics, WINDOW_TEXTURE, this.guiX, this.guiY, this.guiWidth, this.guiHeight, 32, 32, 32, 32, 256, 256);
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+
+        pGuiGraphics.drawCenteredString(this.font, this.title, this.width / 2, this.guiY + 10, 0xFFFFFFFF);
 
         super.render(pGuiGraphics, pMouseX, pMouseY, pPartialTick);
+    }
+
+    @Override
+    public boolean isPauseScreen() {
+        return false;
     }
 
     @Override

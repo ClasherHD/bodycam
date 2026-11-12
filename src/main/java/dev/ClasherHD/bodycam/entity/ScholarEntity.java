@@ -474,7 +474,8 @@ public class ScholarEntity extends AbstractVillager {
     public void die(DamageSource source) {
         if (!this.level().isClientSide() && this.level() instanceof ServerLevel sLevel) {
             ServerPlayer killer = resolveIntentionalPlayerKiller(sLevel, source);
-            if (killer != null && killer.isAlive() && !killer.isCreative() && !killer.isSpectator()) {
+            if (killer != null && killer.isAlive() && !killer.isCreative() && !killer.isSpectator()
+                    && dev.ClasherHD.bodycam.config.ModServerConfig.ENABLE_SCHOLAR_CURSE.get()) {
                 ModAdvancements.award(killer, ModAdvancements.SCHOLAR_CURSE);
                 triggerScholarCurse(sLevel, killer);
             }

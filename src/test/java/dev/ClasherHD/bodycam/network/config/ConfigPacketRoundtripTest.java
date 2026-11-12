@@ -11,10 +11,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ConfigPacketRoundtripTest {
 
     @Test
-    @DisplayName("OpenServerConfigS2CPacket should encode and decode all 12 configuration options accurately")
+    @DisplayName("OpenServerConfigS2CPacket should encode and decode all 18 configuration options accurately")
     void openServerConfigS2CPacket_roundtrip_preservesAllOptions() {
         OpenServerConfigS2CPacket original = new OpenServerConfigS2CPacket(
                 128, 5, 20,
+                true, true, true,
+                true, true, true,
                 true, true, true,
                 true, true, true,
                 true, true, true
@@ -36,6 +38,12 @@ class ConfigPacketRoundtripTest {
         assertThat(decoded.enableWatchPoint).isTrue();
         assertThat(decoded.enablePodest).isTrue();
         assertThat(decoded.opOnlyMode).isTrue();
+        assertThat(decoded.enableLogger).isTrue();
+        assertThat(decoded.enablePortablePortal).isTrue();
+        assertThat(decoded.enableAllSeeingEye).isTrue();
+        assertThat(decoded.enableCreepingDeath).isTrue();
+        assertThat(decoded.enableScholarCurse).isTrue();
+        assertThat(decoded.enableCreepingDeathNuke).isTrue();
     }
 
     @Test
@@ -43,6 +51,8 @@ class ConfigPacketRoundtripTest {
     void openServerConfigS2CPacket_roundtrip_withBoundaryValues() {
         OpenServerConfigS2CPacket original = new OpenServerConfigS2CPacket(
                 Integer.MAX_VALUE, 0, Integer.MIN_VALUE,
+                false, false, false,
+                false, false, false,
                 false, false, false,
                 false, false, false,
                 false, false, false
@@ -64,6 +74,12 @@ class ConfigPacketRoundtripTest {
         assertThat(decoded.enableWatchPoint).isFalse();
         assertThat(decoded.enablePodest).isFalse();
         assertThat(decoded.opOnlyMode).isFalse();
+        assertThat(decoded.enableLogger).isFalse();
+        assertThat(decoded.enablePortablePortal).isFalse();
+        assertThat(decoded.enableAllSeeingEye).isFalse();
+        assertThat(decoded.enableCreepingDeath).isFalse();
+        assertThat(decoded.enableScholarCurse).isFalse();
+        assertThat(decoded.enableCreepingDeathNuke).isFalse();
     }
 
     @Test
@@ -79,10 +95,12 @@ class ConfigPacketRoundtripTest {
     }
 
     @Test
-    @DisplayName("SaveServerConfigC2SPacket should encode and decode all 12 configuration options accurately")
+    @DisplayName("SaveServerConfigC2SPacket should encode and decode all 18 configuration options accurately")
     void saveServerConfigC2SPacket_roundtrip_preservesAllOptions() {
         SaveServerConfigC2SPacket original = new SaveServerConfigC2SPacket(
                 256, 10, 50,
+                true, false, true,
+                false, true, false,
                 true, false, true,
                 false, true, false,
                 true, false, true
@@ -104,6 +122,12 @@ class ConfigPacketRoundtripTest {
         assertThat(decoded.enableWatchPoint).isTrue();
         assertThat(decoded.enablePodest).isFalse();
         assertThat(decoded.opOnlyMode).isTrue();
+        assertThat(decoded.enableLogger).isFalse();
+        assertThat(decoded.enablePortablePortal).isTrue();
+        assertThat(decoded.enableAllSeeingEye).isFalse();
+        assertThat(decoded.enableCreepingDeath).isTrue();
+        assertThat(decoded.enableScholarCurse).isFalse();
+        assertThat(decoded.enableCreepingDeathNuke).isTrue();
     }
 
     @Test
@@ -111,6 +135,8 @@ class ConfigPacketRoundtripTest {
     void saveServerConfigC2SPacket_roundtrip_withBoundaryValues() {
         SaveServerConfigC2SPacket original = new SaveServerConfigC2SPacket(
                 1, 1, 1,
+                false, true, false,
+                true, false, true,
                 false, true, false,
                 true, false, true,
                 false, true, false
@@ -125,5 +151,8 @@ class ConfigPacketRoundtripTest {
         assertThat(decoded.maxWatchPointsTotal).isEqualTo(1);
         assertThat(decoded.enableReachEnchantment).isFalse();
         assertThat(decoded.enableJammer).isTrue();
+        assertThat(decoded.enableDimensionLocator).isFalse();
+        assertThat(decoded.enableLogger).isTrue();
+        assertThat(decoded.enablePortablePortal).isFalse();
     }
 }

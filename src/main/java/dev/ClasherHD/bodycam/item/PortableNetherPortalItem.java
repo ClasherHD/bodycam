@@ -63,6 +63,9 @@ public class PortableNetherPortalItem extends Item {
 
     @Override
     public InteractionResult useOn(UseOnContext context) {
+        if (!ModServerConfig.ENABLE_PORTABLE_NETHER_PORTAL.get()) {
+            return InteractionResult.PASS;
+        }
         Level level = context.getLevel();
         BlockPos clickedPos = context.getClickedPos();
         Player player = context.getPlayer();
@@ -81,6 +84,13 @@ public class PortableNetherPortalItem extends Item {
         if (ModServerConfig.OP_ONLY_MODE.get() && !player.hasPermissions(2)) {
             if (!level.isClientSide()) {
                 player.sendSystemMessage(Component.translatable("message.bodycam.op_only").withStyle(ChatFormatting.RED));
+            }
+            return InteractionResultHolder.fail(stack);
+        }
+
+        if (!ModServerConfig.ENABLE_PORTABLE_NETHER_PORTAL.get()) {
+            if (!level.isClientSide()) {
+                player.displayClientMessage(Component.translatable("message.bodycam.portable_portal_disabled").withStyle(ChatFormatting.RED), true);
             }
             return InteractionResultHolder.fail(stack);
         }

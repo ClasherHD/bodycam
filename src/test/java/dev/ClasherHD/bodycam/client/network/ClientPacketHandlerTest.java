@@ -174,7 +174,8 @@ class ClientPacketHandlerTest {
 
             OpenServerConfigS2CPacket packet = new OpenServerConfigS2CPacket(
                     100, 5, 20,
-                    true, true, true, true, true, true, true, true, false
+                    true, true, true, true, true, true, true, true, false,
+                    true, true, true, true, true, true
             );
             ClientPacketHandler.handleOpenServerConfig(packet);
 

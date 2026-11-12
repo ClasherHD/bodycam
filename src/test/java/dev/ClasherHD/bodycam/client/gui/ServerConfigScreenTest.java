@@ -30,6 +30,8 @@ class ServerConfigScreenTest {
                 100, 5, 20,
                 true, false, true,
                 false, true, false,
+                true, false, true,
+                false, true, false,
                 true, false, true
         );
 
@@ -52,6 +54,14 @@ class ServerConfigScreenTest {
         Field opOnlyField = ServerConfigScreen.class.getDeclaredField("opOnlyVal");
         opOnlyField.setAccessible(true);
         assertThat(opOnlyField.getBoolean(screen)).isTrue();
+
+        Field loggerField = ServerConfigScreen.class.getDeclaredField("loggerVal");
+        loggerField.setAccessible(true);
+        assertThat(loggerField.getBoolean(screen)).isFalse();
+
+        Field creepingDeathField = ServerConfigScreen.class.getDeclaredField("creepingDeathVal");
+        creepingDeathField.setAccessible(true);
+        assertThat(creepingDeathField.getBoolean(screen)).isTrue();
     }
 
     @Test
@@ -59,7 +69,8 @@ class ServerConfigScreenTest {
     void getToggleButtonMessage_formatsCorrectly() throws Exception {
         OpenServerConfigS2CPacket packet = new OpenServerConfigS2CPacket(
                 100, 5, 20,
-                true, true, true, true, true, true, true, true, false
+                true, true, true, true, true, true, true, true, false,
+                true, true, true, true, true, true
         );
         ServerConfigScreen screen = new ServerConfigScreen(null, packet);
 
@@ -74,15 +85,17 @@ class ServerConfigScreenTest {
     }
 
     @Test
-    @DisplayName("mouseScrolled adjusts and clamps scrollY within valid range")
-    void mouseScrolled_clampsScrollRange() throws Exception {
+    @DisplayName("updateLayout and updateVisibility configure widgets for pages inside GUI window")
+    void updateLayout_andVisibility_configuresWindowPages() throws Exception {
         OpenServerConfigS2CPacket packet = new OpenServerConfigS2CPacket(
                 100, 5, 20,
-                true, true, true, true, true, true, true, true, false
+                true, true, true, true, true, true, true, true, false,
+                true, true, true, true, true, true
         );
         ServerConfigScreen screen = new ServerConfigScreen(null, packet);
         net.minecraft.client.gui.components.EditBox mockEditBox = mock(net.minecraft.client.gui.components.EditBox.class);
         net.minecraft.client.gui.components.Button mockButton = mock(net.minecraft.client.gui.components.Button.class);
+        MinecraftTestEnvironment.setField(screen, "guiY", 30);
         MinecraftTestEnvironment.setField(screen, "txtMaxDistance", mockEditBox);
         MinecraftTestEnvironment.setField(screen, "btnReach", mockButton);
         MinecraftTestEnvironment.setField(screen, "btnJammer", mockButton);
@@ -90,24 +103,33 @@ class ServerConfigScreenTest {
         MinecraftTestEnvironment.setField(screen, "btnHologram", mockButton);
         MinecraftTestEnvironment.setField(screen, "btnAnonymizer", mockButton);
         MinecraftTestEnvironment.setField(screen, "btnPlayerLocator", mockButton);
+        MinecraftTestEnvironment.setField(screen, "btnLogger", mockButton);
+        MinecraftTestEnvironment.setField(screen, "btnPortablePortal", mockButton);
         MinecraftTestEnvironment.setField(screen, "txtMaxWatchPointsPlayer", mockEditBox);
         MinecraftTestEnvironment.setField(screen, "txtMaxWatchPointsTotal", mockEditBox);
         MinecraftTestEnvironment.setField(screen, "btnWatchPoint", mockButton);
         MinecraftTestEnvironment.setField(screen, "btnPodest", mockButton);
+        MinecraftTestEnvironment.setField(screen, "btnAllSeeingEye", mockButton);
+        MinecraftTestEnvironment.setField(screen, "btnCreepingDeath", mockButton);
+        MinecraftTestEnvironment.setField(screen, "btnScholarCurse", mockButton);
+        MinecraftTestEnvironment.setField(screen, "btnCreepingDeathNuke", mockButton);
         MinecraftTestEnvironment.setField(screen, "btnOpOnly", mockButton);
         MinecraftTestEnvironment.setField(screen, "btnBack", mockButton);
         MinecraftTestEnvironment.setField(screen, "btnNext", mockButton);
         MinecraftTestEnvironment.setField(screen, "btnReset", mockButton);
         MinecraftTestEnvironment.setField(screen, "btnSave", mockButton);
 
-        Field scrollField = ServerConfigScreen.class.getDeclaredField("scrollY");
-        scrollField.setAccessible(true);
+        Method updateLayout = ServerConfigScreen.class.getDeclaredMethod("updateLayout");
+        updateLayout.setAccessible(true);
+        updateLayout.invoke(screen);
 
-        screen.mouseScrolled(0, 0, 5.0D);
-        assertThat(scrollField.getDouble(screen)).isEqualTo(0.0D);
+        Method updateVisibility = ServerConfigScreen.class.getDeclaredMethod("updateVisibility");
+        updateVisibility.setAccessible(true);
+        updateVisibility.invoke(screen);
 
-        screen.mouseScrolled(0, 0, -10.0D);
-        assertThat(scrollField.getDouble(screen)).isEqualTo(-80.0D);
+        assertThat(screen.isPauseScreen()).isFalse();
+        verify(mockEditBox, org.mockito.Mockito.atLeastOnce()).setY(64);
+        verify(mockButton, org.mockito.Mockito.atLeastOnce()).setY(210);
     }
 
     @Test
@@ -115,7 +137,8 @@ class ServerConfigScreenTest {
     void onClose_restoresPreviousScreen() {
         OpenServerConfigS2CPacket packet = new OpenServerConfigS2CPacket(
                 100, 5, 20,
-                true, true, true, true, true, true, true, true, false
+                true, true, true, true, true, true, true, true, false,
+                true, true, true, true, true, true
         );
         Screen previousScreen = mock(Screen.class);
         ServerConfigScreen screen = new ServerConfigScreen(previousScreen, packet);

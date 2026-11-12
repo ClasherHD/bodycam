@@ -33,6 +33,9 @@ public class ModServerConfig {
     public static final ForgeConfigSpec.BooleanValue ENABLE_LOGGER;
     public static final ForgeConfigSpec.BooleanValue ENABLE_ALL_SEEING_EYE;
     public static final ForgeConfigSpec.BooleanValue ENABLE_CREEPING_DEATH;
+    public static final ForgeConfigSpec.BooleanValue ENABLE_PORTABLE_NETHER_PORTAL;
+    public static final ForgeConfigSpec.BooleanValue ENABLE_SCHOLAR_CURSE;
+    public static final ForgeConfigSpec.BooleanValue ENABLE_CREEPING_DEATH_NUKE;
     public static final ForgeConfigSpec.IntValue ANCIENT_TABLE_FUEL_PER_CRYSTAL;
     public static final ForgeConfigSpec.IntValue ANCIENT_TABLE_REPAIR_SECONDS_PER_CRYSTAL;
     public static final ForgeConfigSpec.IntValue ANCIENT_TABLE_CRAFT_SECONDS_PER_ITEM;
@@ -85,6 +88,12 @@ public class ModServerConfig {
                 .define("enableAllSeeingEye", true);
         ENABLE_CREEPING_DEATH = BUILDER.comment("Enable or Disable the Creeping Death item")
                 .define("enableCreepingDeath", true);
+        ENABLE_PORTABLE_NETHER_PORTAL = BUILDER.comment("Enable or Disable the Portable Nether Portal item")
+                .define("enablePortableNetherPortal", true);
+        ENABLE_SCHOLAR_CURSE = BUILDER.comment("Enable or Disable the Creeping Death curse when killing a Scholar")
+                .define("enableScholarCurse", true);
+        ENABLE_CREEPING_DEATH_NUKE = BUILDER.comment("Enable or Disable the OSC Nuke explosion on Creeping Death defeat or timeout")
+                .define("enableCreepingDeathNuke", true);
         BUILDER.pop();
 
         BUILDER.push("durability");
