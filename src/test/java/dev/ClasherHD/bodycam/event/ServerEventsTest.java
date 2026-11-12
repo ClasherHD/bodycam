@@ -63,6 +63,15 @@ class ServerEventsTest {
         BodycamDummyEntity.DUMMY_POS.put(id, Vec3.ZERO);
         PodestBlockEntity podest = new PodestBlockEntity(BlockPos.ZERO, ModBlocks.PODEST.get().defaultBlockState());
         PodestBlockEntity.LOADED_PODESTS.add(podest);
+        dev.ClasherHD.bodycam.entity.CreepingDeathEntity.ACTIVE_HUNTS_BY_TARGET.put(id, UUID.randomUUID());
+        synchronized (dev.ClasherHD.bodycam.entity.CreepingDeathEntity.PENDING_SPAWNS) {
+            dev.ClasherHD.bodycam.entity.CreepingDeathEntity.PENDING_SPAWNS.add(
+                    new dev.ClasherHD.bodycam.entity.CreepingDeathEntity.PendingSpawn(id, null, "test", 100));
+        }
+        synchronized (dev.ClasherHD.bodycam.entity.CreepingDeathEntity.PENDING_OSC_NUKES) {
+            dev.ClasherHD.bodycam.entity.CreepingDeathEntity.PENDING_OSC_NUKES.add(
+                    new dev.ClasherHD.bodycam.entity.CreepingDeathEntity.PendingOscNuke(Level.OVERWORLD, Vec3.ZERO, 50));
+        }
 
         ServerStoppedEvent event = MinecraftTestEnvironment.allocateInstance(ServerStoppedEvent.class);
         ServerEvents.onServerStopped(event);
@@ -71,6 +80,9 @@ class ServerEventsTest {
         assertThat(BodycamSetCameraPacket.ORIGINAL_POS).isEmpty();
         assertThat(BodycamDummyEntity.DUMMY_POS).isEmpty();
         assertThat(PodestBlockEntity.LOADED_PODESTS).isEmpty();
+        assertThat(dev.ClasherHD.bodycam.entity.CreepingDeathEntity.ACTIVE_HUNTS_BY_TARGET).isEmpty();
+        assertThat(dev.ClasherHD.bodycam.entity.CreepingDeathEntity.PENDING_SPAWNS).isEmpty();
+        assertThat(dev.ClasherHD.bodycam.entity.CreepingDeathEntity.PENDING_OSC_NUKES).isEmpty();
     }
 
     @Test

@@ -53,6 +53,14 @@ class ModRegistriesTest {
         assertThat(ModItems.ANCIENT_TABLE_ITEM.isPresent()).isTrue();
         assertThat(ModItems.WATCH_POINT_ITEM.isPresent()).isTrue();
         assertThat(ModItems.PODEST_ITEM.isPresent()).isTrue();
+
+        assertThat(ModItems.LOGGER.isPresent()).isTrue();
+        assertThat(ModItems.LOG_PAPER.isPresent()).isTrue();
+        assertThat(ModItems.LOG_BOOK.isPresent()).isTrue();
+        assertThat(ModItems.ALL_SEEING_EYE.isPresent()).isTrue();
+        assertThat(ModItems.CREEPING_DEATH.isPresent()).isTrue();
+        assertThat(ModItems.CHERRY_HOUSE_EXPLORER_MAP.isPresent()).isTrue();
+        assertThat(ModItems.SCHOLAR_SPAWN_EGG.isPresent()).isTrue();
     }
 
     @Test
@@ -83,6 +91,8 @@ class ModRegistriesTest {
         assertThat(ModEntityTypes.COMPASS_DUMMY.isPresent()).isTrue();
         assertThat(ModEntityTypes.HOLOGRAM_DUMMY.isPresent()).isTrue();
         assertThat(ModEntityTypes.WATCH_POINT_DUMMY.isPresent()).isTrue();
+        assertThat(ModEntityTypes.CREEPING_DEATH.isPresent()).isTrue();
+        assertThat(ModEntityTypes.SCHOLAR.isPresent()).isTrue();
 
         assertThat(ModMenuTypes.ANCIENT_TABLE.isPresent()).isTrue();
     }
@@ -114,6 +124,14 @@ class ModRegistriesTest {
         assertThat(ModSounds.PODEST_REMOVE.isPresent()).isTrue();
         assertThat(ModSounds.WATCH_POINT_ACTIVATE.isPresent()).isTrue();
         assertThat(ModSounds.WATCH_POINT_DEACTIVATE.isPresent()).isTrue();
+        assertThat(ModSounds.LOG_BOOK_LOCK.isPresent()).isTrue();
+        assertThat(ModSounds.LOG_BOOK_UNLOCK.isPresent()).isTrue();
+        assertThat(ModSounds.LOG_BOOK_WRONG_PIN.isPresent()).isTrue();
+        assertThat(ModSounds.LOGGER_START.isPresent()).isTrue();
+        assertThat(ModSounds.LOGGER_STOP.isPresent()).isTrue();
+        assertThat(ModSounds.LOGGER_CANCEL.isPresent()).isTrue();
+        assertThat(ModSounds.ALL_SEEING_EYE_USE.isPresent()).isTrue();
+        assertThat(ModSounds.ALL_SEEING_EYE_EXPIRE.isPresent()).isTrue();
     }
 
     @Test
@@ -121,6 +139,7 @@ class ModRegistriesTest {
     void modRecipes_arePresentAndCorrect() {
         assertThat(ModRecipes.ANCIENT_TABLE_CRAFTING_TYPE.isPresent()).isTrue();
         assertThat(ModRecipes.ANCIENT_TABLE_CRAFTING_SERIALIZER.isPresent()).isTrue();
+        assertThat(ModRecipes.LOGGER_REFILL_SERIALIZER.isPresent()).isTrue();
     }
 
     @Test
