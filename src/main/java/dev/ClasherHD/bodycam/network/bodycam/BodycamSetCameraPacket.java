@@ -362,9 +362,24 @@ public class BodycamSetCameraPacket {
 
             if (target != null && (!alreadyActive || oldTargetId == null || !oldTargetId.equals(msg.targetId))) {
                 dev.ClasherHD.bodycam.item.LoggerItem.recordObservation(target, player, observerDim, observerPos);
+                if (!isAllSeeingEye && dev.ClasherHD.bodycam.item.ItemDurabilityHelper.hasFullObservationCrystalTrimSet(target)) {
+                    dev.ClasherHD.bodycam.registry.ModSounds.TRIM_OBSERVATION_ALERT.getHolder().ifPresent(holder ->
+                            target.connection.send(new net.minecraft.network.protocol.game.ClientboundSoundPacket(
+                                    holder,
+                                    net.minecraft.sounds.SoundSource.PLAYERS,
+                                    target.getX(),
+                                    target.getY(),
+                                    target.getZ(),
+                                    0.45F,
+                                    0.72F,
+                                    target.getRandom().nextLong()
+                            ))
+                    );
+                }
             }
 
             player.getPersistentData().putBoolean("bodycam_active", true);
+            dev.ClasherHD.bodycam.util.ModAdvancements.award(player, dev.ClasherHD.bodycam.util.ModAdvancements.FIRST_OBSERVATION);
             player.getPersistentData().putBoolean("bodycam_watching_watchpoint", targetWatchPoint != null);
             player.getPersistentData().putUUID("bodycam_target_uuid", msg.targetId);
             player.getPersistentData().putInt("bodycam_disconnect_ticks", 0);

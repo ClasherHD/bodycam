@@ -11,6 +11,7 @@ public class ModClientConfig {
     public static final ForgeConfigSpec.BooleanValue SHOW_NAME_OVERLAY;
     public static final ForgeConfigSpec.BooleanValue SHOW_HEALTH_OVERLAY;
     public static final ForgeConfigSpec.BooleanValue SHOW_SHIFT_OVERLAY;
+    public static final ForgeConfigSpec.BooleanValue SHOW_DAMAGE_VIGNETTE;
 
     public static final ForgeConfigSpec.ConfigValue<String> COLOR_STANDARD;
     public static final ForgeConfigSpec.ConfigValue<String> COLOR_BLOCKED;
@@ -26,6 +27,7 @@ public class ModClientConfig {
         SHOW_NAME_OVERLAY = BUILDER.comment("Show the target's name while observing").define("showNameOverlay", true);
         SHOW_HEALTH_OVERLAY = BUILDER.comment("Show the target's health hearts while observing").define("showHealthOverlay", true);
         SHOW_SHIFT_OVERLAY = BUILDER.comment("Show the exit instruction while observing").define("showShiftOverlay", true);
+        SHOW_DAMAGE_VIGNETTE = BUILDER.comment("Show a progressively stronger red vignette and subtle signal flicker when taking damage while observing").define("showDamageVignette", true);
         BUILDER.pop();
 
         BUILDER.push("GUI Colors");

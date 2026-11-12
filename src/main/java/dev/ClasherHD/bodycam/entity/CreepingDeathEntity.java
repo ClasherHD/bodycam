@@ -548,6 +548,15 @@ public class CreepingDeathEntity extends PathfinderMob {
             }
             if (!this.missionAccomplished && !this.nukeScheduled) {
                 this.nukeScheduled = true;
+                if (source.getEntity() instanceof ServerPlayer killer) {
+                    dev.ClasherHD.bodycam.util.ModAdvancements.award(killer, dev.ClasherHD.bodycam.util.ModAdvancements.SURVIVE_CREEPING_DEATH);
+                }
+                if (targetId != null && this.level() instanceof ServerLevel sLevel) {
+                    ServerPlayer hunted = sLevel.getServer().getPlayerList().getPlayer(targetId);
+                    if (hunted != null && hunted.isAlive()) {
+                        dev.ClasherHD.bodycam.util.ModAdvancements.award(hunted, dev.ClasherHD.bodycam.util.ModAdvancements.SURVIVE_CREEPING_DEATH);
+                    }
+                }
                 scheduleOscNuke(this.level().dimension(), this.position());
             }
         }
@@ -605,6 +614,13 @@ public class CreepingDeathEntity extends PathfinderMob {
         if (this.tickCount >= MAX_LIFETIME_TICKS) {
             if (!this.missionAccomplished && !this.nukeScheduled) {
                 this.nukeScheduled = true;
+                UUID survivedTargetId = getTargetUUID();
+                if (survivedTargetId != null) {
+                    ServerPlayer survivedPlayer = sLevel.getServer().getPlayerList().getPlayer(survivedTargetId);
+                    if (survivedPlayer != null && survivedPlayer.isAlive()) {
+                        dev.ClasherHD.bodycam.util.ModAdvancements.award(survivedPlayer, dev.ClasherHD.bodycam.util.ModAdvancements.SURVIVE_CREEPING_DEATH);
+                    }
+                }
                 scheduleOscNuke(sLevel.dimension(), this.position());
             }
             this.discard();

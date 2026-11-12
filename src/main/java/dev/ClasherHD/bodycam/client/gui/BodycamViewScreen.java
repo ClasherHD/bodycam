@@ -33,6 +33,11 @@ public class BodycamViewScreen extends Screen {
     private boolean packetSent = false;
     private long lastLookPacketTime = 0L;
     private boolean pendingLookPacket = false;
+    private float currentVignetteAlpha = 0.0F;
+    private float currentHitFlash = 0.0F;
+    private int lastHurtTime = 0;
+    private int lastDamageTier = 0;
+    private long lastRenderNanoTime = System.nanoTime();
 
     public BodycamViewScreen(java.util.UUID targetId, String targetName, boolean isOnHologram) {
         this(targetId, targetName, isOnHologram, false, false);
@@ -190,6 +195,8 @@ public class BodycamViewScreen extends Screen {
             com.mojang.blaze3d.systems.RenderSystem.enableBlend();
             com.mojang.blaze3d.systems.RenderSystem.defaultBlendFunc();
 
+            int damageTier = updateAndRenderDamageVignette(graphics, mc, frameThickX, frameThickY);
+
             int barColor = this.isAllSeeingEye ? 0xAA221800 : 0x99000000;
             graphics.fill(0, 0, this.width, frameThickY, barColor);
             graphics.fill(0, this.height - frameThickY, this.width, this.height, barColor);
@@ -204,6 +211,13 @@ public class BodycamViewScreen extends Screen {
             }
 
             com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+
+            if (damageTier >= 3 && (System.currentTimeMillis() % 900L) < 600L) {
+                Component alert = Component.translatable(damageTier >= 4 ? "gui.bodycam.signal_critical" : "gui.bodycam.signal_weak");
+                int alertColor = damageTier >= 4 ? 0xFFFF3B3B : 0xFFFFAA22;
+                int textW = this.font.width(alert);
+                graphics.drawString(this.font, alert, (this.width - textW) / 2, 10, alertColor, true);
+            }
 
             if (dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_NAME_OVERLAY.get()) {
                 Component recComp = Component.translatable("gui.bodycam.rec", this.targetName);
@@ -265,6 +279,144 @@ public class BodycamViewScreen extends Screen {
             }
         } catch (Exception e) {
         }
+    }
+
+    private int updateAndRenderDamageVignette(GuiGraphics graphics, Minecraft mc, int frameThickX, int frameThickY) {
+        if (mc.player == null || !dev.ClasherHD.bodycam.config.ModClientConfig.SHOW_DAMAGE_VIGNETTE.get()) {
+            this.currentVignetteAlpha = 0.0F;
+            this.currentHitFlash = 0.0F;
+            return 0;
+        }
+        long nowNano = System.nanoTime();
+        float deltaSec = Math.min(0.1F, Math.max(0.001F, (nowNano - this.lastRenderNanoTime) / 1_000_000_000.0F));
+        this.lastRenderNanoTime = nowNano;
+
+        float healthRatio = net.minecraft.util.Mth.clamp(
+                mc.player.getHealth() / Math.max(1.0F, mc.player.getMaxHealth()), 0.0F, 1.0F);
+        int tier;
+        float targetAlpha;
+        if (healthRatio > 0.75F) {
+            tier = 0;
+            targetAlpha = 0.0F;
+        } else if (healthRatio > 0.50F) {
+            tier = 1;
+            targetAlpha = 0.30F;
+        } else if (healthRatio > 0.25F) {
+            tier = 2;
+            targetAlpha = 0.55F;
+        } else if (healthRatio > 0.10F) {
+            tier = 3;
+            targetAlpha = 0.78F;
+        } else {
+            tier = 4;
+            targetAlpha = 0.94F;
+        }
+
+        if (mc.player.hurtTime > this.lastHurtTime) {
+            this.currentHitFlash = 0.25F;
+            if (tier >= 1) {
+                mc.player.playSound(dev.ClasherHD.bodycam.registry.ModSounds.SIGNAL_STATIC.get(), 0.22F, 1.7F);
+            }
+        } else if (tier > this.lastDamageTier && tier >= 1) {
+            mc.player.playSound(dev.ClasherHD.bodycam.registry.ModSounds.SIGNAL_STATIC.get(), 0.25F, 1.8F);
+        }
+        this.lastHurtTime = mc.player.hurtTime;
+        this.lastDamageTier = tier;
+
+        float lerpRate = targetAlpha > this.currentVignetteAlpha ? 1.6F : 2.4F;
+        this.currentVignetteAlpha = net.minecraft.util.Mth.lerp(
+                Math.min(1.0F, deltaSec * lerpRate), this.currentVignetteAlpha, targetAlpha);
+        this.currentHitFlash = Math.max(0.0F, this.currentHitFlash - deltaSec * 1.4F);
+
+        float flicker = 0.0F;
+        if (this.currentVignetteAlpha > 0.02F) {
+            double t = System.currentTimeMillis() / 1000.0D;
+            float amp = 0.03F + tier * 0.025F;
+            flicker = (float) (Math.sin(t * (7.0D + tier * 3.0D)) * 0.6D + Math.sin(t * 23.0D) * 0.4D) * amp;
+        }
+
+        float effectiveAlpha = net.minecraft.util.Mth.clamp(this.currentVignetteAlpha + this.currentHitFlash + flicker, 0.0F, 0.95F);
+        if (effectiveAlpha > 0.005F) {
+            drawRadialRedVignette(graphics, effectiveAlpha, frameThickX, frameThickY);
+        }
+        return tier;
+    }
+
+    private void drawRadialRedVignette(GuiGraphics graphics, float alpha, int frameThickX, int frameThickY) {
+        int outerAlpha = net.minecraft.util.Mth.clamp((int) (alpha * 255.0F), 0, 255);
+        int midAlpha = net.minecraft.util.Mth.clamp((int) (alpha * 145.0F), 0, 255);
+        if (outerAlpha <= 0) {
+            return;
+        }
+        float cx = this.width * 0.5F;
+        float cy = this.height * 0.5F;
+        float viewHalfW = Math.max(1.0F, this.width * 0.5F - frameThickX);
+        float viewHalfH = Math.max(1.0F, this.height * 0.5F - frameThickY);
+
+        float innerRx = viewHalfW * (0.48F - alpha * 0.18F);
+        float innerRy = viewHalfH * (0.48F - alpha * 0.18F);
+        float midRx = viewHalfW * 0.88F;
+        float midRy = viewHalfH * 0.88F;
+        float outerRx = this.width * 0.75F;
+        float outerRy = this.height * 0.75F;
+        int segments = 40;
+
+        com.mojang.blaze3d.systems.RenderSystem.enableBlend();
+        com.mojang.blaze3d.systems.RenderSystem.defaultBlendFunc();
+        com.mojang.blaze3d.systems.RenderSystem.disableCull();
+        com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        com.mojang.blaze3d.systems.RenderSystem.setShader(net.minecraft.client.renderer.GameRenderer::getPositionColorShader);
+
+        com.mojang.blaze3d.vertex.Tesselator tesselator = com.mojang.blaze3d.vertex.Tesselator.getInstance();
+        com.mojang.blaze3d.vertex.BufferBuilder buffer = tesselator.getBuilder();
+        org.joml.Matrix4f pose = graphics.pose().last().pose();
+
+        int r = 175;
+        int g = 8;
+        int b = 12;
+
+        buffer.begin(com.mojang.blaze3d.vertex.VertexFormat.Mode.TRIANGLES, com.mojang.blaze3d.vertex.DefaultVertexFormat.POSITION_COLOR);
+        for (int i = 0; i < segments; i++) {
+            double a0 = (Math.PI * 2.0D * i) / segments;
+            double a1 = (Math.PI * 2.0D * (i + 1)) / segments;
+            float cos0 = (float) Math.cos(a0);
+            float sin0 = (float) Math.sin(a0);
+            float cos1 = (float) Math.cos(a1);
+            float sin1 = (float) Math.sin(a1);
+
+            float ix0 = cx + cos0 * innerRx;
+            float iy0 = cy + sin0 * innerRy;
+            float ix1 = cx + cos1 * innerRx;
+            float iy1 = cy + sin1 * innerRy;
+
+            float mx0 = cx + cos0 * midRx;
+            float my0 = cy + sin0 * midRy;
+            float mx1 = cx + cos1 * midRx;
+            float my1 = cy + sin1 * midRy;
+
+            float ox0 = cx + cos0 * outerRx;
+            float oy0 = cy + sin0 * outerRy;
+            float ox1 = cx + cos1 * outerRx;
+            float oy1 = cy + sin1 * outerRy;
+
+            buffer.vertex(pose, ix0, iy0, 0.0F).color(r, g, b, 0).endVertex();
+            buffer.vertex(pose, mx0, my0, 0.0F).color(r, g, b, midAlpha).endVertex();
+            buffer.vertex(pose, mx1, my1, 0.0F).color(r, g, b, midAlpha).endVertex();
+
+            buffer.vertex(pose, ix0, iy0, 0.0F).color(r, g, b, 0).endVertex();
+            buffer.vertex(pose, mx1, my1, 0.0F).color(r, g, b, midAlpha).endVertex();
+            buffer.vertex(pose, ix1, iy1, 0.0F).color(r, g, b, 0).endVertex();
+
+            buffer.vertex(pose, mx0, my0, 0.0F).color(r, g, b, midAlpha).endVertex();
+            buffer.vertex(pose, ox0, oy0, 0.0F).color(r, g, b, outerAlpha).endVertex();
+            buffer.vertex(pose, ox1, oy1, 0.0F).color(r, g, b, outerAlpha).endVertex();
+
+            buffer.vertex(pose, mx0, my0, 0.0F).color(r, g, b, midAlpha).endVertex();
+            buffer.vertex(pose, ox1, oy1, 0.0F).color(r, g, b, outerAlpha).endVertex();
+            buffer.vertex(pose, mx1, my1, 0.0F).color(r, g, b, midAlpha).endVertex();
+        }
+        tesselator.end();
+        com.mojang.blaze3d.systems.RenderSystem.enableCull();
     }
 
     @Override

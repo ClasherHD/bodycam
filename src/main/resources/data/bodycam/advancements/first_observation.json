@@ -1,0 +1,23 @@
+{
+  "parent": "bodycam:bodycam_monitor",
+  "display": {
+    "icon": {
+      "item": "bodycam:bodycam_monitor"
+    },
+    "title": {
+      "translate": "advancements.bodycam.first_observation.title"
+    },
+    "description": {
+      "translate": "advancements.bodycam.first_observation.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "observed": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

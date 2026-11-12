@@ -1,0 +1,23 @@
+{
+  "parent": "bodycam:logger",
+  "display": {
+    "icon": {
+      "item": "bodycam:log_paper"
+    },
+    "title": {
+      "translate": "advancements.bodycam.caught_on_logger.title"
+    },
+    "description": {
+      "translate": "advancements.bodycam.caught_on_logger.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "caught": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

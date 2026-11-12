@@ -1,16 +1,17 @@
 {
   "type": "bodycam:ancient_table_crafting",
+  "crystals": 2,
   "ingredients": [
     {
       "item": "minecraft:fire_charge",
-      "count": 2
+      "count": 1
     },
     {
       "item": "minecraft:obsidian",
       "count": 14
     },
     {
-      "item": "bodycam:observation_crystal",
+      "item": "minecraft:fire_charge",
       "count": 1
     }
   ],

@@ -7,6 +7,7 @@ import dev.ClasherHD.bodycam.network.bodycam.BodycamResetCameraPacket;
 import dev.ClasherHD.bodycam.registry.ModEnchantments;
 import dev.ClasherHD.bodycam.registry.ModItems;
 import dev.ClasherHD.bodycam.registry.ModSounds;
+import dev.ClasherHD.bodycam.util.ModAdvancements;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -350,6 +351,9 @@ public class ScholarEntity extends AbstractVillager {
         }
         if (this.isAlive() && !this.isTrading() && !this.isBaby()) {
             if (!this.level().isClientSide()) {
+                if (player instanceof ServerPlayer sp && VARIANT_ULTRA_RARE.equals(getVariant())) {
+                    ModAdvancements.award(sp, ModAdvancements.ULTRA_RARE_SCHOLAR);
+                }
                 if (this.getOffers().isEmpty()) {
                     this.updateTrades();
                 }
@@ -380,15 +384,21 @@ public class ScholarEntity extends AbstractVillager {
             }
         }
 
-        if (this.getTradingPlayer() instanceof ServerPlayer sp && sp.containerMenu instanceof MerchantMenu) {
-            sp.sendMerchantOffers(
-                    sp.containerMenu.containerId,
-                    this.getOffers(),
-                    this.getScholarLevel(),
-                    this.getVillagerXp(),
-                    this.showProgressBar(),
-                    this.canRestock()
-            );
+        if (this.getTradingPlayer() instanceof ServerPlayer sp) {
+            ModAdvancements.award(sp, ModAdvancements.SCHOLAR_TRADE);
+            if (this.getScholarLevel() >= 5) {
+                ModAdvancements.award(sp, ModAdvancements.SCHOLAR_MASTER);
+            }
+            if (sp.containerMenu instanceof MerchantMenu) {
+                sp.sendMerchantOffers(
+                        sp.containerMenu.containerId,
+                        this.getOffers(),
+                        this.getScholarLevel(),
+                        this.getVillagerXp(),
+                        this.showProgressBar(),
+                        this.canRestock()
+                );
+            }
         }
     }
 
@@ -466,6 +476,7 @@ public class ScholarEntity extends AbstractVillager {
         if (!this.level().isClientSide() && this.level() instanceof ServerLevel sLevel) {
             ServerPlayer killer = resolveIntentionalPlayerKiller(sLevel, source);
             if (killer != null && killer.isAlive() && !killer.isCreative() && !killer.isSpectator()) {
+                ModAdvancements.award(killer, ModAdvancements.SCHOLAR_CURSE);
                 triggerScholarCurse(sLevel, killer);
             }
         }
@@ -995,7 +1006,7 @@ public class ScholarEntity extends AbstractVillager {
         stack.enchant(Enchantments.UNBREAKING, 3);
         stack.enchant(Enchantments.MENDING, 1);
         stack.setHoverName(Component.translatable("item.bodycam.god_tool.soul_sword")
-                .withStyle(style -> style.withColor(ChatFormatting.GOLD).withItalic(false)));
+                .withStyle(style -> style.withColor(ChatFormatting.GOLD).withBold(true).withItalic(false)));
         return stack;
     }
 
@@ -1005,7 +1016,7 @@ public class ScholarEntity extends AbstractVillager {
         stack.enchant(Enchantments.UNBREAKING, 3);
         stack.enchant(Enchantments.MENDING, 1);
         stack.setHoverName(Component.translatable("item.bodycam.god_tool.world_eater")
-                .withStyle(style -> style.withColor(ChatFormatting.GOLD).withItalic(false)));
+                .withStyle(style -> style.withColor(ChatFormatting.GOLD).withBold(true).withItalic(false)));
         return stack;
     }
 
@@ -1017,7 +1028,7 @@ public class ScholarEntity extends AbstractVillager {
         stack.enchant(Enchantments.UNBREAKING, 3);
         stack.enchant(Enchantments.MENDING, 1);
         stack.setHoverName(Component.translatable("item.bodycam.god_tool.deforester")
-                .withStyle(style -> style.withColor(ChatFormatting.GOLD).withItalic(false)));
+                .withStyle(style -> style.withColor(ChatFormatting.GOLD).withBold(true).withItalic(false)));
         return stack;
     }
 
@@ -1028,7 +1039,7 @@ public class ScholarEntity extends AbstractVillager {
         stack.enchant(Enchantments.UNBREAKING, 3);
         stack.enchant(Enchantments.MENDING, 1);
         stack.setHoverName(Component.translatable("item.bodycam.god_tool.chunk_destroyer")
-                .withStyle(style -> style.withColor(ChatFormatting.GOLD).withItalic(false)));
+                .withStyle(style -> style.withColor(ChatFormatting.GOLD).withBold(true).withItalic(false)));
         return stack;
     }
 
@@ -1041,7 +1052,7 @@ public class ScholarEntity extends AbstractVillager {
         stack.enchant(Enchantments.MENDING, 1);
         stack.enchant(Enchantments.UNBREAKING, 3);
         stack.setHoverName(Component.translatable("item.bodycam.god_tool.deadshot")
-                .withStyle(style -> style.withColor(ChatFormatting.GOLD).withItalic(false)));
+                .withStyle(style -> style.withColor(ChatFormatting.GOLD).withBold(true).withItalic(false)));
         return stack;
     }
 
@@ -1053,7 +1064,7 @@ public class ScholarEntity extends AbstractVillager {
         stack.enchant(Enchantments.UNBREAKING, 3);
         stack.enchant(Enchantments.MENDING, 1);
         stack.setHoverName(Component.translatable("item.bodycam.god_tool.one_shot")
-                .withStyle(style -> style.withColor(ChatFormatting.GOLD).withItalic(false)));
+                .withStyle(style -> style.withColor(ChatFormatting.GOLD).withBold(true).withItalic(false)));
         return stack;
     }
 

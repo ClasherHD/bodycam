@@ -1,0 +1,23 @@
+{
+  "parent": "bodycam:find_cherry_house",
+  "display": {
+    "icon": {
+      "item": "minecraft:emerald"
+    },
+    "title": {
+      "translate": "advancements.bodycam.scholar_trade.title"
+    },
+    "description": {
+      "translate": "advancements.bodycam.scholar_trade.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "traded": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

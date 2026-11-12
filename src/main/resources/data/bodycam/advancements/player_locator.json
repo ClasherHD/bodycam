@@ -1,0 +1,32 @@
+{
+  "parent": "bodycam:ancient_table",
+  "display": {
+    "icon": {
+      "item": "bodycam:player_locator_compass"
+    },
+    "title": {
+      "translate": "advancements.bodycam.player_locator.title"
+    },
+    "description": {
+      "translate": "advancements.bodycam.player_locator.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "has_player_locator": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "bodycam:player_locator_compass"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

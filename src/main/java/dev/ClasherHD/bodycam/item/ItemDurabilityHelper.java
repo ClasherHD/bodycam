@@ -1,12 +1,15 @@
 package dev.ClasherHD.bodycam.item;
 
+import dev.ClasherHD.bodycam.bodycam;
 import dev.ClasherHD.bodycam.config.ModServerConfig;
 import dev.ClasherHD.bodycam.enchantment.BodycamAnonymityEnchantment;
 import dev.ClasherHD.bodycam.enchantment.BodycamNightspyEnchantment;
 import dev.ClasherHD.bodycam.enchantment.BodycamReachEnchantment;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.DigDurabilityEnchantment;
@@ -25,6 +28,9 @@ public final class ItemDurabilityHelper {
     public static final int ANONYMIZER_DURABILITY = 448;
     public static final int JAMMER_DURABILITY = 336;
     public static final int LOGGER_DURABILITY = 8;
+
+    public static final String CRYSTAL_TRIM_MATERIAL = bodycam.MODID + ":observation_crystal";
+    public static final float SAVE_CHANCE_PER_TRIM_PIECE = 0.125F;
 
     private ItemDurabilityHelper() {
     }
@@ -106,6 +112,47 @@ public final class ItemDurabilityHelper {
         return isPerTimeItem(stack) || isPerUseItem(stack);
     }
 
+    public static boolean hasObservationCrystalTrim(ItemStack stack) {
+        if (stack == null || stack.isEmpty() || !stack.hasTag()) {
+            return false;
+        }
+        CompoundTag tag = stack.getTag();
+        if (!tag.contains("Trim", 10)) {
+            return false;
+        }
+        String material = tag.getCompound("Trim").getString("material");
+        return CRYSTAL_TRIM_MATERIAL.equals(material);
+    }
+
+    public static int getObservationCrystalTrimCount(Player player) {
+        if (player == null) {
+            return 0;
+        }
+        int count = 0;
+        for (ItemStack armorStack : player.getArmorSlots()) {
+            if (hasObservationCrystalTrim(armorStack)) {
+                count++;
+            }
+        }
+        return Math.min(4, count);
+    }
+
+    public static float getTrimSaveChance(Player player) {
+        return getObservationCrystalTrimCount(player) * SAVE_CHANCE_PER_TRIM_PIECE;
+    }
+
+    public static boolean hasFullObservationCrystalTrimSet(Player player) {
+        return getObservationCrystalTrimCount(player) >= 4;
+    }
+
+    public static boolean shouldSaveDurabilityByTrim(ServerPlayer player) {
+        if (player == null) {
+            return false;
+        }
+        float chance = getTrimSaveChance(player);
+        return chance > 0.0F && player.getRandom().nextFloat() < chance;
+    }
+
     public static void damagePerUse(ItemStack stack, ServerPlayer player, int amount) {
         if (player != null && player.isCreative()) {
             return;
@@ -113,7 +160,16 @@ public final class ItemDurabilityHelper {
         if (isUnbreakable(stack) || !stack.isDamageableItem() || isEmpty(stack) || amount <= 0) {
             return;
         }
-        int newDamage = Math.min(stack.getMaxDamage(), stack.getDamageValue() + amount);
+        int actualDamage = 0;
+        for (int i = 0; i < amount; i++) {
+            if (!shouldSaveDurabilityByTrim(player)) {
+                actualDamage++;
+            }
+        }
+        if (actualDamage <= 0) {
+            return;
+        }
+        int newDamage = Math.min(stack.getMaxDamage(), stack.getDamageValue() + actualDamage);
         stack.setDamageValue(newDamage);
         if (newDamage >= stack.getMaxDamage() && player != null) {
             player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
@@ -131,6 +187,9 @@ public final class ItemDurabilityHelper {
         int unbreaking = stack.getEnchantmentLevel(Enchantments.UNBREAKING);
         int actualDamage = 0;
         for (int i = 0; i < amount; i++) {
+            if (shouldSaveDurabilityByTrim(player)) {
+                continue;
+            }
             if (unbreaking <= 0 || player == null
                     || !DigDurabilityEnchantment.shouldIgnoreDurabilityDrop(stack, unbreaking, player.getRandom())) {
                 actualDamage++;

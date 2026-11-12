@@ -1,0 +1,32 @@
+{
+  "parent": "bodycam:jammer",
+  "display": {
+    "icon": {
+      "item": "bodycam:anonymizer"
+    },
+    "title": {
+      "translate": "advancements.bodycam.anonymizer.title"
+    },
+    "description": {
+      "translate": "advancements.bodycam.anonymizer.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "has_anonymizer": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "bodycam:anonymizer"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

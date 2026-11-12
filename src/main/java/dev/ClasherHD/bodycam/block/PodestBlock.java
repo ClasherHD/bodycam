@@ -172,6 +172,9 @@ public class PodestBlock extends BaseEntityBlock {
             if (held.is(ModItems.OBSERVATION_CRYSTAL.get())) {
                 if (podest.getCharges() < PodestBlockEntity.MAX_CHARGES) {
                     podest.addCharge(level, pos, state);
+                    if (podest.getCharges() >= PodestBlockEntity.MAX_CHARGES && player instanceof net.minecraft.server.level.ServerPlayer sp) {
+                        dev.ClasherHD.bodycam.util.ModAdvancements.award(sp, dev.ClasherHD.bodycam.util.ModAdvancements.PODEST_MAX);
+                    }
                     if (!player.getAbilities().instabuild) {
                         held.shrink(1);
                     }

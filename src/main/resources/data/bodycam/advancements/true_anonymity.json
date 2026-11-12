@@ -1,0 +1,54 @@
+{
+  "parent": "bodycam:anonymizer",
+  "display": {
+    "icon": {
+      "item": "minecraft:enchanted_book"
+    },
+    "title": {
+      "translate": "advancements.bodycam.true_anonymity.title"
+    },
+    "description": {
+      "translate": "advancements.bodycam.true_anonymity.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "has_book": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "stored_enchantments": [
+              {
+                "enchantment": "bodycam:true_anonymity"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "has_item": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "enchantments": [
+              {
+                "enchantment": "bodycam:true_anonymity"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_book",
+      "has_item"
+    ]
+  ]
+}

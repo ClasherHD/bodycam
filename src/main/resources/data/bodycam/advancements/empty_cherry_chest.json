@@ -1,0 +1,23 @@
+{
+  "parent": "bodycam:find_cherry_house",
+  "display": {
+    "icon": {
+      "item": "minecraft:chest"
+    },
+    "title": {
+      "translate": "advancements.bodycam.empty_cherry_chest.title"
+    },
+    "description": {
+      "translate": "advancements.bodycam.empty_cherry_chest.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "unlucky": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

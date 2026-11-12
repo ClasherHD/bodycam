@@ -1,0 +1,32 @@
+{
+  "parent": "bodycam:root",
+  "display": {
+    "icon": {
+      "item": "bodycam:ancient_table"
+    },
+    "title": {
+      "translate": "advancements.bodycam.ancient_table.title"
+    },
+    "description": {
+      "translate": "advancements.bodycam.ancient_table.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "has_ancient_table": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "bodycam:ancient_table"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

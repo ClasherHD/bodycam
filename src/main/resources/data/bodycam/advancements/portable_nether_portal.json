@@ -1,0 +1,32 @@
+{
+  "parent": "bodycam:dimension_locator",
+  "display": {
+    "icon": {
+      "item": "bodycam:portable_nether_portal"
+    },
+    "title": {
+      "translate": "advancements.bodycam.portable_nether_portal.title"
+    },
+    "description": {
+      "translate": "advancements.bodycam.portable_nether_portal.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "has_portable_portal": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "bodycam:portable_nether_portal"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

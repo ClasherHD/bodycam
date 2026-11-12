@@ -160,6 +160,7 @@ public class LogBookItem extends Item {
             return;
         }
         book.getOrCreateTag().putString(TAG_PIN, hashPin(newPin));
+        dev.ClasherHD.bodycam.util.ModAdvancements.award(player, dev.ClasherHD.bodycam.util.ModAdvancements.LOG_BOOK_ENCRYPTED);
         player.level().playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.LOG_BOOK_LOCK.get(), SoundSource.PLAYERS, 0.6F, 1.4F);
         player.displayClientMessage(Component.translatable(hadPin ? "message.bodycam.logbook.pin_changed" : "message.bodycam.logbook.pin_set").withStyle(ChatFormatting.GREEN), true);
     }

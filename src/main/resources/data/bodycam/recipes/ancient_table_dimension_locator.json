@@ -1,0 +1,23 @@
+{
+  "type": "bodycam:ancient_table_crafting",
+  "crystals": 1,
+  "ingredients": [
+    {
+      "item": "minecraft:ender_eye",
+      "count": 1
+    },
+    {
+      "item": "bodycam:player_locator_compass",
+      "count": 1
+    },
+    {
+      "item": "minecraft:echo_shard",
+      "count": 1
+    }
+  ],
+  "result": {
+    "item": "bodycam:dimension_locator",
+    "count": 1,
+    "start_empty": true
+  }
+}

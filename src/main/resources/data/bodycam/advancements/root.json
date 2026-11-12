@@ -1,0 +1,32 @@
+{
+  "display": {
+    "icon": {
+      "item": "bodycam:observation_crystal"
+    },
+    "title": {
+      "translate": "advancements.bodycam.root.title"
+    },
+    "description": {
+      "translate": "advancements.bodycam.root.description"
+    },
+    "background": "minecraft:textures/gui/advancements/backgrounds/adventure.png",
+    "frame": "task",
+    "show_toast": false,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "has_crystal": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "bodycam:observation_crystal"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

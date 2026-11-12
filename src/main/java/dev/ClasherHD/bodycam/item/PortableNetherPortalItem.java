@@ -161,7 +161,8 @@ public class PortableNetherPortalItem extends Item {
         if (!level.isClientSide() && livingEntity instanceof ServerPlayer player) {
             int charges = getCharges(stack);
             if (charges > 0 && performDimensionTeleport(player)) {
-                if (!player.getAbilities().instabuild) {
+                dev.ClasherHD.bodycam.util.ModAdvancements.award(player, dev.ClasherHD.bodycam.util.ModAdvancements.USE_PORTABLE_PORTAL);
+                if (!player.getAbilities().instabuild && !ItemDurabilityHelper.shouldSaveDurabilityByTrim(player)) {
                     int remaining = charges - 1;
                     if (remaining <= 0) {
                         level.playSound(null, player.getX(), player.getY(), player.getZ(),

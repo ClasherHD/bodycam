@@ -61,6 +61,16 @@ public class BodycamClientEvents {
         handleHologramInteraction(event);
     }
 
+    @SubscribeEvent
+    public static void onRenderHand(net.minecraftforge.client.event.RenderHandEvent event) {
+        dev.ClasherHD.bodycam.client.render.CherryHouseMapRenderer.handleRenderHand(event);
+    }
+
+    @SubscribeEvent
+    public static void onRenderItemInFrame(net.minecraftforge.client.event.RenderItemInFrameEvent event) {
+        dev.ClasherHD.bodycam.client.render.CherryHouseMapRenderer.handleRenderItemInFrame(event);
+    }
+
     private static void handleHologramInteraction(net.minecraftforge.event.entity.player.PlayerInteractEvent event) {
         if (event.getHand() != net.minecraft.world.InteractionHand.MAIN_HAND) return;
         if (!event.getEntity().isCrouching()) return;

@@ -1,0 +1,32 @@
+{
+  "parent": "bodycam:all_seeing_eye_activated",
+  "display": {
+    "icon": {
+      "item": "bodycam:creeping_death"
+    },
+    "title": {
+      "translate": "advancements.bodycam.creeping_death.title"
+    },
+    "description": {
+      "translate": "advancements.bodycam.creeping_death.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "has_creeping_death": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "bodycam:creeping_death"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

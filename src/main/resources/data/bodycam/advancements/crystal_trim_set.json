@@ -1,0 +1,23 @@
+{
+  "parent": "bodycam:root",
+  "display": {
+    "icon": {
+      "item": "minecraft:netherite_chestplate"
+    },
+    "title": {
+      "translate": "advancements.bodycam.crystal_trim_set.title"
+    },
+    "description": {
+      "translate": "advancements.bodycam.crystal_trim_set.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "full_trim_set": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

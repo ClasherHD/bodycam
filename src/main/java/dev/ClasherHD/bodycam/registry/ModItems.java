@@ -4,6 +4,7 @@ import dev.ClasherHD.bodycam.bodycam;
 import dev.ClasherHD.bodycam.item.AllSeeingEyeItem;
 import dev.ClasherHD.bodycam.item.AnonymizerItem;
 import dev.ClasherHD.bodycam.item.BodycamMonitorItem;
+import dev.ClasherHD.bodycam.item.CherryHouseExplorerMapItem;
 import dev.ClasherHD.bodycam.item.CreepingDeathItem;
 import dev.ClasherHD.bodycam.item.DimensionLocatorItem;
 import dev.ClasherHD.bodycam.item.ItemDurabilityHelper;
@@ -60,4 +61,6 @@ public class ModItems {
             () -> new BlockItem(ModBlocks.PODEST.get(), new Item.Properties()));
     public static final RegistryObject<Item> SCHOLAR_SPAWN_EGG = ITEMS.register("scholar_spawn_egg",
             () -> new ForgeSpawnEggItem(ModEntityTypes.SCHOLAR, 0x3B2B28, 0xE6A8C2, new Item.Properties()));
+    public static final RegistryObject<Item> CHERRY_HOUSE_EXPLORER_MAP = ITEMS.register("cherry_house_explorer_map",
+            () -> new CherryHouseExplorerMapItem(new Item.Properties()));
 }

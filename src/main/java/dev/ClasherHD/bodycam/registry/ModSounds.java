@@ -79,4 +79,8 @@ public class ModSounds {
             () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(bodycam.MODID, "scholar_death")));
     public static final RegistryObject<SoundEvent> SCHOLAR_CURSE = SOUND_EVENTS.register("scholar_curse",
             () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(bodycam.MODID, "scholar_curse")));
+    public static final RegistryObject<SoundEvent> TRIM_OBSERVATION_ALERT = SOUND_EVENTS.register("trim_observation_alert",
+            () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(bodycam.MODID, "trim_observation_alert")));
+    public static final RegistryObject<SoundEvent> SIGNAL_STATIC = SOUND_EVENTS.register("signal_static",
+            () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(bodycam.MODID, "signal_static")));
 }

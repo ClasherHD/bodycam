@@ -91,7 +91,8 @@ public class CreepingDeathItem extends Item {
 
     @Override
     public Component getName(ItemStack stack) {
-        return Component.translatable(this.getDescriptionId(stack)).withStyle(ChatFormatting.BLACK);
+        return Component.translatable(this.getDescriptionId(stack))
+                .withStyle(style -> style.withColor(0x666670).withBold(true));
     }
 
     @Override

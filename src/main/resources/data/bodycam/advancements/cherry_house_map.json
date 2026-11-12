@@ -1,0 +1,32 @@
+{
+  "parent": "bodycam:root",
+  "display": {
+    "icon": {
+      "item": "bodycam:cherry_house_explorer_map"
+    },
+    "title": {
+      "translate": "advancements.bodycam.cherry_house_map.title"
+    },
+    "description": {
+      "translate": "advancements.bodycam.cherry_house_map.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "has_map": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "bodycam:cherry_house_explorer_map"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

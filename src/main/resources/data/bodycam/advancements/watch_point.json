@@ -1,0 +1,32 @@
+{
+  "parent": "bodycam:first_observation",
+  "display": {
+    "icon": {
+      "item": "bodycam:watch_point"
+    },
+    "title": {
+      "translate": "advancements.bodycam.watch_point.title"
+    },
+    "description": {
+      "translate": "advancements.bodycam.watch_point.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "has_watch_point": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "bodycam:watch_point"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

@@ -140,11 +140,18 @@ public class CherryHousePiece extends TemplateStructurePiece {
 
         Direction facing = determineChestFacing(level, pos);
         level.setBlock(pos, Blocks.CHEST.defaultBlockState().setValue(ChestBlock.FACING, facing), 3);
+        BlockEntity blockEntity = level.getBlockEntity(pos);
         if (lootTable != null) {
-            BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof RandomizableContainerBlockEntity container) {
                 container.setLootTable(lootTable, random.nextLong());
+                if (LOOT_ULTRA_RARE.equals(lootTable)) {
+                    container.getPersistentData().putBoolean("BodycamUltraRareCherryChest", true);
+                    container.setChanged();
+                }
             }
+        } else if (blockEntity != null) {
+            blockEntity.getPersistentData().putBoolean("BodycamEmptyCherryChest", true);
+            blockEntity.setChanged();
         }
     }
 

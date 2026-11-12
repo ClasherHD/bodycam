@@ -107,6 +107,9 @@ public class LoggerItem extends Item {
         if (!sPlayer.getInventory().add(paper)) {
             sPlayer.drop(paper, false);
         }
+        if (recorded > 0) {
+            dev.ClasherHD.bodycam.util.ModAdvancements.award(sPlayer, dev.ClasherHD.bodycam.util.ModAdvancements.CAUGHT_ON_LOGGER);
+        }
         level.playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.LOGGER_STOP.get(), SoundSource.PLAYERS, 0.8F, 1.0F);
         sPlayer.displayClientMessage(Component.translatable("message.bodycam.logger.stopped", recorded).withStyle(ChatFormatting.AQUA), true);
         return InteractionResultHolder.sidedSuccess(stack, false);

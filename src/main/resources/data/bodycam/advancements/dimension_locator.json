@@ -1,0 +1,32 @@
+{
+  "parent": "bodycam:player_locator",
+  "display": {
+    "icon": {
+      "item": "bodycam:dimension_locator"
+    },
+    "title": {
+      "translate": "advancements.bodycam.dimension_locator.title"
+    },
+    "description": {
+      "translate": "advancements.bodycam.dimension_locator.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "has_dimension_locator": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "bodycam:dimension_locator"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

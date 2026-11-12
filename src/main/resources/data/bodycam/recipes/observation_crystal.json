@@ -1,21 +1,16 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "pattern": [
-    " Q ",
-    "DAD",
-    " Q "
-  ],
-  "key": {
-    "A": {
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "minecraft:quartz"
+    },
+    {
       "item": "minecraft:amethyst_shard"
     },
-    "D": {
+    {
       "item": "minecraft:diamond"
-    },
-    "Q": {
-      "item": "minecraft:quartz"
     }
-  },
+  ],
   "result": {
     "item": "bodycam:observation_crystal",
     "count": 1

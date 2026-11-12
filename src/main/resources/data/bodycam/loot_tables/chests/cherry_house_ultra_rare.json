@@ -11,7 +11,7 @@
           "functions": [
             {
               "function": "minecraft:set_nbt",
-              "tag": "{display:{Name:'{\"translate\":\"item.bodycam.god_tool.soul_sword\",\"color\":\"gold\",\"italic\":false}'}}"
+              "tag": "{display:{Name:'{\"translate\":\"item.bodycam.god_tool.soul_sword\",\"color\":\"gold\",\"bold\":true,\"italic\":false}'}}"
             },
             {
               "function": "minecraft:set_enchantments",
@@ -33,7 +33,7 @@
           "functions": [
             {
               "function": "minecraft:set_nbt",
-              "tag": "{display:{Name:'{\"translate\":\"item.bodycam.god_tool.world_eater\",\"color\":\"gold\",\"italic\":false}'}}"
+              "tag": "{display:{Name:'{\"translate\":\"item.bodycam.god_tool.world_eater\",\"color\":\"gold\",\"bold\":true,\"italic\":false}'}}"
             },
             {
               "function": "minecraft:set_enchantments",
@@ -52,7 +52,7 @@
           "functions": [
             {
               "function": "minecraft:set_nbt",
-              "tag": "{display:{Name:'{\"translate\":\"item.bodycam.god_tool.deforester\",\"color\":\"gold\",\"italic\":false}'}}"
+              "tag": "{display:{Name:'{\"translate\":\"item.bodycam.god_tool.deforester\",\"color\":\"gold\",\"bold\":true,\"italic\":false}'}}"
             },
             {
               "function": "minecraft:set_enchantments",
@@ -73,7 +73,7 @@
           "functions": [
             {
               "function": "minecraft:set_nbt",
-              "tag": "{display:{Name:'{\"translate\":\"item.bodycam.god_tool.chunk_destroyer\",\"color\":\"gold\",\"italic\":false}'}}"
+              "tag": "{display:{Name:'{\"translate\":\"item.bodycam.god_tool.chunk_destroyer\",\"color\":\"gold\",\"bold\":true,\"italic\":false}'}}"
             },
             {
               "function": "minecraft:set_enchantments",
@@ -93,7 +93,7 @@
           "functions": [
             {
               "function": "minecraft:set_nbt",
-              "tag": "{display:{Name:'{\"translate\":\"item.bodycam.god_tool.deadshot\",\"color\":\"gold\",\"italic\":false}'}}"
+              "tag": "{display:{Name:'{\"translate\":\"item.bodycam.god_tool.deadshot\",\"color\":\"gold\",\"bold\":true,\"italic\":false}'}}"
             },
             {
               "function": "minecraft:set_enchantments",
@@ -115,7 +115,7 @@
           "functions": [
             {
               "function": "minecraft:set_nbt",
-              "tag": "{display:{Name:'{\"translate\":\"item.bodycam.god_tool.one_shot\",\"color\":\"gold\",\"italic\":false}'}}"
+              "tag": "{display:{Name:'{\"translate\":\"item.bodycam.god_tool.one_shot\",\"color\":\"gold\",\"bold\":true,\"italic\":false}'}}"
             },
             {
               "function": "minecraft:set_enchantments",

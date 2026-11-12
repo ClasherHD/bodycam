@@ -306,5 +306,27 @@
         "type": "event"
       }
     ]
+  },
+  "trim_observation_alert": {
+    "subtitle": "subtitles.bodycam.trim_observation_alert",
+    "sounds": [
+      {
+        "name": "minecraft:block/amethyst/resonate4",
+        "stream": false,
+        "volume": 0.45,
+        "pitch": 0.72
+      }
+    ]
+  },
+  "signal_static": {
+    "subtitle": "subtitles.bodycam.signal_static",
+    "sounds": [
+      {
+        "name": "minecraft:block.redstone_torch.burnout",
+        "type": "event",
+        "volume": 0.25,
+        "pitch": 1.75
+      }
+    ]
   }
 }

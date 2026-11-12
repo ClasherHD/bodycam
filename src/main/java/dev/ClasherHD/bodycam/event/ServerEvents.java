@@ -13,6 +13,7 @@ import dev.ClasherHD.bodycam.entity.ScholarEntity;
 import dev.ClasherHD.bodycam.entity.WatchPointDummyEntity;
 import dev.ClasherHD.bodycam.item.AllSeeingEyeItem;
 import dev.ClasherHD.bodycam.item.AnonymizerItem;
+import dev.ClasherHD.bodycam.item.CherryHouseExplorerMapItem;
 import dev.ClasherHD.bodycam.item.ItemDurabilityHelper;
 import dev.ClasherHD.bodycam.item.JammerItem;
 import dev.ClasherHD.bodycam.item.LogBookItem;
@@ -25,6 +26,7 @@ import dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket;
 import dev.ClasherHD.bodycam.network.bodycam.CrossObservationSyncPacket;
 import dev.ClasherHD.bodycam.registry.ModEnchantments;
 import dev.ClasherHD.bodycam.registry.ModItems;
+import dev.ClasherHD.bodycam.util.ModAdvancements;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
@@ -41,6 +43,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.EnchantedBookItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ShearsItem;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
@@ -50,8 +53,13 @@ import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.storage.loot.LootPool;
+import net.minecraft.world.level.storage.loot.entries.EmptyLootItem;
+import net.minecraft.world.level.storage.loot.entries.LootItem;
+import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.AnvilUpdateEvent;
+import net.minecraftforge.event.LootTableLoadEvent;
 import net.minecraftforge.event.entity.living.LivingChangeTargetEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
@@ -59,6 +67,8 @@ import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.village.VillagerTradesEvent;
+import net.minecraftforge.event.village.WandererTradesEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.event.server.ServerStoppedEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -141,6 +151,30 @@ public class ServerEvents {
         event.setCancellationResult(InteractionResult.sidedSuccess(level.isClientSide()));
         if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer) {
             LogBookItem.handleCartographyInteraction(serverPlayer, book, other);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onCherryChestOpen(PlayerInteractEvent.RightClickBlock event) {
+        if (event.getHand() != InteractionHand.MAIN_HAND || event.getLevel().isClientSide()) {
+            return;
+        }
+        if (!(event.getEntity() instanceof ServerPlayer serverPlayer) || serverPlayer.isSpectator()) {
+            return;
+        }
+        net.minecraft.world.level.block.entity.BlockEntity be = event.getLevel().getBlockEntity(event.getPos());
+        if (be == null) {
+            return;
+        }
+        if (be.getPersistentData().getBoolean("BodycamEmptyCherryChest")) {
+            be.getPersistentData().remove("BodycamEmptyCherryChest");
+            be.setChanged();
+            ModAdvancements.award(serverPlayer, ModAdvancements.EMPTY_CHERRY_CHEST);
+        }
+        if (be.getPersistentData().getBoolean("BodycamUltraRareCherryChest")) {
+            be.getPersistentData().remove("BodycamUltraRareCherryChest");
+            be.setChanged();
+            ModAdvancements.award(serverPlayer, ModAdvancements.ULTRA_RARE_CHEST);
         }
     }
 
@@ -362,6 +396,59 @@ public class ServerEvents {
     }
 
     @SubscribeEvent
+    public static void onVillagerTrades(VillagerTradesEvent event) {
+        if (event.getType() == VillagerProfession.CARTOGRAPHER) {
+            event.getTrades().get(3).add((trader, random) -> {
+                if (!(trader.level() instanceof ServerLevel sLevel)) {
+                    return null;
+                }
+                ItemStack map = CherryHouseExplorerMapItem.createExplorerMap(sLevel, trader.blockPosition());
+                if (map.isEmpty()) {
+                    return null;
+                }
+                return new MerchantOffer(
+                        new ItemStack(Items.EMERALD, 14),
+                        new ItemStack(Items.COMPASS, 1),
+                        map,
+                        0, 12, 10, 0.2F
+                );
+            });
+        }
+    }
+
+    @SubscribeEvent
+    public static void onWandererTrades(WandererTradesEvent event) {
+        event.getRareTrades().add((trader, random) -> {
+            if (!(trader.level() instanceof ServerLevel sLevel)) {
+                return null;
+            }
+            ItemStack map = CherryHouseExplorerMapItem.createExplorerMap(sLevel, trader.blockPosition());
+            if (map.isEmpty()) {
+                return null;
+            }
+            return new MerchantOffer(
+                    new ItemStack(Items.EMERALD, 16),
+                    new ItemStack(Items.COMPASS, 1),
+                    map,
+                    0, 2, 10, 0.05F
+            );
+        });
+    }
+
+    @SubscribeEvent
+    public static void onLootTableLoad(LootTableLoadEvent event) {
+        if (event.getName().equals(new ResourceLocation("minecraft", "chests/village/village_cartographer"))) {
+            LootPool pool = LootPool.lootPool()
+                    .name("bodycam_cherry_house_explorer_map")
+                    .setRolls(ConstantValue.exactly(1.0F))
+                    .add(LootItem.lootTableItem(ModItems.CHERRY_HOUSE_EXPLORER_MAP.get()).setWeight(1))
+                    .add(EmptyLootItem.emptyItem().setWeight(6))
+                    .build();
+            event.getTable().addPool(pool);
+        }
+    }
+
+    @SubscribeEvent
     public static void onPlayerChangedDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
         if (!event.getEntity().level().isClientSide() && event.getEntity() instanceof ServerPlayer targetPlayer) {
             UUID assassinId = CreepingDeathEntity.ACTIVE_HUNTS_BY_TARGET.get(targetPlayer.getUUID());
@@ -381,6 +468,10 @@ public class ServerEvents {
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
         if (event.phase == TickEvent.Phase.END && !event.player.level().isClientSide()
                 && event.player instanceof ServerPlayer observer) {
+
+            if (observer.tickCount % 20 == 0 && ItemDurabilityHelper.hasFullObservationCrystalTrimSet(observer)) {
+                ModAdvancements.award(observer, ModAdvancements.CRYSTAL_TRIM_SET);
+            }
 
             int fogTicks = observer.getPersistentData().getInt("bodycam_all_seeing_fog_ticks");
             if (fogTicks > 0) {

@@ -1,0 +1,32 @@
+{
+  "parent": "bodycam:ancient_table",
+  "display": {
+    "icon": {
+      "item": "bodycam:bodycam_monitor"
+    },
+    "title": {
+      "translate": "advancements.bodycam.bodycam_monitor.title"
+    },
+    "description": {
+      "translate": "advancements.bodycam.bodycam_monitor.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "has_monitor": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "bodycam:bodycam_monitor"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "parent": "bodycam:first_observation",
+  "display": {
+    "icon": {
+      "item": "bodycam:hologram_block"
+    },
+    "title": {
+      "translate": "advancements.bodycam.hologram_block.title"
+    },
+    "description": {
+      "translate": "advancements.bodycam.hologram_block.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "has_hologram": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "bodycam:hologram_block"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

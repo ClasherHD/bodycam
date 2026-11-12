@@ -102,7 +102,7 @@ public class AllSeeingEyeItem extends Item {
     @Override
     public Component getName(ItemStack stack) {
         if (isActivated(stack)) {
-            return Component.translatable(this.getDescriptionId(stack)).withStyle(ChatFormatting.GOLD);
+            return Component.translatable(this.getDescriptionId(stack)).withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD);
         }
         return Component.translatable("item.bodycam.all_seeing_eye.deactivated").withStyle(ChatFormatting.GRAY);
     }
