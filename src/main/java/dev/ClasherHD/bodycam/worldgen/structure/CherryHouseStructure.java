@@ -79,13 +79,13 @@ public class CherryHouseStructure extends Structure {
             for (int z = minZ; z <= maxZ; z++) {
                 cursor.set(x, baseFloorY, z);
                 BlockState baseState = level.getBlockState(cursor);
-                if (baseState.isAir() || baseState.liquid()) {
+                if (baseState.isAir() || !baseState.getFluidState().isEmpty()) {
                     continue;
                 }
                 for (int y = baseFloorY - 1; y >= minBuildY; y--) {
                     cursor.set(x, y, z);
                     BlockState existing = level.getBlockState(cursor);
-                    if (!existing.isAir() && !existing.liquid() && !existing.canBeReplaced()) {
+                    if (!existing.isAir() && existing.getFluidState().isEmpty() && !existing.canBeReplaced()) {
                         break;
                     }
                     int depth = baseFloorY - y;

@@ -11,7 +11,6 @@ import dev.ClasherHD.bodycam.entity.BodycamDummyEntity;
 import dev.ClasherHD.bodycam.entity.CreepingDeathEntity;
 import dev.ClasherHD.bodycam.entity.ScholarEntity;
 import dev.ClasherHD.bodycam.entity.WatchPointDummyEntity;
-import dev.ClasherHD.bodycam.item.AllSeeingEyeItem;
 import dev.ClasherHD.bodycam.item.AnonymizerItem;
 import dev.ClasherHD.bodycam.item.CherryHouseExplorerMapItem;
 import dev.ClasherHD.bodycam.item.ItemDurabilityHelper;

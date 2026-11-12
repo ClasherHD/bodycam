@@ -3,6 +3,7 @@ package dev.ClasherHD.bodycam.client.gui;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
 
+@SuppressWarnings("null")
 public final class GuiRenderUtils {
 
     private GuiRenderUtils() {

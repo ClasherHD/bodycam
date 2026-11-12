@@ -1,6 +1,5 @@
 package dev.ClasherHD.bodycam.network.bodycam;
 
-import dev.ClasherHD.bodycam.item.AllSeeingEyeItem;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
