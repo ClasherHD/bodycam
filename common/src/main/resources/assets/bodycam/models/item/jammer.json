@@ -1,0 +1,26 @@
+{
+    "parent": "item/generated",
+    "textures": {
+        "layer0": "bodycam:item/jammer/jammer_off"
+    },
+    "overrides": [
+        {
+            "predicate": {
+                "bodycam:mode": 1.0
+            },
+            "model": "bodycam:item/jammer/jammer_on"
+        },
+        {
+            "predicate": {
+                "bodycam:mode": 2.0
+            },
+            "model": "bodycam:item/jammer/jammer_limited"
+        },
+        {
+            "predicate": {
+                "bodycam:empty": 1.0
+            },
+            "model": "bodycam:item/jammer/jammer_empty"
+        }
+    ]
+}

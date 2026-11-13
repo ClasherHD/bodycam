@@ -1,0 +1,26 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.ClasherHD.bodycam.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "AnvilMenuMixin",
+    "BlockEntityPersistentDataMixin",
+    "EntityPersistentDataMixin",
+    "MobTargetMixin"
+  ],
+  "client": [
+    "CameraMixin",
+    "ClientPacketListenerMixin",
+    "GuiMixin",
+    "ItemFrameRendererMixin",
+    "ItemInHandRendererMixin",
+    "ItemPropertiesAccessor",
+    "ItemRendererMixin",
+    "LivingEntityRendererAccessor",
+    "ModelBakeryMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

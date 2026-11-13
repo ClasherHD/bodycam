@@ -1,0 +1,33 @@
+{
+  "parent": "bodycam:anonymizer",
+  "display": {
+    "icon": {
+      "id": "bodycam:logger"
+    },
+    "title": {
+      "translate": "advancements.bodycam.logger.title"
+    },
+    "description": {
+      "translate": "advancements.bodycam.logger.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "has_logger": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "bodycam:logger"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
+

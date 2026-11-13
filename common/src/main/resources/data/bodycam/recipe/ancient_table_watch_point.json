@@ -1,0 +1,23 @@
+{
+  "type": "bodycam:ancient_table_crafting",
+  "crystals": 1,
+  "ingredients": [
+    {
+      "item": "minecraft:lodestone",
+      "count": 1
+    },
+    {
+      "item": "minecraft:eye_armor_trim_smithing_template",
+      "count": 1
+    },
+    {
+      "item": "minecraft:respawn_anchor",
+      "count": 1
+    }
+  ],
+  "result": {
+    "item": "bodycam:watch_point",
+    "count": 1,
+    "start_empty": false
+  }
+}

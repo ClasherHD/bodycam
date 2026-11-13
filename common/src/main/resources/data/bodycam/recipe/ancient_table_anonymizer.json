@@ -1,0 +1,22 @@
+{
+  "type": "bodycam:ancient_table_crafting",
+  "ingredients": [
+    {
+      "item": "minecraft:netherite_ingot",
+      "count": 1
+    },
+    {
+      "item": "minecraft:item_frame",
+      "count": 1
+    },
+    {
+      "item": "minecraft:obsidian",
+      "count": 1
+    }
+  ],
+  "result": {
+    "item": "bodycam:anonymizer",
+    "count": 1,
+    "start_empty": true
+  }
+}

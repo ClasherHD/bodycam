@@ -1,0 +1,24 @@
+{
+  "parent": "bodycam:scholar_trade",
+  "display": {
+    "icon": {
+      "id": "minecraft:experience_bottle"
+    },
+    "title": {
+      "translate": "advancements.bodycam.scholar_master.title"
+    },
+    "description": {
+      "translate": "advancements.bodycam.scholar_master.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "master": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}
+

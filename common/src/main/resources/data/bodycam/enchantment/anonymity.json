@@ -1,0 +1,21 @@
+{
+  "description": {
+    "translate": "enchantment.bodycam.anonymity"
+  },
+  "supported_items": "bodycam:anonymizer",
+  "weight": 1,
+  "max_level": 2,
+  "min_cost": {
+    "base": 30,
+    "per_level_above_first": 15
+  },
+  "max_cost": {
+    "base": 80,
+    "per_level_above_first": 15
+  },
+  "anvil_cost": 8,
+  "slots": [
+    "mainhand",
+    "offhand"
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "parent": "bodycam:cherry_house_map",
+  "display": {
+    "icon": {
+      "id": "minecraft:cherry_sapling"
+    },
+    "title": {
+      "translate": "advancements.bodycam.find_cherry_house.title"
+    },
+    "description": {
+      "translate": "advancements.bodycam.find_cherry_house.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "in_cherry_house": {
+      "trigger": "minecraft:location",
+      "conditions": {
+        "player": [
+          {
+            "condition": "minecraft:location_check",
+            "predicate": {
+              "structures": "bodycam:cherry_house"
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+

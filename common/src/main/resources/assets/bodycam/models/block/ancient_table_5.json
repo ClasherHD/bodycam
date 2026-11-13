@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "bodycam:block/ancient_table/smithing_table_front_on_full",
+    "down": "bodycam:block/ancient_table/smithing_table_bottom",
+    "up": "bodycam:block/ancient_table/smithing_table_top",
+    "north": "bodycam:block/ancient_table/smithing_table_front_on_full",
+    "south": "bodycam:block/ancient_table/smithing_table_back",
+    "east": "bodycam:block/ancient_table/smithing_table_side_left",
+    "west": "bodycam:block/ancient_table/smithing_table_side_right_fuel"
+  }
+}

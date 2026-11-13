@@ -1,0 +1,24 @@
+{
+  "parent": "bodycam:scholar_trade",
+  "display": {
+    "icon": {
+      "id": "minecraft:wither_skeleton_skull"
+    },
+    "title": {
+      "translate": "advancements.bodycam.scholar_curse.title"
+    },
+    "description": {
+      "translate": "advancements.bodycam.scholar_curse.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "cursed": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}
+

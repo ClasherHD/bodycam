@@ -1,0 +1,23 @@
+{
+  "type": "bodycam:ancient_table_crafting",
+  "crystals": 4,
+  "ingredients": [
+    {
+      "item": "minecraft:glass",
+      "count": 1
+    },
+    {
+      "item": "minecraft:lodestone",
+      "count": 1
+    },
+    {
+      "item": "minecraft:glass",
+      "count": 1
+    }
+  ],
+  "result": {
+    "item": "bodycam:hologram_block",
+    "count": 1,
+    "start_empty": false
+  }
+}

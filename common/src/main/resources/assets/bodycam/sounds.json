@@ -1,0 +1,332 @@
+{
+  "monitor_select_resonate1": {
+    "sounds": [
+      {
+        "name": "minecraft:block/amethyst/resonate1",
+        "stream": false
+      }
+    ]
+  },
+  "monitor_select_resonate2": {
+    "sounds": [
+      {
+        "name": "minecraft:block/amethyst/resonate2",
+        "stream": false
+      }
+    ]
+  },
+  "monitor_select_resonate3": {
+    "sounds": [
+      {
+        "name": "minecraft:block/amethyst/resonate3",
+        "stream": false
+      }
+    ]
+  },
+  "monitor_select_resonate4": {
+    "sounds": [
+      {
+        "name": "minecraft:block/amethyst/resonate4",
+        "stream": false
+      }
+    ]
+  },
+  "monitor_select_shimmer": {
+    "subtitle": "subtitles.bodycam.monitor_select",
+    "sounds": [
+      {
+        "name": "minecraft:block/amethyst/shimmer",
+        "stream": false
+      }
+    ]
+  },
+  "anonymizer_used1": {
+    "subtitle": "subtitles.bodycam.anonymizer_used",
+    "sounds": [
+      {
+        "name": "minecraft:block.metal.step",
+        "type": "event"
+      }
+    ]
+  },
+  "anonymizer_used2": {
+    "subtitle": "subtitles.bodycam.anonymizer_used",
+    "sounds": [
+      {
+        "name": "minecraft:block.metal.step",
+        "type": "event"
+      }
+    ]
+  },
+  "jammer_used": {
+    "subtitle": "subtitles.bodycam.jammer_used",
+    "sounds": [
+      {
+        "name": "minecraft:random/anvil_land",
+        "stream": false
+      }
+    ]
+  },
+  "player_locator_used": {
+    "subtitle": "subtitles.bodycam.player_locator_used",
+    "sounds": [
+      {
+        "name": "minecraft:block/lodestone/lock1",
+        "stream": false
+      },
+      {
+        "name": "minecraft:block/lodestone/lock2",
+        "stream": false
+      }
+    ]
+  },
+  "ancient_table_refuel": {
+    "subtitle": "subtitles.bodycam.ancient_table_refuel",
+    "sounds": [
+      {
+        "name": "minecraft:block.amethyst_block.chime",
+        "type": "event"
+      }
+    ]
+  },
+  "ancient_table_use": {
+    "subtitle": "subtitles.bodycam.ancient_table_use",
+    "sounds": [
+      {
+        "name": "minecraft:block.smithing_table.use",
+        "type": "event"
+      }
+    ]
+  },
+  "podest_charge": {
+    "subtitle": "subtitles.bodycam.podest_charge",
+    "sounds": [
+      {
+        "name": "minecraft:block.amethyst_block.chime",
+        "type": "event"
+      }
+    ]
+  },
+  "podest_place": {
+    "subtitle": "subtitles.bodycam.podest_place",
+    "sounds": [
+      {
+        "name": "minecraft:item.book.put",
+        "type": "event"
+      }
+    ]
+  },
+  "podest_remove": {
+    "subtitle": "subtitles.bodycam.podest_remove",
+    "sounds": [
+      {
+        "name": "minecraft:entity.item.pickup",
+        "type": "event"
+      }
+    ]
+  },
+  "watch_point_activate": {
+    "subtitle": "subtitles.bodycam.watch_point_activate",
+    "sounds": [
+      {
+        "name": "minecraft:block.beacon.activate",
+        "type": "event"
+      }
+    ]
+  },
+  "watch_point_deactivate": {
+    "subtitle": "subtitles.bodycam.watch_point_deactivate",
+    "sounds": [
+      {
+        "name": "minecraft:block.beacon.deactivate",
+        "type": "event"
+      }
+    ]
+  },
+  "log_book_lock": {
+    "subtitle": "subtitles.bodycam.log_book_lock",
+    "sounds": [
+      {
+        "name": "minecraft:block.iron_door.close",
+        "type": "event"
+      }
+    ]
+  },
+  "log_book_unlock": {
+    "subtitle": "subtitles.bodycam.log_book_unlock",
+    "sounds": [
+      {
+        "name": "minecraft:block.iron_door.open",
+        "type": "event"
+      }
+    ]
+  },
+  "log_book_wrong_pin": {
+    "subtitle": "subtitles.bodycam.log_book_wrong_pin",
+    "sounds": [
+      {
+        "name": "minecraft:entity.villager.no",
+        "type": "event"
+      }
+    ]
+  },
+  "logger_start": {
+    "subtitle": "subtitles.bodycam.logger_start",
+    "sounds": [
+      {
+        "name": "minecraft:ui.button.click",
+        "type": "event"
+      }
+    ]
+  },
+  "logger_stop": {
+    "subtitle": "subtitles.bodycam.logger_stop",
+    "sounds": [
+      {
+        "name": "minecraft:ui.cartography_table.take_result",
+        "type": "event"
+      }
+    ]
+  },
+  "logger_cancel": {
+    "subtitle": "subtitles.bodycam.logger_cancel",
+    "sounds": [
+      {
+        "name": "minecraft:ui.button.click",
+        "type": "event"
+      }
+    ]
+  },
+  "all_seeing_eye_use": {
+    "subtitle": "subtitles.bodycam.all_seeing_eye_use",
+    "sounds": [
+      {
+        "name": "minecraft:block.end_portal.spawn",
+        "type": "event",
+        "attenuation_distance": 50
+      }
+    ]
+  },
+  "all_seeing_eye_expire": {
+    "subtitle": "subtitles.bodycam.all_seeing_eye_expire",
+    "sounds": [
+      {
+        "name": "minecraft:entity.ender_eye.death",
+        "type": "event"
+      }
+    ]
+  },
+  "creeping_death_use": {
+    "subtitle": "subtitles.bodycam.creeping_death_use",
+    "sounds": [
+      {
+        "name": "minecraft:block.sculk_shrieker.shriek",
+        "type": "event"
+      }
+    ]
+  },
+  "creeping_death_heartbeat": {
+    "subtitle": "subtitles.bodycam.creeping_death_heartbeat",
+    "sounds": [
+      {
+        "name": "minecraft:entity.warden.heartbeat",
+        "type": "event"
+      }
+    ]
+  },
+  "creeping_death_nuke": {
+    "subtitle": "subtitles.bodycam.creeping_death_nuke",
+    "sounds": [
+      {
+        "name": "minecraft:block.end_portal.spawn",
+        "type": "event",
+        "attenuation_distance": 100
+      }
+    ]
+  },
+  "scholar_ambient": {
+    "subtitle": "subtitles.bodycam.scholar_ambient",
+    "sounds": [
+      {
+        "name": "minecraft:entity.villager.ambient",
+        "type": "event"
+      }
+    ]
+  },
+  "scholar_yes": {
+    "subtitle": "subtitles.bodycam.scholar_yes",
+    "sounds": [
+      {
+        "name": "minecraft:entity.villager.yes",
+        "type": "event"
+      }
+    ]
+  },
+  "scholar_no": {
+    "subtitle": "subtitles.bodycam.scholar_no",
+    "sounds": [
+      {
+        "name": "minecraft:entity.villager.no",
+        "type": "event"
+      }
+    ]
+  },
+  "scholar_celebrate": {
+    "subtitle": "subtitles.bodycam.scholar_celebrate",
+    "sounds": [
+      {
+        "name": "minecraft:entity.villager.celebrate",
+        "type": "event"
+      }
+    ]
+  },
+  "scholar_hurt": {
+    "subtitle": "subtitles.bodycam.scholar_hurt",
+    "sounds": [
+      {
+        "name": "minecraft:entity.villager.hurt",
+        "type": "event"
+      }
+    ]
+  },
+  "scholar_death": {
+    "subtitle": "subtitles.bodycam.scholar_death",
+    "sounds": [
+      {
+        "name": "minecraft:entity.villager.death",
+        "type": "event"
+      }
+    ]
+  },
+  "scholar_curse": {
+    "subtitle": "subtitles.bodycam.scholar_curse",
+    "sounds": [
+      {
+        "name": "minecraft:block.sculk_shrieker.shriek",
+        "type": "event"
+      }
+    ]
+  },
+  "trim_observation_alert": {
+    "subtitle": "subtitles.bodycam.trim_observation_alert",
+    "sounds": [
+      {
+        "name": "minecraft:block/amethyst/resonate4",
+        "stream": false,
+        "volume": 0.45,
+        "pitch": 0.72
+      }
+    ]
+  },
+  "signal_static": {
+    "subtitle": "subtitles.bodycam.signal_static",
+    "sounds": [
+      {
+        "name": "minecraft:block.redstone_torch.burnout",
+        "type": "event",
+        "volume": 0.25,
+        "pitch": 1.75
+      }
+    ]
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "type": "bodycam:ancient_table_crafting",
+  "crystals": 2,
+  "ingredients": [
+    {
+      "item": "minecraft:fire_charge",
+      "count": 1
+    },
+    {
+      "item": "minecraft:obsidian",
+      "count": 14
+    },
+    {
+      "item": "minecraft:fire_charge",
+      "count": 1
+    }
+  ],
+  "result": {
+    "item": "bodycam:portable_nether_portal",
+    "count": 1,
+    "start_empty": false
+  }
+}

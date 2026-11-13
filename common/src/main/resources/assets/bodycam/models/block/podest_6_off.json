@@ -1,0 +1,11 @@
+{
+  "parent": "minecraft:block/lectern",
+  "textures": {
+    "particle": "bodycam:block/podest/podest_sides",
+    "bottom": "bodycam:block/podest/podest_top",
+    "base": "bodycam:block/podest/podest_base_60",
+    "top": "bodycam:block/podest/podest_top",
+    "sides": "bodycam:block/podest/podest_sides",
+    "front": "bodycam:block/podest/podest_front_disabled"
+  }
+}

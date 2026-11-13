@@ -1,0 +1,15 @@
+{
+  "structures": [
+    {
+      "structure": "bodycam:cherry_house",
+      "weight": 1
+    }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "salt": 194827563,
+    "spacing": 40,
+    "separation": 12,
+    "spread_type": "triangular"
+  }
+}

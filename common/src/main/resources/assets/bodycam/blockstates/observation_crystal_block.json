@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "bodycam:block/observation_crystal_block"
+    }
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "parent": "bodycam:all_seeing_eye_deactivated",
+  "display": {
+    "icon": {
+      "id": "bodycam:all_seeing_eye",
+      "components": {
+        "minecraft:custom_data": "{AllSeeingEyeCharged:1b}"
+      }
+    },
+    "title": {
+      "translate": "advancements.bodycam.all_seeing_eye_activated.title"
+    },
+    "description": {
+      "translate": "advancements.bodycam.all_seeing_eye_activated.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "has_charged_eye": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "bodycam:all_seeing_eye"
+            ],
+            "predicates": {
+              "minecraft:custom_data": "{AllSeeingEyeCharged:1b}"
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+

@@ -1,0 +1,27 @@
+{
+  "parent": "bodycam:portable_nether_portal",
+  "display": {
+    "icon": {
+      "id": "bodycam:portable_nether_portal",
+      "components": {
+        "minecraft:custom_data": "{PortalCharges:2}"
+      }
+    },
+    "title": {
+      "translate": "advancements.bodycam.use_portable_portal.title"
+    },
+    "description": {
+      "translate": "advancements.bodycam.use_portable_portal.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "teleported": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}
+

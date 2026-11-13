@@ -1,0 +1,6 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "bodycam:item/all_seeing_eye/all_seeing_eye_deactivated"
+  }
+}

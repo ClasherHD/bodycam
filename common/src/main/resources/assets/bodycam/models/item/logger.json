@@ -1,0 +1,1 @@
+{"parent":"item/generated","textures":{"layer0":"bodycam:item/logger/logger_with_paper_off"},"overrides":[{"predicate":{"bodycam:active":1.0},"model":"bodycam:item/logger/logger_with_paper_on"},{"predicate":{"bodycam:empty":1.0},"model":"bodycam:item/logger/logger_empty"}]}

@@ -1,0 +1,20 @@
+{
+  "replace": false,
+  "sources": [
+    {
+      "type": "paletted_permutations",
+      "textures": [
+        "trims/items/helmet_trim",
+        "trims/items/chestplate_trim",
+        "trims/items/leggings_trim",
+        "trims/items/boots_trim"
+      ],
+      "palette_key": "trims/color_palettes/trim_palette",
+      "permutations": {
+        "observation_crystal": "bodycam:trims/color_palettes/observation_crystal",
+        "observation_crystal_darker": "bodycam:trims/color_palettes/observation_crystal_darker"
+      }
+
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+{"parent":"item/generated","textures":{"layer0":"bodycam:item/log_book/log_book_unlocked"},"overrides":[{"predicate":{"bodycam:pages_empty":1.0},"model":"bodycam:item/log_book/log_book_empty"},{"predicate":{"bodycam:locked":1.0},"model":"bodycam:item/log_book/log_book_locked"}]}

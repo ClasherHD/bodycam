@@ -1,0 +1,33 @@
+{
+  "parent": "bodycam:ancient_table",
+  "display": {
+    "icon": {
+      "id": "bodycam:jammer"
+    },
+    "title": {
+      "translate": "advancements.bodycam.jammer.title"
+    },
+    "description": {
+      "translate": "advancements.bodycam.jammer.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "has_jammer": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "bodycam:jammer"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
+

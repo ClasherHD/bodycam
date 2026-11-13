@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "bodycam",
+  "version": "3.0",
+  "name": "Bodycam",
+  "description": "Bodycam Security, Surveillance & Tacticals Mod (1.21.1 Architectury Port).",
+  "authors": [
+    "ClasherHD"
+  ],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "dev.ClasherHD.bodycam.fabric.BodycamFabric"
+    ],
+    "client": [
+      "dev.ClasherHD.bodycam.fabric.BodycamFabricClient"
+    ]
+  },
+  "mixins": [
+    "bodycam.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.9",
+    "minecraft": "~1.21.1",
+    "java": ">=21",
+    "architectury": ">=13.0.8",
+    "fabric-api": "*"
+  }
+}

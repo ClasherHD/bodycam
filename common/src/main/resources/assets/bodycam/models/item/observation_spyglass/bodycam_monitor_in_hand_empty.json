@@ -1,0 +1,6 @@
+{
+    "parent": "bodycam:item/observation_spyglass/bodycam_monitor_in_hand",
+    "textures": {
+        "spyglass": "bodycam:item/observation_spyglass/observation_spyglass_model_empty"
+    }
+}

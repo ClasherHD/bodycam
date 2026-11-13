@@ -1,0 +1,11 @@
+{
+  "parent": "bodycam:item/observation_spyglass/bodycam_monitor_gui",
+  "overrides": [
+    {
+      "predicate": {
+        "bodycam:empty": 1.0
+      },
+      "model": "bodycam:item/bodycam_monitor_empty"
+    }
+  ]
+}

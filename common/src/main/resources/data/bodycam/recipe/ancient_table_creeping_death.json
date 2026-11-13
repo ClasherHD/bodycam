@@ -1,0 +1,23 @@
+{
+  "type": "bodycam:ancient_table_crafting",
+  "crystals": 5,
+  "ingredients": [
+    {
+      "item": "bodycam:all_seeing_eye",
+      "count": 1
+    },
+    {
+      "item": "minecraft:echo_shard",
+      "count": 1
+    },
+    {
+      "item": "minecraft:nether_star",
+      "count": 1
+    }
+  ],
+  "result": {
+    "item": "bodycam:creeping_death",
+    "count": 1,
+    "start_empty": false
+  }
+}

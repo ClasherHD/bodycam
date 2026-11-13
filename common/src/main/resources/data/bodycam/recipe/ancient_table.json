@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "III",
+    "WAW",
+    "WWW"
+  ],
+  "key": {
+    "I": { "item": "minecraft:iron_ingot" },
+    "W": { "item": "minecraft:warped_planks" },
+    "A": { "item": "minecraft:ancient_debris" }
+  },
+  "result": {
+    "id": "bodycam:ancient_table",
+    "count": 1
+  }
+}

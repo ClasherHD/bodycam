@@ -1,0 +1,12 @@
+{
+  "asset_name": "observation_crystal",
+  "description": {
+    "color": "#7CE8FF",
+    "translate": "trim_material.bodycam.observation_crystal"
+  },
+  "ingredient": "bodycam:observation_crystal",
+  "item_model_index": 0.8,
+  "override_armor_materials": {
+    "diamond": "observation_crystal_darker"
+  }
+}

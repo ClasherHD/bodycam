@@ -1,0 +1,27 @@
+{
+  "parent": "bodycam:scholar_trade",
+  "display": {
+    "icon": {
+      "id": "minecraft:enchanted_golden_apple"
+    },
+    "title": {
+      "translate": "advancements.bodycam.ultra_rare_scholar.title"
+    },
+    "description": {
+      "translate": "advancements.bodycam.ultra_rare_scholar.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "rewards": {
+    "experience": 1000
+  },
+  "criteria": {
+    "met_ultra_rare_scholar": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}
+
