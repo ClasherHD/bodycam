@@ -927,7 +927,6 @@ public class CreepingDeathEntity extends PathfinderMob {
             this.yBodyRot = yaw;
             this.yHeadRot = yaw;
 
-            // 1.21.11 kinetic spear charge while closing in during Elytra pursuit
             if (totalDistSq <= 324.0D) {
                 KineticWeapon kw = this.getMainHandItem().get(DataComponents.KINETIC_WEAPON);
                 if (this.isUsingItem()) {
@@ -1343,7 +1342,6 @@ public class CreepingDeathEntity extends PathfinderMob {
             onTargetKilled();
             return;
         }
-        // Wind Burst I bounces Creeping Death upward on a successful smash; chain up to 2 follow-ups only if still advantageous
         if (hit && this.maceChainCount < 2 && this.getDeltaMovement().y > 0.20D
                 && horizDistSq <= 30.25D && Math.abs(dy) <= 3.0D
                 && this.targetRunningAwayTicks < 6 && this.targetBuildingUpTicks < 6
@@ -1459,11 +1457,9 @@ public class CreepingDeathEntity extends PathfinderMob {
         if (target.isInWater() || target.isInLava() || target.isFallFlying() || target.isPassenger() || target.isBlocking()) {
             return false;
         }
-        // Close enough to reliably land a wind-charge mace arc, and roughly same elevation
         if (horizDistSq < 1.2D || horizDistSq > 25.0D || Math.abs(dy) > 1.8D) {
             return false;
         }
-        // Do not mace if target is running away, pillaring up, or hiding/covered
         if (this.targetRunningAwayTicks >= 6 || this.targetBuildingUpTicks >= 6) {
             return false;
         }
@@ -1475,7 +1471,6 @@ public class CreepingDeathEntity extends PathfinderMob {
         if (!this.hasLineOfSight(target) || isTargetEnclosedOrHiding(level, target)) {
             return false;
         }
-        // Only mace where headroom and safe footing exist so it never puts Creeping Death at a disadvantage
         BlockPos selfPos = this.blockPosition();
         BlockPos targetPos = target.blockPosition();
         if (!hasOpenHeadroom(level, selfPos, 7) || !hasOpenHeadroom(level, targetPos, 6)) {
@@ -1545,7 +1540,6 @@ public class CreepingDeathEntity extends PathfinderMob {
             return true;
         }
 
-        // MaceState.DESCENDING
         equipWeapon(this.godMace);
         if (MaceItem.canSmashAttack(this) && totalDistSq <= 13.5D
                 && (this.hasLineOfSight(target) || totalDistSq <= 6.25D)) {
@@ -1724,7 +1718,6 @@ public class CreepingDeathEntity extends PathfinderMob {
         double hx = dx / horizDist;
         double hz = dz / horizDist;
 
-        // 1. Self-catch immediately if feet are over air
         BlockPos belowFeet = feet.below();
         if (!hasSolidSupport(level, belowFeet)) {
             BlockState belowState = level.getBlockState(belowFeet);
@@ -1737,7 +1730,6 @@ public class CreepingDeathEntity extends PathfinderMob {
             }
         }
 
-        // 2. Compute guaranteed adjacent neighbor block in target direction
         BlockPos nextStep = BlockPos.containing(feet.getX() + 0.5D + hx, feet.getY(), feet.getZ() + 0.5D + hz);
         if (nextStep.equals(feet)) {
             nextStep = Math.abs(hx) >= Math.abs(hz)
@@ -1745,7 +1737,6 @@ public class CreepingDeathEntity extends PathfinderMob {
                     : feet.offset(0, 0, hz >= 0 ? 1 : -1);
         }
 
-        // 3. Clear blocking walls ahead (never mining support blocks!)
         if (!isPassableForBody(level, nextStep.above()) && isBreakableObstacle(level, nextStep.above())) {
             this.setDeltaMovement(0.0D, this.getDeltaMovement().y, 0.0D);
             handleMining(level, nextStep.above());
@@ -1761,7 +1752,6 @@ public class CreepingDeathEntity extends PathfinderMob {
         }
         clearMining(level);
 
-        // 4. Ensure diagonal corner link block so Creeping Death never slips off diagonal corners
         boolean isDiagonal = nextStep.getX() != feet.getX() && nextStep.getZ() != feet.getZ();
         boolean cornerReady = true;
         if (isDiagonal) {
@@ -1782,7 +1772,6 @@ public class CreepingDeathEntity extends PathfinderMob {
             }
         }
 
-        // 5. Place support block under nextStep before walking onto it
         BlockPos nextSupport = nextStep.below();
         boolean nextReady = hasSolidSupport(level, nextSupport) || !isPassableForBody(level, nextStep);
         if (!nextReady && this.buildCooldown <= 0) {
@@ -1795,7 +1784,6 @@ public class CreepingDeathEntity extends PathfinderMob {
             }
         }
 
-        // 6. Optional gentle staircase-up while bridging if target is slightly higher
         if (nextReady && cornerReady && dy >= 0.9D && dy < 2.2D && this.buildCooldown <= 0
                 && isPassableForBody(level, nextStep) && isPassableForBody(level, nextStep.above())
                 && isPassableForBody(level, nextStep.above(2)) && isPassableForBody(level, feet.above(2))) {
@@ -1807,7 +1795,6 @@ public class CreepingDeathEntity extends PathfinderMob {
             }
         }
 
-        // 7. Pre-place one block further ahead when ready for smooth uninterrupted bridging
         if (nextReady && cornerReady && this.buildCooldown <= 0) {
             BlockPos lookAhead = BlockPos.containing(nextStep.getX() + 0.5D + hx, feet.getY(), nextStep.getZ() + 0.5D + hz);
             BlockPos lookAheadSupport = lookAhead.below();
@@ -1821,7 +1808,6 @@ public class CreepingDeathEntity extends PathfinderMob {
             }
         }
 
-        // 8. Only step forward once the next bridge block (and diagonal corner) actually exists!
         if (!nextReady || !cornerReady) {
             double centerX = feet.getX() + 0.5D;
             double centerZ = feet.getZ() + 0.5D;
@@ -1968,7 +1954,6 @@ public class CreepingDeathEntity extends PathfinderMob {
                 return frontHead;
             }
             if (!frontFeet.equals(supportBelow) && !frontFeet.equals(feet) && isBreakableObstacle(level, frontFeet)) {
-                // Only mine a foot-level block ahead if Creeping Death cannot simply step up onto it
                 boolean canStepUp = isPassableForBody(level, frontFeet.above())
                         && isPassableForBody(level, frontFeet.above(2))
                         && isPassableForBody(level, head.above());
@@ -1985,7 +1970,6 @@ public class CreepingDeathEntity extends PathfinderMob {
             }
         } else if (dy < -1.8D && horizDist < 2.2D && !this.hasLineOfSight(target)
                 && this.bridgingTicks <= 0 && this.pillaringTicks <= 0 && this.windPillarTicks <= 0) {
-            // Only dig straight down through a real floor/roof directly above a hiding target, never a pillar or bridge
             if (isBreakableObstacle(level, supportBelow) && isSafeFloorToDigDown(level, supportBelow, target)) {
                 return supportBelow;
             }
@@ -2007,13 +1991,11 @@ public class CreepingDeathEntity extends PathfinderMob {
         if (shape.isEmpty()) {
             return false;
         }
-        // Ignore slabs/stairs/paths/floors whose collision top is at or near feet level
         double topY = pos.getY() + shape.max(net.minecraft.core.Direction.Axis.Y);
         return topY > this.getY() + 0.55D;
     }
 
     private boolean isSafeFloorToDigDown(ServerLevel level, BlockPos floorPos, ServerPlayer target) {
-        // Must have at least 2 solid horizontal neighbors (i.e. a floor/ceiling, not a 1x1 pillar or narrow bridge)
         int solidNeighbors = 0;
         if (hasSolidSupport(level, floorPos.north())) solidNeighbors++;
         if (hasSolidSupport(level, floorPos.south())) solidNeighbors++;
@@ -2022,7 +2004,6 @@ public class CreepingDeathEntity extends PathfinderMob {
         if (solidNeighbors < 2) {
             return false;
         }
-        // Ensure we don't drop into lava or an abyss far below the target
         int minSafeY = Math.max(level.getMinY() + 2, target.getBlockY() - 4);
         for (int y = floorPos.getY() - 1; y >= minSafeY; y--) {
             BlockPos check = new BlockPos(floorPos.getX(), y, floorPos.getZ());
