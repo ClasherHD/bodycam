@@ -1,0 +1,14 @@
+{
+  "model": {
+    "type": "minecraft:condition",
+    "property": "bodycam:charged",
+    "on_true": {
+      "type": "minecraft:model",
+      "model": "bodycam:item/portable_nether_portal_loaded"
+    },
+    "on_false": {
+      "type": "minecraft:model",
+      "model": "bodycam:item/portable_nether_portal_empty"
+    }
+  }
+}

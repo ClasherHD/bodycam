@@ -30,6 +30,7 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.Entity;
 
+@SuppressWarnings("null")
 public final class ClientPacketHandler {
     private ClientPacketHandler() {
     }

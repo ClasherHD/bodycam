@@ -3,62 +3,78 @@ package dev.ClasherHD.bodycam.client.render;
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.ClasherHD.bodycam.bodycam;
 import dev.ClasherHD.bodycam.entity.ScholarEntity;
-import net.minecraft.client.model.HumanoidModel;
-import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.model.geom.ModelLayers;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.model.player.PlayerModel;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.MobRenderer;
 import net.minecraft.client.renderer.entity.layers.CustomHeadLayer;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.InteractionHand;
+import net.minecraft.client.renderer.entity.state.AvatarRenderState;
+import net.minecraft.client.renderer.state.CameraRenderState;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.player.PlayerModelType;
 import net.minecraft.world.item.ItemStack;
 
 @SuppressWarnings("null")
-public class ScholarRenderer extends MobRenderer<ScholarEntity, PlayerModel<ScholarEntity>> {
+public class ScholarRenderer extends MobRenderer<ScholarEntity, AvatarRenderState, PlayerModel> {
 
-    public static final ResourceLocation TEX_COMMON = bodycam.id("textures/entity/scholar_common.png");
-    public static final ResourceLocation TEX_UNCOMMON = bodycam.id("textures/entity/scholar_uncommon.png");
-    public static final ResourceLocation TEX_RARE = bodycam.id("textures/entity/scholar_rare.png");
-    public static final ResourceLocation TEX_RARE2 = bodycam.id("textures/entity/scholar_rare2.png");
-    public static final ResourceLocation TEX_ULTRA_RARE = bodycam.id("textures/entity/scholar_ultra_rare.png");
+    public static final Identifier TEX_COMMON = bodycam.id("textures/entity/scholar_common.png");
+    public static final Identifier TEX_UNCOMMON = bodycam.id("textures/entity/scholar_uncommon.png");
+    public static final Identifier TEX_RARE = bodycam.id("textures/entity/scholar_rare.png");
+    public static final Identifier TEX_RARE2 = bodycam.id("textures/entity/scholar_rare2.png");
+    public static final Identifier TEX_ULTRA_RARE = bodycam.id("textures/entity/scholar_ultra_rare.png");
 
-    private final PlayerModel<ScholarEntity> classicModel;
-    private final PlayerModel<ScholarEntity> slimModel;
+    private final PlayerModel classicModel;
+    private final PlayerModel slimModel;
 
     public ScholarRenderer(EntityRendererProvider.Context context) {
-        super(context, new PlayerModel<>(context.bakeLayer(ModelLayers.PLAYER_SLIM), true), 0.5F);
-        this.classicModel = new PlayerModel<>(context.bakeLayer(ModelLayers.PLAYER), false);
+        super(context, new PlayerModel(context.bakeLayer(ModelLayers.PLAYER_SLIM), true), 0.5F);
+        this.classicModel = new PlayerModel(context.bakeLayer(ModelLayers.PLAYER), false);
         this.slimModel = this.model;
-        this.addLayer(new BodycamItemInHandLayer<>(this, context.getItemInHandRenderer()));
-        this.addLayer(new CustomHeadLayer<>(this, context.getModelSet(), context.getItemInHandRenderer()));
+        this.addLayer(new BodycamItemInHandLayer<>(this));
+        this.addLayer(new CustomHeadLayer<>(this, context.getModelSet(), context.getPlayerSkinRenderCache()));
     }
 
     @Override
-    protected void scale(ScholarEntity entity, PoseStack poseStack, float partialTick) {
+    public AvatarRenderState createRenderState() {
+        return new AvatarRenderState();
+    }
+
+    @Override
+    public void extractRenderState(ScholarEntity entity, AvatarRenderState state, float partialTick) {
+        super.extractRenderState(entity, state, partialTick);
+        HumanoidRenderHelper.populateAvatarState(entity, state, this.itemModelResolver, partialTick);
+        state.headEquipment = ItemStack.EMPTY;
+        state.chestEquipment = ItemStack.EMPTY;
+        state.legsEquipment = ItemStack.EMPTY;
+        state.feetEquipment = ItemStack.EMPTY;
+        Identifier texture = getTextureForVariant(entity.getVariant());
+        state.skin = HumanoidRenderHelper.createStaticSkin(texture, entity.isSlimModel());
+    }
+
+    @Override
+    protected void scale(AvatarRenderState state, PoseStack poseStack) {
+        super.scale(state, poseStack);
         poseStack.scale(0.9375F, 0.9375F, 0.9375F);
     }
 
     @Override
-    public void render(ScholarEntity entity, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
-        this.model = entity.isSlimModel() ? this.slimModel : this.classicModel;
-        this.model.crouching = entity.isCrouching();
-        this.model.rightArmPose = getArmPose(entity, InteractionHand.MAIN_HAND);
-        this.model.leftArmPose = getArmPose(entity, InteractionHand.OFF_HAND);
-        super.render(entity, entityYaw, partialTicks, poseStack, buffer, packedLight);
-    }
-
-    private HumanoidModel.ArmPose getArmPose(ScholarEntity entity, InteractionHand hand) {
-        ItemStack stack = entity.getItemInHand(hand);
-        return stack.isEmpty() ? HumanoidModel.ArmPose.EMPTY : HumanoidModel.ArmPose.ITEM;
+    public void submit(
+            AvatarRenderState state,
+            PoseStack poseStack,
+            SubmitNodeCollector submitNodeCollector,
+            CameraRenderState cameraRenderState
+    ) {
+        this.model = state.skin != null && state.skin.model() == PlayerModelType.SLIM ? this.slimModel : this.classicModel;
+        super.submit(state, poseStack, submitNodeCollector, cameraRenderState);
     }
 
     @Override
-    public ResourceLocation getTextureLocation(ScholarEntity entity) {
-        return getTextureForVariant(entity.getVariant());
+    public Identifier getTextureLocation(AvatarRenderState state) {
+        return state.skin != null ? state.skin.body().texturePath() : TEX_COMMON;
     }
 
-    public static ResourceLocation getTextureForVariant(String variant) {
+    public static Identifier getTextureForVariant(String variant) {
         return switch (ScholarEntity.normalizeVariant(variant)) {
             case ScholarEntity.VARIANT_UNCOMMON -> TEX_UNCOMMON;
             case ScholarEntity.VARIANT_RARE -> TEX_RARE;

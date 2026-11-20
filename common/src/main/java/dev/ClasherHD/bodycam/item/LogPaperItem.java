@@ -8,8 +8,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.TooltipDisplay;
 
-import java.util.List;
+import java.util.function.Consumer;
 
 @SuppressWarnings("null")
 public class LogPaperItem extends Item {
@@ -28,17 +29,18 @@ public class LogPaperItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, context, tooltip, flag);
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay tooltipDisplay,
+            Consumer<Component> tooltipAdder, TooltipFlag flag) {
+        super.appendHoverText(stack, context, tooltipDisplay, tooltipAdder, flag);
         CompoundTag tag = ItemNbtAccess.getReadOnlyTag(stack);
         if (tag == null) {
             return;
         }
-        String author = tag.getString(TAG_AUTHOR);
+        String author = tag.getStringOr(TAG_AUTHOR, "");
         if (!author.isEmpty()) {
-            tooltip.add(Component.translatable("tooltip.bodycam.log_paper.author", author).withStyle(ChatFormatting.GRAY));
+            tooltipAdder.accept(Component.translatable("tooltip.bodycam.log_paper.author", author).withStyle(ChatFormatting.GRAY));
         }
-        ListTag entries = tag.getList(TAG_ENTRIES, 10);
-        tooltip.add(Component.translatable("tooltip.bodycam.log_paper.entries", entries.size()).withStyle(ChatFormatting.DARK_GRAY));
+        ListTag entries = tag.getListOrEmpty(TAG_ENTRIES);
+        tooltipAdder.accept(Component.translatable("tooltip.bodycam.log_paper.entries", entries.size()).withStyle(ChatFormatting.DARK_GRAY));
     }
 }

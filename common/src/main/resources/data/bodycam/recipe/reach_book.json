@@ -6,9 +6,9 @@
     "SOS"
   ],
   "key": {
-    "S": { "item": "minecraft:spyglass" },
-    "O": { "item": "bodycam:observation_crystal" },
-    "B": { "item": "minecraft:book" }
+    "S": "minecraft:spyglass",
+    "O": "bodycam:observation_crystal",
+    "B": "minecraft:book"
   },
   "result": {
     "id": "minecraft:enchanted_book",

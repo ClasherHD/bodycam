@@ -1,14 +1,18 @@
 package dev.ClasherHD.bodycam.client.camera;
 
 import net.minecraft.SharedConstants;
+import net.minecraft.client.entity.ClientAvatarState;
+import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.world.entity.EntityDimensions;
+import net.minecraft.world.entity.InterpolationHandler;
 import net.minecraft.world.entity.Pose;
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.Vec3;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import java.util.UUID;
 
@@ -18,6 +22,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings("null")
 class CameraExitTransitionTest {
     private UUID playerId;
 
@@ -38,11 +43,15 @@ class CameraExitTransitionTest {
         CameraSnapState.clearAll();
     }
 
-    private Player createMockPlayer(int entityId) {
-        Player player = mock(Player.class);
+    private AbstractClientPlayer createMockPlayer(int entityId) {
+        AbstractClientPlayer player = mock(AbstractClientPlayer.class);
+        InterpolationHandler interpolation = mock(InterpolationHandler.class);
+        ClientAvatarState avatarState = mock(ClientAvatarState.class);
         when(player.getId()).thenReturn(entityId);
         when(player.getPose()).thenReturn(Pose.STANDING);
         when(player.getDimensions(any())).thenReturn(EntityDimensions.scalable(0.6F, 1.8F));
+        when(player.getInterpolation()).thenReturn(interpolation);
+        when(player.avatarState()).thenReturn(avatarState);
         return player;
     }
 
@@ -90,7 +99,7 @@ class CameraExitTransitionTest {
 
     @Test
     void recordAtomicExit_withEntity_snapsAllPreviousAndCurrentTransformFields() {
-        Player player = createMockPlayer(77);
+        AbstractClientPlayer player = createMockPlayer(77);
         player.xo = 999.0D;
         player.yo = 999.0D;
         player.zo = 999.0D;
@@ -101,8 +110,6 @@ class CameraExitTransitionTest {
         player.xRotO = 15.0F;
         player.yBodyRotO = 15.0F;
         player.yHeadRotO = 15.0F;
-        player.bob = 0.75F;
-        player.oBob = 0.75F;
         CameraSnapState.setObserverInMonitorSession(true);
 
         CameraSnapState.recordAtomicExit(player, 12.5D, 64.0D, -30.25D, 180.0F, -15.0F, 0.1D, -0.05D, 0.2D, 2.5F, 55);
@@ -123,15 +130,14 @@ class CameraExitTransitionTest {
         assertThat(player.yBodyRotO).isEqualTo(180.0F);
         assertThat(player.yHeadRot).isEqualTo(180.0F);
         assertThat(player.yHeadRotO).isEqualTo(180.0F);
-        assertThat(player.bob).isEqualTo(0.0F);
-        assertThat(player.oBob).isEqualTo(0.0F);
-        assertThat(player.fallDistance).isEqualTo(2.5F);
+        assertThat(player.fallDistance).isEqualTo(2.5D);
 
         verify(player).setPosRaw(12.5D, 64.0D, -30.25D);
         verify(player).setYRot(180.0F);
         verify(player).setXRot(-15.0F);
-        verify(player).lerpTo(12.5D, 64.0D, -30.25D, 180.0F, -15.0F, 0);
+        verify(player.getInterpolation()).cancel();
         verify(player).lerpHeadTo(180.0F, 0);
+        verify(player.avatarState(), Mockito.atLeastOnce()).resetBob();
         verify(player).syncPacketPositionCodec(12.5D, 64.0D, -30.25D);
         verify(player).setDeltaMovement(0.1D, -0.05D, 0.2D);
         verify(player).setInvisible(false);
@@ -139,7 +145,7 @@ class CameraExitTransitionTest {
 
     @Test
     void enforceRenderFrameGuard_consumesOneShotWithoutLockingSubsequentFrames() {
-        Player player = createMockPlayer(101);
+        AbstractClientPlayer player = createMockPlayer(101);
         when(player.getX()).thenReturn(100.0D);
         when(player.getY()).thenReturn(70.0D);
         when(player.getZ()).thenReturn(200.0D);
@@ -172,7 +178,7 @@ class CameraExitTransitionTest {
 
     @Test
     void tickFrameGuard_consumesPendingOnceAndAllowsFreeMovementAfterward() {
-        Player player = createMockPlayer(202);
+        AbstractClientPlayer player = createMockPlayer(202);
         when(player.getX()).thenReturn(50.0D);
         when(player.getY()).thenReturn(80.0D);
         when(player.getZ()).thenReturn(-10.0D);
@@ -204,7 +210,7 @@ class CameraExitTransitionTest {
 
     @Test
     void snapRemoteEntityWithoutInterpolation_clearsLerpAndPreservesCodec() {
-        Player remote = createMockPlayer(404);
+        AbstractClientPlayer remote = createMockPlayer(404);
         remote.xo = 900.0D;
         remote.yo = 120.0D;
         remote.zo = -900.0D;
@@ -214,21 +220,20 @@ class CameraExitTransitionTest {
         assertThat(remote.xo).isEqualTo(10.0D);
         assertThat(remote.yo).isEqualTo(64.0D);
         assertThat(remote.zo).isEqualTo(20.0D);
-        verify(remote).lerpTo(10.0D, 64.0D, 20.0D, 90.0F, 0.0F, 0);
+        verify(remote.getInterpolation()).cancel();
         verify(remote).lerpHeadTo(90.0F, 0);
         verify(remote).setInvisible(false);
-        verify(remote, org.mockito.Mockito.never()).syncPacketPositionCodec(10.0D, 64.0D, 20.0D);
+        verify(remote, Mockito.never()).syncPacketPositionCodec(10.0D, 64.0D, 20.0D);
     }
 
     @Test
     void snapRemoteObserverOnExit_armsGuardAndCancelsVanillaPositionLerpAndHeadLerp() {
-        Player remote = createMockPlayer(505);
-        when(remote.lerpTargetX()).thenReturn(10.0D);
-        when(remote.lerpTargetY()).thenReturn(64.0D);
-        when(remote.lerpTargetZ()).thenReturn(20.0D);
-        when(remote.lerpTargetYRot()).thenReturn(90.0F);
-        when(remote.lerpTargetXRot()).thenReturn(15.0F);
-        when(remote.getDeltaMovement()).thenReturn(net.minecraft.world.phys.Vec3.ZERO);
+        AbstractClientPlayer remote = createMockPlayer(505);
+        InterpolationHandler interpolation = remote.getInterpolation();
+        when(interpolation.position()).thenReturn(new Vec3(10.0D, 64.0D, 20.0D));
+        when(interpolation.yRot()).thenReturn(90.0F);
+        when(interpolation.xRot()).thenReturn(15.0F);
+        when(remote.getDeltaMovement()).thenReturn(Vec3.ZERO);
 
         CameraSnapState.snapRemoteObserverOnExit(
                 remote, 505, 10.0D, 64.0D, 20.0D, 90.0F, 15.0F, 0.0D, 0.0D, 0.0D, 0.0F, false
@@ -245,13 +250,13 @@ class CameraExitTransitionTest {
         assertThat(remote.xo).isEqualTo(10.0D);
         assertThat(remote.yo).isEqualTo(64.0D);
         assertThat(remote.zo).isEqualTo(20.0D);
-        verify(remote, org.mockito.Mockito.times(2)).lerpTo(10.0D, 64.0D, 20.0D, 90.0F, 15.0F, 0);
-        verify(remote, org.mockito.Mockito.never()).syncPacketPositionCodec(10.0D, 64.0D, 20.0D);
+        verify(interpolation, Mockito.times(2)).cancel();
+        verify(remote, Mockito.never()).syncPacketPositionCodec(10.0D, 64.0D, 20.0D);
     }
 
     @Test
     void clearAndReset_leaveNoStaleSnapOrSessionState() {
-        Player player = createMockPlayer(303);
+        AbstractClientPlayer player = createMockPlayer(303);
         CameraSnapState.setObserverInMonitorSession(true);
         CameraSnapState.recordAtomicExit(playerId, 1.0D, 2.0D, 3.0D, 10.0F, 20.0F, 123, player);
         CameraSnapState.setObserverInMonitorSession(true);

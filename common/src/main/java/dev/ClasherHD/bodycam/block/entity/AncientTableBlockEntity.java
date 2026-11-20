@@ -8,14 +8,14 @@ import dev.ClasherHD.bodycam.menu.AncientTableMenu;
 import dev.ClasherHD.bodycam.recipe.AncientTableRecipe;
 import dev.ClasherHD.bodycam.registry.ModBlockEntities;
 import dev.ClasherHD.bodycam.registry.ModItems;
-import dev.ClasherHD.bodycam.registry.ModRecipes;
 import dev.ClasherHD.bodycam.registry.ModSounds;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.Containers;
@@ -26,12 +26,14 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 
-import java.util.List;
 import java.util.Optional;
 
 @SuppressWarnings("null")
@@ -81,7 +83,7 @@ public class AncientTableBlockEntity extends BlockEntity implements MenuProvider
     private int processType = PROCESS_NONE;
     private int activeRepairSlot = -1;
     private int activeRepairAmount;
-    private ResourceLocation activeRecipeId;
+    private ResourceKey<Recipe<?>> activeRecipeId;
     private int activeFuelCost;
     private RecipeHolder<AncientTableRecipe> cachedRecipeHolder;
     private int[] cachedPermutation;
@@ -269,15 +271,17 @@ public class AncientTableBlockEntity extends BlockEntity implements MenuProvider
         return true;
     }
 
+    @SuppressWarnings("unchecked")
     private boolean tryStartCraft() {
-        if (this.level == null || !items.getItem(OUTPUT_SLOT).isEmpty()) {
+        if (!(this.level instanceof ServerLevel serverLevel) || !items.getItem(OUTPUT_SLOT).isEmpty()) {
             return false;
         }
         int perCrystal = getFuelPerCrystal();
-        List<RecipeHolder<AncientTableRecipe>> recipes = this.level.getRecipeManager()
-                .getAllRecipesFor(ModRecipes.ANCIENT_TABLE_CRAFTING_TYPE.get());
-        for (RecipeHolder<AncientTableRecipe> holder : recipes) {
-            AncientTableRecipe recipe = holder.value();
+        for (RecipeHolder<?> rawHolder : serverLevel.recipeAccess().getRecipes()) {
+            if (!(rawHolder.value() instanceof AncientTableRecipe recipe)) {
+                continue;
+            }
+            RecipeHolder<AncientTableRecipe> holder = (RecipeHolder<AncientTableRecipe>) rawHolder;
             int requiredFuel = recipe.getCrystalsRequired() * perCrystal;
             int[] match = findMatchingSlots(recipe, items);
             if (fuelUnits >= requiredFuel && match != null) {
@@ -322,10 +326,10 @@ public class AncientTableBlockEntity extends BlockEntity implements MenuProvider
 
     @SuppressWarnings("unchecked")
     private RecipeHolder<AncientTableRecipe> getActiveCraftRecipe() {
-        if (this.level == null || this.activeRecipeId == null) {
+        if (!(this.level instanceof ServerLevel serverLevel) || this.activeRecipeId == null) {
             return null;
         }
-        Optional<RecipeHolder<?>> found = this.level.getRecipeManager().byKey(this.activeRecipeId);
+        Optional<RecipeHolder<?>> found = serverLevel.recipeAccess().byKey(this.activeRecipeId);
         if (found.isPresent() && found.get().value() instanceof AncientTableRecipe) {
             return (RecipeHolder<AncientTableRecipe>) found.get();
         }
@@ -476,55 +480,60 @@ public class AncientTableBlockEntity extends BlockEntity implements MenuProvider
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        super.preRemoveSideEffects(pos, state);
+        if (this.level != null && !this.level.isClientSide()) {
+            dropContents(this.level, pos);
+        }
+    }
+
+    @Override
+    protected void saveAdditional(ValueOutput output) {
+        super.saveAdditional(output);
         NonNullList<ItemStack> list = NonNullList.withSize(SLOT_COUNT, ItemStack.EMPTY);
         for (int i = 0; i < SLOT_COUNT; i++) {
             list.set(i, items.getItem(i));
         }
-        CompoundTag invTag = new CompoundTag();
-        ContainerHelper.saveAllItems(invTag, list, registries);
-        tag.put("Inventory", invTag);
-        tag.putInt("FuelUnits", fuelUnits);
-        tag.putInt("Progress", progress);
-        tag.putInt("MaxProgress", maxProgress);
-        tag.putInt("ProcessType", processType);
-        tag.putInt("ActiveRepairSlot", activeRepairSlot);
-        tag.putInt("ActiveRepairAmount", activeRepairAmount);
+        ContainerHelper.saveAllItems(output.child("Inventory"), list);
+        output.putInt("FuelUnits", fuelUnits);
+        output.putInt("Progress", progress);
+        output.putInt("MaxProgress", maxProgress);
+        output.putInt("ProcessType", processType);
+        output.putInt("ActiveRepairSlot", activeRepairSlot);
+        output.putInt("ActiveRepairAmount", activeRepairAmount);
         if (activeRecipeId != null) {
-            tag.putString("ActiveRecipeId", activeRecipeId.toString());
+            output.putString("ActiveRecipeId", activeRecipeId.identifier().toString());
         }
-        tag.putInt("ActiveFuelCost", activeFuelCost);
+        output.putInt("ActiveFuelCost", activeFuelCost);
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
+    protected void loadAdditional(ValueInput input) {
+        super.loadAdditional(input);
         NonNullList<ItemStack> list = NonNullList.withSize(SLOT_COUNT, ItemStack.EMPTY);
-        if (tag.contains("Inventory")) {
-            ContainerHelper.loadAllItems(tag.getCompound("Inventory"), list, registries);
+        Optional<ValueInput> invOpt = input.child("Inventory");
+        if (invOpt.isPresent()) {
+            ContainerHelper.loadAllItems(invOpt.get(), list);
         } else {
-            ContainerHelper.loadAllItems(tag, list, registries);
+            ContainerHelper.loadAllItems(input, list);
         }
         for (int i = 0; i < SLOT_COUNT; i++) {
             items.setItem(i, list.get(i));
         }
         int maxUnits = getMaxFuelUnits();
-        if (tag.contains("FuelUnits")) {
-            fuelUnits = Math.min(tag.getInt("FuelUnits"), maxUnits);
+        Optional<Integer> fuelUnitsOpt = input.getInt("FuelUnits");
+        if (fuelUnitsOpt.isPresent()) {
+            fuelUnits = Math.min(fuelUnitsOpt.get(), maxUnits);
         } else {
-            fuelUnits = Math.min(tag.getInt("Fuel") * getFuelPerCrystal(), maxUnits);
+            fuelUnits = Math.min(input.getIntOr("Fuel", 0) * getFuelPerCrystal(), maxUnits);
         }
-        progress = tag.getInt("Progress");
-        maxProgress = tag.getInt("MaxProgress");
-        processType = tag.getInt("ProcessType");
-        activeRepairSlot = tag.getInt("ActiveRepairSlot");
-        activeRepairAmount = tag.getInt("ActiveRepairAmount");
-        if (tag.contains("ActiveRecipeId")) {
-            activeRecipeId = ResourceLocation.tryParse(tag.getString("ActiveRecipeId"));
-        } else {
-            activeRecipeId = null;
-        }
-        activeFuelCost = tag.getInt("ActiveFuelCost");
+        progress = input.getIntOr("Progress", 0);
+        maxProgress = input.getIntOr("MaxProgress", 0);
+        processType = input.getIntOr("ProcessType", PROCESS_NONE);
+        activeRepairSlot = input.getIntOr("ActiveRepairSlot", -1);
+        activeRepairAmount = input.getIntOr("ActiveRepairAmount", 0);
+        Identifier parsedId = input.getString("ActiveRecipeId").map(Identifier::tryParse).orElse(null);
+        activeRecipeId = parsedId != null ? ResourceKey.create(Registries.RECIPE, parsedId) : null;
+        activeFuelCost = input.getIntOr("ActiveFuelCost", 0);
     }
 }

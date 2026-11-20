@@ -11,18 +11,22 @@ import dev.ClasherHD.bodycam.util.PersistentDataAccess;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permissions;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.Level;
 
-import java.util.List;
+import java.util.function.Consumer;
 
 public class AllSeeingEyeItem extends Item {
 
@@ -30,7 +34,7 @@ public class AllSeeingEyeItem extends Item {
     public static final String TAG_CHARGED = "AllSeeingEyeCharged";
     public static final String TAG_FOG_START_TICK = "FogStartTick";
     public static final int FOG_DURATION_TICKS = 20;
-    private static final ResourceLocation ALL_SEEING_EYE_ACTIVATED_ADVANCEMENT = bodycam.id("all_seeing_eye_activated");
+    private static final Identifier ALL_SEEING_EYE_ACTIVATED_ADVANCEMENT = bodycam.id("all_seeing_eye_activated");
 
     public AllSeeingEyeItem(Properties properties) {
         super(properties.stacksTo(1));
@@ -44,7 +48,7 @@ public class AllSeeingEyeItem extends Item {
         if (tag == null || !tag.contains(TAG_FOG_START_TICK)) {
             return false;
         }
-        long elapsed = gameTime - tag.getLong(TAG_FOG_START_TICK);
+        long elapsed = gameTime - tag.getLongOr(TAG_FOG_START_TICK, 0L);
         return elapsed >= 0 && elapsed < FOG_DURATION_TICKS;
     }
 
@@ -56,7 +60,7 @@ public class AllSeeingEyeItem extends Item {
         if (tag == null || !tag.contains(TAG_FOG_START_TICK)) {
             return 0.0F;
         }
-        double elapsed = (gameTime - tag.getLong(TAG_FOG_START_TICK)) + partialTick;
+        double elapsed = (gameTime - tag.getLongOr(TAG_FOG_START_TICK, 0L)) + partialTick;
         if (elapsed < 0.0D || elapsed >= FOG_DURATION_TICKS) {
             return 0.0F;
         }
@@ -65,7 +69,7 @@ public class AllSeeingEyeItem extends Item {
 
     public static boolean isActivated(ItemStack stack) {
         CompoundTag tag = ItemNbtAccess.getReadOnlyTag(stack);
-        return tag == null || !tag.getBoolean(TAG_DEACTIVATED);
+        return tag == null || !tag.getBooleanOr(TAG_DEACTIVATED, false);
     }
 
     public static void setActivated(ItemStack stack, boolean activated) {
@@ -135,21 +139,21 @@ public class AllSeeingEyeItem extends Item {
     @Override
     public Component getName(ItemStack stack) {
         if (isActivated(stack)) {
-            return Component.translatable(this.getDescriptionId(stack)).withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD);
+            return Component.translatable(this.getDescriptionId()).withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD);
         }
         return Component.translatable("item.bodycam.all_seeing_eye.deactivated").withStyle(ChatFormatting.GRAY);
     }
 
     @Override
-    public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
-        super.inventoryTick(stack, level, entity, slotId, isSelected);
-        if (!level.isClientSide() && entity instanceof ServerPlayer sPlayer && entity.tickCount % 20 == 0 && isActivated(stack)) {
+    public void inventoryTick(ItemStack stack, ServerLevel level, Entity entity, EquipmentSlot slot) {
+        super.inventoryTick(stack, level, entity, slot);
+        if (entity instanceof ServerPlayer sPlayer && entity.tickCount % 20 == 0 && isActivated(stack)) {
             ModAdvancements.award(sPlayer, ALL_SEEING_EYE_ACTIVATED_ADVANCEMENT);
         }
     }
 
     @Override
-    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+    public InteractionResult use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
         if (!isActivated(stack)) {
             if (!level.isClientSide() && player instanceof ServerPlayer sPlayer) {
@@ -157,51 +161,47 @@ public class AllSeeingEyeItem extends Item {
                         Component.translatable("message.bodycam.all_seeing_eye.deactivated").withStyle(ChatFormatting.RED),
                         true);
             }
-            return InteractionResultHolder.fail(stack);
+            return InteractionResult.FAIL;
         }
 
         if (level.isClientSide()) {
-            return InteractionResultHolder.sidedSuccess(stack, true);
+            return InteractionResult.SUCCESS;
         }
 
         if (!(player instanceof ServerPlayer sPlayer)) {
-            return InteractionResultHolder.pass(stack);
+            return InteractionResult.PASS;
         }
 
-        if (ModServerConfig.OP_ONLY_MODE.get() && !sPlayer.hasPermissions(2)) {
+        if (ModServerConfig.OP_ONLY_MODE.get() && !sPlayer.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
             sPlayer.sendSystemMessage(Component.translatable("message.bodycam.op_only").withStyle(ChatFormatting.RED));
-            return InteractionResultHolder.fail(stack);
+            return InteractionResult.FAIL;
         }
         if (ModServerConfig.isDimensionBlacklisted(level)) {
             sPlayer.sendSystemMessage(Component.translatable("message.bodycam.dimension_blacklisted").withStyle(ChatFormatting.RED));
-            return InteractionResultHolder.fail(stack);
+            return InteractionResult.FAIL;
         }
         if (!ModServerConfig.ENABLE_ALL_SEEING_EYE.get()) {
             sPlayer.sendSystemMessage(Component.translatable("message.bodycam.all_seeing_eye_disabled").withStyle(ChatFormatting.RED));
-            return InteractionResultHolder.fail(stack);
+            return InteractionResult.FAIL;
         }
         if (CreepingDeathEntity.blockObservationIfHunted(sPlayer)) {
-            return InteractionResultHolder.fail(stack);
+            return InteractionResult.FAIL;
         }
 
         ModAdvancements.award(sPlayer, ALL_SEEING_EYE_ACTIVATED_ADVANCEMENT);
         PersistentDataAccess.get(sPlayer).putBoolean("bodycam_all_seeing_pending", true);
         SyncBodycamRequestC2SPacket.sendAllSeeingEyeState(sPlayer);
-        return InteractionResultHolder.success(stack);
+        return InteractionResult.SUCCESS;
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, context, tooltip, flag);
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay tooltipDisplay,
+            Consumer<Component> tooltipAdder, TooltipFlag flag) {
+        super.appendHoverText(stack, context, tooltipDisplay, tooltipAdder, flag);
         if (isActivated(stack)) {
-            tooltip.add(Component.translatable("tooltip.bodycam.all_seeing_eye.activated").withStyle(ChatFormatting.GOLD));
+            tooltipAdder.accept(Component.translatable("tooltip.bodycam.all_seeing_eye.activated").withStyle(ChatFormatting.GOLD));
         } else {
-            tooltip.add(Component.translatable("tooltip.bodycam.all_seeing_eye.deactivated").withStyle(ChatFormatting.DARK_GRAY));
+            tooltipAdder.accept(Component.translatable("tooltip.bodycam.all_seeing_eye.deactivated").withStyle(ChatFormatting.DARK_GRAY));
         }
-    }
-
-    @Override
-    public boolean isEnchantable(ItemStack stack) {
-        return false;
     }
 }

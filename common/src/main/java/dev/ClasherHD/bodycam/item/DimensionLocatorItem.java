@@ -10,10 +10,14 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permissions;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -46,21 +50,20 @@ public class DimensionLocatorItem extends Item {
 
     public static Map<UUID, String> collectPlayerDimensions(ServerPlayer observer) {
         Map<UUID, String> dims = new HashMap<>();
-        if (observer == null || observer.server == null) {
+        MinecraftServer server = observer != null ? observer.level().getServer() : null;
+        if (server == null) {
             return dims;
         }
-        for (ServerPlayer onlinePlayer : observer.server.getPlayerList().getPlayers()) {
+        for (ServerPlayer onlinePlayer : server.getPlayerList().getPlayers()) {
             if (!onlinePlayer.getUUID().equals(observer.getUUID()) && !EnchantmentLevels.isHiddenFromSelection(onlinePlayer)) {
                 CompoundTag pData = PersistentDataAccess.get(onlinePlayer);
                 String origDim = pData.contains("bodycam_orig_dim")
-                        ? pData.getString("bodycam_orig_dim")
-                        : (pData.contains("bodycam_original_dimension")
-                            ? pData.getString("bodycam_original_dimension")
-                            : null);
-                if (pData.contains("bodycam_target_uuid") && origDim != null && !origDim.isEmpty()) {
+                        ? pData.getStringOr("bodycam_orig_dim", "")
+                        : pData.getStringOr("bodycam_original_dimension", "");
+                if (pData.contains("bodycam_target_uuid") && !origDim.isEmpty()) {
                     dims.put(onlinePlayer.getUUID(), origDim);
                 } else {
-                    dims.put(onlinePlayer.getUUID(), onlinePlayer.level().dimension().location().toString());
+                    dims.put(onlinePlayer.getUUID(), onlinePlayer.level().dimension().identifier().toString());
                 }
                 if (EnchantmentLevels.isDimensionScrambled(onlinePlayer)) {
                     dims.put(onlinePlayer.getUUID(), EnchantmentLevels.SCRAMBLED_DIMENSION);
@@ -71,39 +74,37 @@ public class DimensionLocatorItem extends Item {
     }
 
     @Override
-    public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
-        super.inventoryTick(stack, level, entity, slotId, isSelected);
-        if (!level.isClientSide()) {
-            syncConfiguredMaxDamage(stack);
-        }
+    public void inventoryTick(ItemStack stack, ServerLevel level, Entity entity, EquipmentSlot slot) {
+        super.inventoryTick(stack, level, entity, slot);
+        syncConfiguredMaxDamage(stack);
     }
 
     @Override
-    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+    public InteractionResult use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
         if (!level.isClientSide()) {
             syncConfiguredMaxDamage(stack);
         }
         if (ItemDurabilityHelper.isEmpty(stack)) {
-            return InteractionResultHolder.fail(stack);
+            return InteractionResult.FAIL;
         }
         if (!level.isClientSide() && player instanceof ServerPlayer sPlayer) {
-            if (ModServerConfig.OP_ONLY_MODE.get() && !sPlayer.hasPermissions(2)) {
+            if (ModServerConfig.OP_ONLY_MODE.get() && !sPlayer.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
                 sPlayer.sendSystemMessage(Component.translatable("message.bodycam.op_only").withStyle(ChatFormatting.RED));
-                return InteractionResultHolder.fail(stack);
+                return InteractionResult.FAIL;
             }
             if (ModServerConfig.isDimensionBlacklisted(level)) {
                 sPlayer.sendSystemMessage(Component.translatable("message.bodycam.dimension_blacklisted").withStyle(ChatFormatting.RED));
-                return InteractionResultHolder.fail(stack);
+                return InteractionResult.FAIL;
             }
             if (!ModServerConfig.ENABLE_DIMENSION_LOCATOR.get()) {
                 sPlayer.sendSystemMessage(Component.translatable("message.bodycam.locator_disabled").withStyle(ChatFormatting.RED));
-                return InteractionResultHolder.fail(stack);
+                return InteractionResult.FAIL;
             }
             ItemDurabilityHelper.damagePerUse(stack, sPlayer, 1);
             PacketHandler.sendToPlayer(sPlayer, new DimensionLocatorResponsePacket(collectPlayerDimensions(sPlayer)));
         }
-        return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
+        return InteractionResult.SUCCESS;
     }
 
     public static void handleSelectDimension(ServerPlayer player, String dimension) {
@@ -120,9 +121,9 @@ public class DimensionLocatorItem extends Item {
     }
 
     @Override
-    public void onCraftedBy(ItemStack stack, Level level, Player player) {
-        super.onCraftedBy(stack, level, player);
-        if (!level.isClientSide()) {
+    public void onCraftedBy(ItemStack stack, Player player) {
+        super.onCraftedBy(stack, player);
+        if (!player.level().isClientSide()) {
             syncConfiguredMaxDamage(stack);
         }
         ItemDurabilityHelper.setEmpty(stack);
@@ -131,10 +132,5 @@ public class DimensionLocatorItem extends Item {
     @Override
     public boolean isBarVisible(ItemStack stack) {
         return stack.isDamaged() && !ItemDurabilityHelper.isEmpty(stack);
-    }
-
-    @Override
-    public boolean isEnchantable(ItemStack stack) {
-        return false;
     }
 }

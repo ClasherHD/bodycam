@@ -2,9 +2,16 @@ plugins {
     id "com.github.johnrengelman.shadow" version "8.1.1"
 }
 
+apply plugin: "architectury-plugin"
+apply plugin: "dev.architectury.loom"
+
 architectury {
     platformSetupLoomIde()
     neoForge()
+}
+
+loom {
+    accessWidenerPath = project(":common").file("src/main/resources/bodycam.accesswidener")
 }
 
 configurations {
@@ -25,6 +32,7 @@ dependencies {
 
 processResources {
     inputs.property "version", project.version
+
     filesMatching("META-INF/neoforge.mods.toml") {
         expand "version": project.version
     }
@@ -41,4 +49,25 @@ remapJar {
     inputFile.set shadowJar.archiveFile
     dependsOn shadowJar
     archiveClassifier = null
+    archiveFileName = "bodycam-neoforge-${rootProject.minecraft_version}-${rootProject.mod_version}.jar".toLowerCase()
+}
+
+jar {
+    archiveClassifier = "dev"
+}
+
+sourcesJar {
+    def commonSources = project(":common").sourcesJar
+    dependsOn commonSources
+    from commonSources.archiveFile.map { zipTree(it) }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+publishing {
+    publications {
+        mavenNeoForge(MavenPublication) {
+            artifactId = rootProject.archives_base_name + "-" + project.name
+            from components.java
+        }
+    }
 }

@@ -13,11 +13,13 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permissions;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -25,7 +27,6 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.LecternBlock;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.Rotation;
@@ -36,20 +37,36 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.level.pathfinder.PathComputationType;
+import net.minecraft.world.level.redstone.Orientation;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-@SuppressWarnings({"null", "deprecation"})
+import java.util.Map;
+
+@SuppressWarnings("null")
 public class PodestBlock extends BaseEntityBlock {
 
     public static final MapCodec<PodestBlock> CODEC = simpleCodec(PodestBlock::new);
-    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
+    public static final EnumProperty<Direction> FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
     public static final IntegerProperty CHARGES = IntegerProperty.create("charges", 0, PodestBlockEntity.MAX_CHARGES);
+    private static final VoxelShape SHAPE_COLLISION = Shapes.or(
+            Block.column(16.0, 0.0, 2.0),
+            Block.column(8.0, 2.0, 14.0)
+    );
+    private static final Map<Direction, VoxelShape> SHAPES = Shapes.rotateHorizontal(
+            Shapes.or(
+                    Block.boxZ(16.0, 10.0, 14.0, 1.0, 5.333333),
+                    Block.boxZ(16.0, 12.0, 16.0, 5.333333, 9.666667),
+                    Block.boxZ(16.0, 14.0, 18.0, 9.666667, 14.0),
+                    SHAPE_COLLISION
+            )
+    );
 
     public PodestBlock(Properties properties) {
         super(properties);
@@ -66,6 +83,7 @@ public class PodestBlock extends BaseEntityBlock {
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        super.createBlockStateDefinition(builder);
         builder.add(FACING, POWERED, CHARGES);
     }
 
@@ -75,8 +93,8 @@ public class PodestBlock extends BaseEntityBlock {
     }
 
     @Override
-    public VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
-        return LecternBlock.SHAPE_COMMON;
+    protected VoxelShape getOcclusionShape(BlockState state) {
+        return SHAPE_COLLISION;
     }
 
     @Override
@@ -97,18 +115,12 @@ public class PodestBlock extends BaseEntityBlock {
 
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return LecternBlock.SHAPE_COLLISION;
+        return SHAPE_COLLISION;
     }
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return switch (state.getValue(FACING)) {
-            case NORTH -> LecternBlock.SHAPE_NORTH;
-            case SOUTH -> LecternBlock.SHAPE_SOUTH;
-            case EAST -> LecternBlock.SHAPE_EAST;
-            case WEST -> LecternBlock.SHAPE_WEST;
-            default -> LecternBlock.SHAPE_COMMON;
-        };
+        return SHAPES.getOrDefault(state.getValue(FACING), SHAPE_COLLISION);
     }
 
     @Override
@@ -122,7 +134,8 @@ public class PodestBlock extends BaseEntityBlock {
     }
 
     @Override
-    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean movedByPiston) {
+    protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, Orientation orientation, boolean movedByPiston) {
+        super.neighborChanged(state, level, pos, neighborBlock, orientation, movedByPiston);
         if (!level.isClientSide()) {
             boolean hasSignal = level.hasNeighborSignal(pos);
             if (hasSignal != state.getValue(POWERED)) {
@@ -140,7 +153,7 @@ public class PodestBlock extends BaseEntityBlock {
     }
 
     @Override
-    public int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
+    protected int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos, Direction direction) {
         return state.getValue(CHARGES);
     }
 
@@ -155,36 +168,36 @@ public class PodestBlock extends BaseEntityBlock {
     }
 
     private static boolean checkAccessAllowed(Level level, Player player) {
-        if (ModServerConfig.OP_ONLY_MODE.get() && !player.hasPermissions(2)) {
-            player.sendSystemMessage(Component.translatable("message.bodycam.op_only").withStyle(ChatFormatting.RED));
+        if (ModServerConfig.OP_ONLY_MODE.get() && !player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
+            player.displayClientMessage(Component.translatable("message.bodycam.op_only").withStyle(ChatFormatting.RED), false);
             return false;
         }
         if (ModServerConfig.isDimensionBlacklisted(level)) {
-            player.sendSystemMessage(Component.translatable("message.bodycam.dimension_blacklisted").withStyle(ChatFormatting.RED));
+            player.displayClientMessage(Component.translatable("message.bodycam.dimension_blacklisted").withStyle(ChatFormatting.RED), false);
             return false;
         }
         if (!ModServerConfig.ENABLE_PODEST.get()) {
-            player.sendSystemMessage(Component.translatable("message.bodycam.podest_disabled").withStyle(ChatFormatting.RED));
+            player.displayClientMessage(Component.translatable("message.bodycam.podest_disabled").withStyle(ChatFormatting.RED), false);
             return false;
         }
         return true;
     }
 
     @Override
-    protected ItemInteractionResult useItemOn(ItemStack held, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    protected InteractionResult useItemOn(ItemStack held, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (hand != InteractionHand.MAIN_HAND) {
-            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            return InteractionResult.TRY_WITH_EMPTY_HAND;
         }
         if (held.isEmpty()) {
-            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            return InteractionResult.TRY_WITH_EMPTY_HAND;
         }
         if (!(level.getBlockEntity(pos) instanceof PodestBlockEntity podest)) {
-            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            return InteractionResult.TRY_WITH_EMPTY_HAND;
         }
 
         if (!level.isClientSide()) {
             if (!checkAccessAllowed(level, player)) {
-                return ItemInteractionResult.FAIL;
+                return InteractionResult.FAIL;
             }
 
             if (held.is(ModItems.OBSERVATION_CRYSTAL.get())) {
@@ -203,7 +216,7 @@ public class PodestBlock extends BaseEntityBlock {
                     player.displayClientMessage(Component.translatable("message.bodycam.podest.max_charged")
                             .withStyle(ChatFormatting.GOLD), true);
                 }
-                return ItemInteractionResult.CONSUME;
+                return InteractionResult.CONSUME;
             }
 
             if (held.getItem() instanceof JammerItem || held.getItem() instanceof AnonymizerItem) {
@@ -211,12 +224,12 @@ public class PodestBlock extends BaseEntityBlock {
                     ItemStack toPlace = held.split(1);
                     podest.setHeldItem(toPlace);
                     level.playSound(null, pos, ModSounds.PODEST_PLACE.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
-                    return ItemInteractionResult.CONSUME;
+                    return InteractionResult.CONSUME;
                 }
             }
         }
 
-        return ItemInteractionResult.sidedSuccess(level.isClientSide());
+        return InteractionResult.SUCCESS;
     }
 
     @Override
@@ -238,21 +251,13 @@ public class PodestBlock extends BaseEntityBlock {
             }
         }
 
-        return InteractionResult.sidedSuccess(level.isClientSide());
+        return InteractionResult.SUCCESS;
     }
 
     @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
-        if (!state.is(newState.getBlock())) {
-            if (level.getBlockEntity(pos) instanceof PodestBlockEntity podest) {
-                PodestBlockEntity.LOADED_PODESTS.remove(podest);
-                if (!level.isClientSide()) {
-                    podest.dropContents(level, pos);
-                }
-            }
-            level.updateNeighbourForOutputSignal(pos, this);
-        }
-        super.onRemove(state, level, pos, newState, movedByPiston);
+    protected void affectNeighborsAfterRemoval(BlockState state, ServerLevel level, BlockPos pos, boolean movedByPiston) {
+        super.affectNeighborsAfterRemoval(state, level, pos, movedByPiston);
+        Containers.updateNeighboursAfterDestroy(state, level, pos);
     }
 
     @Override

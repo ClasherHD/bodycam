@@ -29,8 +29,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permissions;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -87,10 +89,14 @@ public class BodycamSetCameraPacket implements CustomPacketPayload {
 
     public static void handle(BodycamSetCameraPacket msg, NetworkManager.PacketContext context) {
         context.queue(() -> {
-            if (!(context.getPlayer() instanceof ServerPlayer player) || player.server == null) {
+            if (!(context.getPlayer() instanceof ServerPlayer player)) {
                 return;
             }
-            if (ModServerConfig.OP_ONLY_MODE.get() && !player.hasPermissions(2)) {
+            MinecraftServer server = player.level().getServer();
+            if (server == null) {
+                return;
+            }
+            if (ModServerConfig.OP_ONLY_MODE.get() && !player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
                 PacketHandler.sendToPlayer(player, new BodycamForceClosePacket());
                 return;
             }
@@ -98,18 +104,18 @@ public class BodycamSetCameraPacket implements CustomPacketPayload {
                 return;
             }
             CompoundTag playerData = PersistentDataAccess.get(player);
-            boolean alreadyActive = playerData.getBoolean("bodycam_active");
+            boolean alreadyActive = playerData.getBooleanOr("bodycam_active", false);
             if (player.isSpectator() && !alreadyActive) {
                 return;
             }
 
             boolean isAllSeeingEye;
             if (alreadyActive) {
-                isAllSeeingEye = playerData.getBoolean("bodycam_all_seeing_active");
+                isAllSeeingEye = playerData.getBooleanOr("bodycam_all_seeing_active", false);
             } else {
                 isAllSeeingEye = msg.isAllSeeingEye
                         && ModServerConfig.ENABLE_ALL_SEEING_EYE.get()
-                        && playerData.getBoolean("bodycam_all_seeing_pending")
+                        && playerData.getBooleanOr("bodycam_all_seeing_pending", false)
                         && AllSeeingEyeItem.hasActivatedEye(player);
             }
             if (msg.isAllSeeingEye && !isAllSeeingEye) {
@@ -118,7 +124,7 @@ public class BodycamSetCameraPacket implements CustomPacketPayload {
             }
 
             Vec3 observerPos = player.position();
-            String observerDim = player.level().dimension().location().toString();
+            String observerDim = player.level().dimension().identifier().toString();
             if (alreadyActive) {
                 Vec3 dummyPos = BodycamDummyEntity.DUMMY_POS.get(player.getUUID());
                 if (dummyPos != null) {
@@ -127,23 +133,23 @@ public class BodycamSetCameraPacket implements CustomPacketPayload {
                     observerPos = ORIGINAL_POS.get(player.getUUID());
                 } else if (playerData.contains("bodycam_orig_x")) {
                     observerPos = new Vec3(
-                            playerData.getDouble("bodycam_orig_x"),
-                            playerData.getDouble("bodycam_orig_y"),
-                            playerData.getDouble("bodycam_orig_z")
+                            playerData.getDoubleOr("bodycam_orig_x", 0.0D),
+                            playerData.getDoubleOr("bodycam_orig_y", 0.0D),
+                            playerData.getDoubleOr("bodycam_orig_z", 0.0D)
                     );
                 }
                 if (ORIGINAL_DIM.containsKey(player.getUUID())) {
                     observerDim = ORIGINAL_DIM.get(player.getUUID());
                 } else if (playerData.contains("bodycam_orig_dim")) {
-                    observerDim = playerData.getString("bodycam_orig_dim");
+                    observerDim = playerData.getStringOr("bodycam_orig_dim", "");
                 }
             }
 
-            ServerPlayer target = player.server.getPlayerList().getPlayer(msg.targetId);
+            ServerPlayer target = server.getPlayerList().getPlayer(msg.targetId);
             WatchPointDummyEntity targetWatchPoint = null;
             if (target == null) {
                 if (ModServerConfig.ENABLE_WATCH_POINT.get()) {
-                    targetWatchPoint = WatchPointDummyEntity.findByUUID(player.server, msg.targetId);
+                    targetWatchPoint = WatchPointDummyEntity.findByUUID(server, msg.targetId);
                     if (targetWatchPoint != null && !isAllSeeingEye && !player.getUUID().equals(targetWatchPoint.getOwnerUuidOrNull())) {
                         targetWatchPoint = null;
                     }
@@ -170,8 +176,8 @@ public class BodycamSetCameraPacket implements CustomPacketPayload {
                 }
 
                 CompoundTag targetData = PersistentDataAccess.get(target);
-                if (targetData.getBoolean("bodycam_active") && targetData.contains("bodycam_target_uuid")) {
-                    UUID targetUuid = targetData.getUUID("bodycam_target_uuid");
+                if (targetData.getBooleanOr("bodycam_active", false) && PersistentDataAccess.hasUUID(targetData, "bodycam_target_uuid")) {
+                    UUID targetUuid = PersistentDataAccess.getUUID(targetData, "bodycam_target_uuid");
                     if (targetUuid != null && targetUuid.equals(player.getUUID())) {
                         player.sendSystemMessage(Component.translatable("message.bodycam.signal_weak").withStyle(ChatFormatting.RED));
                         PacketHandler.sendToPlayer(player, new BodycamForceClosePacket());
@@ -179,8 +185,8 @@ public class BodycamSetCameraPacket implements CustomPacketPayload {
                     }
                 }
 
-                long lastJammer = targetData.getLong("bodycam_jammer_heartbeat");
-                int jammerMode = targetData.getInt("bodycam_jammer_mode");
+                long lastJammer = targetData.getLongOr("bodycam_jammer_heartbeat", 0L);
+                int jammerMode = targetData.getIntOr("bodycam_jammer_mode", 0);
                 boolean isJammerActive = (target.level().getGameTime() - lastJammer) <= 10;
                 if (!isJammerActive) {
                     jammerMode = 0;
@@ -192,7 +198,7 @@ public class BodycamSetCameraPacket implements CustomPacketPayload {
                     PacketHandler.sendToPlayer(player, new BodycamForceClosePacket());
                     return;
                 } else if (jammerMode == 2) {
-                    String targetDim = target.level().dimension().location().toString();
+                    String targetDim = target.level().dimension().identifier().toString();
                     if (!observerDim.equals(targetDim)
                             || observerPos.distanceTo(target.position()) > (double) ModServerConfig.MAX_MONITOR_DISTANCE.get()) {
                         player.sendSystemMessage(Component.translatable("message.bodycam.jammer_blocked").withStyle(ChatFormatting.RED));
@@ -206,7 +212,7 @@ public class BodycamSetCameraPacket implements CustomPacketPayload {
             if (isAllSeeingEye) {
                 isOnHologram = false;
             } else if (alreadyActive) {
-                isOnHologram = playerData.getBoolean("bodycam_on_hologram");
+                isOnHologram = playerData.getBooleanOr("bodycam_on_hologram", false);
             } else {
                 isOnHologram = msg.isOnHologram;
                 if (isOnHologram) {
@@ -225,7 +231,7 @@ public class BodycamSetCameraPacket implements CustomPacketPayload {
             int reachLevel = isAllSeeingEye ? 2 : EnchantmentLevels.sessionReach(player, isOnHologram);
 
             if (!isAllSeeingEye && reachLevel < 2) {
-                String targetDim = targetEntity.level().dimension().location().toString();
+                String targetDim = targetEntity.level().dimension().identifier().toString();
                 if (!observerDim.equals(targetDim)
                         || (reachLevel < 1 && observerPos.distanceTo(targetEntity.position()) > (double) ModServerConfig.MAX_MONITOR_DISTANCE.get())) {
                     player.sendSystemMessage(Component.translatable("message.bodycam.signal_weak").withStyle(ChatFormatting.RED));
@@ -265,8 +271,8 @@ public class BodycamSetCameraPacket implements CustomPacketPayload {
                     playerData.putDouble("bodycam_fog_x", player.getX());
                     playerData.putDouble("bodycam_fog_y", player.getY());
                     playerData.putDouble("bodycam_fog_z", player.getZ());
-                    playerData.putString("bodycam_fog_dim", player.level().dimension().location().toString());
-                    player.serverLevel().sendParticles(
+                    playerData.putString("bodycam_fog_dim", player.level().dimension().identifier().toString());
+                    player.level().sendParticles(
                             ParticleTypes.END_ROD,
                             player.getX(),
                             player.getY() + 1.0D,
@@ -279,9 +285,9 @@ public class BodycamSetCameraPacket implements CustomPacketPayload {
                     );
                 }
 
-                if (playerData.contains("bodycam_dummy_uuid")) {
-                    UUID oldId = playerData.getUUID("bodycam_dummy_uuid");
-                    for (ServerLevel lvl : player.server.getAllLevels()) {
+                if (PersistentDataAccess.hasUUID(playerData, "bodycam_dummy_uuid")) {
+                    UUID oldId = PersistentDataAccess.getUUID(playerData, "bodycam_dummy_uuid");
+                    for (ServerLevel lvl : server.getAllLevels()) {
                         Entity e = lvl.getEntity(oldId);
                         if (e != null) {
                             e.discard();
@@ -290,7 +296,7 @@ public class BodycamSetCameraPacket implements CustomPacketPayload {
                 }
 
                 int currentGm = player.gameMode.getGameModeForPlayer().getId();
-                String currentDim = player.level().dimension().location().toString();
+                String currentDim = player.level().dimension().identifier().toString();
                 Vec3 currentPos = player.position();
                 Vec2 currentRot = new Vec2(player.getXRot(), player.getYRot());
 
@@ -310,10 +316,10 @@ public class BodycamSetCameraPacket implements CustomPacketPayload {
 
                 BodycamDummyEntity dummy;
                 if (isOnHologram) {
-                    dummy = new HologramDummyEntity(ModEntityTypes.HOLOGRAM_DUMMY.get(), player.serverLevel());
+                    dummy = new HologramDummyEntity(ModEntityTypes.HOLOGRAM_DUMMY.get(), player.level());
                     dummy.setInvulnerable(true);
                 } else {
-                    dummy = new BodycamDummyEntity(ModEntityTypes.BODYCAM_DUMMY.get(), player.serverLevel());
+                    dummy = new BodycamDummyEntity(ModEntityTypes.BODYCAM_DUMMY.get(), player.level());
                 }
 
                 dummy.setPos(player.getX(), player.getY(), player.getZ());
@@ -346,22 +352,22 @@ public class BodycamSetCameraPacket implements CustomPacketPayload {
                 }
 
                 BodycamDummyEntity.DUMMY_POS.put(player.getUUID(), dummy.position());
-                BodycamDummyEntity.DUMMY_FALL.put(player.getUUID(), dummy.fallDistance);
+                BodycamDummyEntity.DUMMY_FALL.put(player.getUUID(), (float) dummy.fallDistance);
                 BodycamDummyEntity.DUMMY_MOTION.put(player.getUUID(), dummy.getDeltaMovement());
 
-                player.serverLevel().addFreshEntity(dummy);
+                player.level().addFreshEntity(dummy);
                 int chunkX = Mth.floor(dummy.getX()) >> 4;
                 int chunkZ = Mth.floor(dummy.getZ()) >> 4;
-                BodycamPlatform.forceChunk(player.serverLevel(), dummy.getUUID(), chunkX, chunkZ, true);
+                BodycamPlatform.forceChunk(player.level(), dummy.getUUID(), chunkX, chunkZ, true);
                 dummy.markChunkForced(chunkX, chunkZ);
-                playerData.putUUID("bodycam_dummy_uuid", dummy.getUUID());
+                PersistentDataAccess.putUUID(playerData, "bodycam_dummy_uuid", dummy.getUUID());
             }
 
-            UUID oldTargetId = playerData.contains("bodycam_target_uuid")
-                    ? playerData.getUUID("bodycam_target_uuid")
+            UUID oldTargetId = PersistentDataAccess.hasUUID(playerData, "bodycam_target_uuid")
+                    ? PersistentDataAccess.getUUID(playerData, "bodycam_target_uuid")
                     : null;
             if (oldTargetId != null && !oldTargetId.equals(msg.targetId)) {
-                ServerPlayer oldTarget = player.server.getPlayerList().getPlayer(oldTargetId);
+                ServerPlayer oldTarget = server.getPlayerList().getPlayer(oldTargetId);
                 if (oldTarget != null) {
                     PacketHandler.sendToPlayer(oldTarget, new CrossObservationSyncPacket(player.getUUID(), false));
                 }
@@ -386,7 +392,7 @@ public class BodycamSetCameraPacket implements CustomPacketPayload {
             playerData.putBoolean("bodycam_active", true);
             ModAdvancements.award(player, ModAdvancements.FIRST_OBSERVATION);
             playerData.putBoolean("bodycam_watching_watchpoint", targetWatchPoint != null);
-            playerData.putUUID("bodycam_target_uuid", msg.targetId);
+            PersistentDataAccess.putUUID(playerData, "bodycam_target_uuid", msg.targetId);
             playerData.putInt("bodycam_disconnect_ticks", 0);
             playerData.putInt("bodycam_reach_level", reachLevel);
             NightspyEffectHandler.begin(player, EnchantmentLevels.sessionNightspy(player, isOnHologram));
@@ -397,7 +403,7 @@ public class BodycamSetCameraPacket implements CustomPacketPayload {
             player.setGameMode(GameType.SPECTATOR);
 
             player.teleportTo(targetServerLevel, targetEntity.getX(), targetEntity.getY(), targetEntity.getZ(),
-                    Set.of(), targetEntity.getYRot(), targetEntity.getXRot());
+                    Set.of(), targetEntity.getYRot(), targetEntity.getXRot(), true);
             player.setOldPosAndRot();
             BodycamPlatform.stopRidingAndSetCamera(player, target != null ? target : player);
         });

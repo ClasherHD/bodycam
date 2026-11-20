@@ -13,8 +13,9 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.MapItem;
@@ -47,12 +48,12 @@ public class CherryHouseExplorerMapItem extends MapItem {
 
     public static int getTargetX(ItemStack stack) {
         CompoundTag tag = ItemNbtAccess.getReadOnlyTag(stack);
-        return tag != null ? tag.getInt(TAG_TARGET_X) : 0;
+        return tag != null ? tag.getIntOr(TAG_TARGET_X, 0) : 0;
     }
 
     public static int getTargetZ(ItemStack stack) {
         CompoundTag tag = ItemNbtAccess.getReadOnlyTag(stack);
-        return tag != null ? tag.getInt(TAG_TARGET_Z) : 0;
+        return tag != null ? tag.getIntOr(TAG_TARGET_Z, 0) : 0;
     }
 
     public static ItemStack createExplorerMap(ServerLevel level, BlockPos origin) {
@@ -101,24 +102,23 @@ public class CherryHouseExplorerMapItem extends MapItem {
     }
 
     @Override
-    public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
-        if (!level.isClientSide() && entity.tickCount % 20 == 0
-                && level.dimension() == Level.OVERWORLD && level instanceof ServerLevel sLevel) {
+    public void inventoryTick(ItemStack stack, ServerLevel level, Entity entity, EquipmentSlot slot) {
+        if (entity.tickCount % 20 == 0 && level.dimension() == Level.OVERWORLD) {
             boolean hasMapId = stack.has(DataComponents.MAP_ID);
             CompoundTag tag = ItemNbtAccess.getReadOnlyTag(stack);
-            boolean searched = tag != null && tag.getBoolean(TAG_SEARCHED);
-            boolean hasCenter = tag != null && tag.contains(TAG_CENTER_X, 99);
+            boolean searched = tag != null && tag.getBooleanOr(TAG_SEARCHED, false);
+            boolean hasCenter = tag != null && tag.contains(TAG_CENTER_X);
             if (!hasMapId && !searched) {
-                bindToNearestCherryHouse(stack, sLevel, entity.blockPosition());
+                bindToNearestCherryHouse(stack, level, entity.blockPosition());
             } else if (hasMapId && !hasCenter) {
-                bindToNearestCherryHouse(stack, sLevel, entity.blockPosition());
+                bindToNearestCherryHouse(stack, level, entity.blockPosition());
             }
         }
-        super.inventoryTick(stack, level, entity, slotId, isSelected);
+        super.inventoryTick(stack, level, entity, slot);
     }
 
     @Override
-    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+    public InteractionResult use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
         if (!level.isClientSide() && level instanceof ServerLevel sLevel && player instanceof ServerPlayer sp) {
             if (!stack.has(DataComponents.MAP_ID)) {
@@ -127,10 +127,10 @@ public class CherryHouseExplorerMapItem extends MapItem {
                             Component.translatable("message.bodycam.cherry_house_explorer_map.not_found")
                                     .withStyle(ChatFormatting.RED),
                             true);
-                    return InteractionResultHolder.fail(stack);
+                    return InteractionResult.FAIL;
                 }
             }
         }
-        return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
+        return InteractionResult.SUCCESS;
     }
 }

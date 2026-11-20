@@ -15,8 +15,9 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
@@ -55,13 +56,14 @@ public class BodycamResetCameraPacket implements CustomPacketPayload {
     }
 
     public static void executeReset(ServerPlayer sender) {
-        if (sender == null || sender.server == null) {
+        MinecraftServer server = sender != null ? sender.level().getServer() : null;
+        if (sender == null || server == null) {
             return;
         }
         CompoundTag data = PersistentDataAccess.get(sender);
-        boolean hasActiveSession = data.getBoolean("bodycam_active")
-                || data.contains("bodycam_dummy_uuid")
-                || data.contains("bodycam_target_uuid")
+        boolean hasActiveSession = data.getBooleanOr("bodycam_active", false)
+                || PersistentDataAccess.hasUUID(data, "bodycam_dummy_uuid")
+                || PersistentDataAccess.hasUUID(data, "bodycam_target_uuid")
                 || BodycamSetCameraPacket.ORIGINAL_POS.containsKey(sender.getUUID());
         if (!hasActiveSession) {
             data.remove("bodycam_all_seeing_pending");
@@ -71,9 +73,9 @@ public class BodycamResetCameraPacket implements CustomPacketPayload {
         NightspyEffectHandler.end(sender);
 
         BodycamDummyEntity dummy = null;
-        if (data.contains("bodycam_dummy_uuid")) {
-            UUID dummyId = data.getUUID("bodycam_dummy_uuid");
-            for (ServerLevel lvl : sender.server.getAllLevels()) {
+        if (PersistentDataAccess.hasUUID(data, "bodycam_dummy_uuid")) {
+            UUID dummyId = PersistentDataAccess.getUUID(data, "bodycam_dummy_uuid");
+            for (ServerLevel lvl : server.getAllLevels()) {
                 Entity e = lvl.getEntity(dummyId);
                 if (e instanceof BodycamDummyEntity d) {
                     dummy = d;
@@ -85,7 +87,7 @@ public class BodycamResetCameraPacket implements CustomPacketPayload {
         int removedDummyEntityId = dummy != null ? dummy.getId() : -1;
 
         int defaultGm = data.contains("bodycam_original_gamemode")
-                ? data.getInt("bodycam_original_gamemode")
+                ? data.getIntOr("bodycam_original_gamemode", GameType.SURVIVAL.getId())
                 : GameType.SURVIVAL.getId();
         int gameModeId = BodycamSetCameraPacket.ORIGINAL_GAMEMODE.getOrDefault(sender.getUUID(), defaultGm);
         GameType originalGameType = GameType.byId(gameModeId);
@@ -101,14 +103,14 @@ public class BodycamResetCameraPacket implements CustomPacketPayload {
             return;
         }
 
-        ServerLevel originalLevel = sender.serverLevel();
+        ServerLevel originalLevel = sender.level();
         double x = sender.getX();
         double y = sender.getY();
         double z = sender.getZ();
         float xRot = sender.getXRot();
         float yRot = sender.getYRot();
         Vec3 lastPos;
-        float lastFall;
+        double lastFall;
         Vec3 motion;
 
         if (dummy != null && dummy.level() instanceof ServerLevel dummyLevel) {
@@ -120,14 +122,14 @@ public class BodycamResetCameraPacket implements CustomPacketPayload {
             xRot = dummy.getXRot();
         } else {
             String dimStr = BodycamSetCameraPacket.ORIGINAL_DIM.getOrDefault(
-                    sender.getUUID(), data.getString("bodycam_orig_dim"));
+                    sender.getUUID(), data.getStringOr("bodycam_orig_dim", ""));
             if (dimStr != null && !dimStr.isEmpty()) {
-                ResourceLocation rl = ResourceLocation.tryParse(dimStr);
+                Identifier rl = Identifier.tryParse(dimStr);
                 if (rl != null) {
-                    ServerLevel resolved = sender.server.getLevel(ResourceKey.create(Registries.DIMENSION, rl));
-                    originalLevel = resolved != null ? resolved : sender.server.overworld();
+                    ServerLevel resolved = server.getLevel(ResourceKey.create(Registries.DIMENSION, rl));
+                    originalLevel = resolved != null ? resolved : server.overworld();
                 } else {
-                    originalLevel = sender.server.overworld();
+                    originalLevel = server.overworld();
                 }
             }
             Vec3 origPos = BodycamSetCameraPacket.ORIGINAL_POS.get(sender.getUUID());
@@ -136,17 +138,17 @@ public class BodycamResetCameraPacket implements CustomPacketPayload {
                 y = origPos.y;
                 z = origPos.z;
             } else if (data.contains("bodycam_orig_x")) {
-                x = data.getDouble("bodycam_orig_x");
-                y = data.getDouble("bodycam_orig_y");
-                z = data.getDouble("bodycam_orig_z");
+                x = data.getDoubleOr("bodycam_orig_x", 0.0D);
+                y = data.getDoubleOr("bodycam_orig_y", 0.0D);
+                z = data.getDoubleOr("bodycam_orig_z", 0.0D);
             }
             Vec2 origRot = BodycamSetCameraPacket.ORIGINAL_ROT.get(sender.getUUID());
             if (origRot != null) {
                 xRot = origRot.x;
                 yRot = origRot.y;
             } else if (data.contains("bodycam_orig_yrot")) {
-                yRot = data.getFloat("bodycam_orig_yrot");
-                xRot = data.getFloat("bodycam_orig_xrot");
+                yRot = data.getFloatOr("bodycam_orig_yrot", 0.0F);
+                xRot = data.getFloatOr("bodycam_orig_xrot", 0.0F);
             }
             lastPos = BodycamDummyEntity.DUMMY_POS.getOrDefault(sender.getUUID(), new Vec3(x, y, z));
             lastFall = BodycamDummyEntity.DUMMY_FALL.getOrDefault(sender.getUUID(), 0.0F);
@@ -154,8 +156,8 @@ public class BodycamResetCameraPacket implements CustomPacketPayload {
         }
 
         boolean crossDim = !originalLevel.dimension().equals(sender.level().dimension());
-        boolean involvesCustDim = !originalLevel.dimension().location().getNamespace().equals("minecraft")
-                || !sender.level().dimension().location().getNamespace().equals("minecraft");
+        boolean involvesCustDim = !originalLevel.dimension().identifier().getNamespace().equals("minecraft")
+                || !sender.level().dimension().identifier().getNamespace().equals("minecraft");
         if (crossDim && involvesCustDim) {
             ServerEvents.POSITION_LOCKS.put(sender.getUUID(), new ServerEvents.LockData(
                     originalLevel.dimension(),
@@ -166,11 +168,11 @@ public class BodycamResetCameraPacket implements CustomPacketPayload {
                     xRot
             ));
             sender.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 20, 0, false, false, false));
-            sender.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 255, false, false, false));
+            sender.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 20, 255, false, false, false));
         }
 
         GameType targetGameMode = originalGameType != null ? originalGameType : GameType.SURVIVAL;
-        sender.teleportTo(originalLevel, lastPos.x, lastPos.y, lastPos.z, Set.of(), yRot, xRot);
+        sender.teleportTo(originalLevel, lastPos.x, lastPos.y, lastPos.z, Set.of(), yRot, xRot, true);
         sender.setCamera(sender);
         sender.setOldPosAndRot();
         sender.yBodyRot = yRot;
@@ -190,7 +192,7 @@ public class BodycamResetCameraPacket implements CustomPacketPayload {
                 motion.x,
                 motion.y,
                 motion.z,
-                lastFall,
+                (float) lastFall,
                 targetGameMode.getId(),
                 removedDummyEntityId,
                 sender.getId(),
@@ -218,7 +220,7 @@ public class BodycamResetCameraPacket implements CustomPacketPayload {
                 motion.x,
                 motion.y,
                 motion.z,
-                lastFall,
+                (float) lastFall,
                 targetGameMode.getId(),
                 removedDummyEntityId,
                 sender.getId(),
@@ -231,10 +233,11 @@ public class BodycamResetCameraPacket implements CustomPacketPayload {
     }
 
     private static void notifyOldTargetObservationEnd(ServerPlayer sender, CompoundTag data) {
-        if (data.contains("bodycam_target_uuid")) {
-            UUID oldTargetId = data.getUUID("bodycam_target_uuid");
-            if (oldTargetId != null && sender.server != null) {
-                ServerPlayer oldTarget = sender.server.getPlayerList().getPlayer(oldTargetId);
+        if (PersistentDataAccess.hasUUID(data, "bodycam_target_uuid")) {
+            UUID oldTargetId = PersistentDataAccess.getUUID(data, "bodycam_target_uuid");
+            MinecraftServer server = sender.level().getServer();
+            if (oldTargetId != null && server != null) {
+                ServerPlayer oldTarget = server.getPlayerList().getPlayer(oldTargetId);
                 if (oldTarget != null) {
                     PacketHandler.sendToPlayer(oldTarget, new CrossObservationSyncPacket(sender.getUUID(), false));
                 }
@@ -262,7 +265,7 @@ public class BodycamResetCameraPacket implements CustomPacketPayload {
         data.remove("bodycam_orig_xrot");
         data.remove("bodycam_original_dimension");
         data.remove("bodycam_on_hologram");
-        if (data.getBoolean("bodycam_all_seeing_active")) {
+        if (data.getBooleanOr("bodycam_all_seeing_active", false)) {
             data.remove("bodycam_all_seeing_active");
             player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
                     ModSounds.ALL_SEEING_EYE_EXPIRE.get(), SoundSource.PLAYERS, 0.9F, 1.2F);

@@ -1,6 +1,5 @@
 package dev.ClasherHD.bodycam.client.gui;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import dev.ClasherHD.bodycam.bodycam;
 import dev.ClasherHD.bodycam.config.ModClientConfig;
 import net.minecraft.ChatFormatting;
@@ -8,11 +7,11 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 @SuppressWarnings("null")
 public class ClientConfigScreen extends Screen {
-    private static final ResourceLocation WINDOW_TEXTURE = bodycam.id("textures/gui/gui_window.png");
+    private static final Identifier WINDOW_TEXTURE = bodycam.id("textures/gui/gui_window.png");
 
     private final Screen previous;
 
@@ -157,6 +156,7 @@ public class ClientConfigScreen extends Screen {
 
     @Override
     protected void init() {
+        super.init();
         this.guiWidth = Math.min(430, this.width - 12);
         this.guiHeight = 186;
         this.guiX = (this.width - this.guiWidth) / 2;
@@ -293,9 +293,7 @@ public class ClientConfigScreen extends Screen {
     @Override
     public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.renderBackground(graphics, mouseX, mouseY, partialTick);
-        RenderSystem.setShaderColor(0.32F, 0.32F, 0.35F, 1.0F);
-        GuiRenderUtils.drawNineSlice(graphics, WINDOW_TEXTURE, this.guiX, this.guiY, this.guiWidth, this.guiHeight, 32, 32, 32, 32, 256, 256);
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        GuiRenderUtils.drawNineSlice(graphics, WINDOW_TEXTURE, this.guiX, this.guiY, this.guiWidth, this.guiHeight, 32, 32, 32, 32, 256, 256, 0xFF525259);
     }
 
     @Override
@@ -311,6 +309,7 @@ public class ClientConfigScreen extends Screen {
 
     @Override
     public void onClose() {
+        super.onClose();
         if (this.minecraft != null) {
             this.minecraft.setScreen(this.previous);
         }

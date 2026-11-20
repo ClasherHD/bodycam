@@ -15,7 +15,10 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.item.crafting.PlacementInfo;
 import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeBookCategories;
+import net.minecraft.world.item.crafting.RecipeBookCategory;
 import net.minecraft.world.item.crafting.RecipeInput;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
@@ -25,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+@SuppressWarnings("null")
 public class AncientTableRecipe implements Recipe<RecipeInput> {
     private static final int[][] SLOT_PERMUTATIONS = {
             {0, 1, 2},
@@ -36,7 +40,7 @@ public class AncientTableRecipe implements Recipe<RecipeInput> {
     };
 
     public record CountedIngredient(Ingredient ingredient, int count) {
-        public static final CountedIngredient EMPTY = new CountedIngredient(Ingredient.EMPTY, 0);
+        public static final CountedIngredient EMPTY = new CountedIngredient(null, 0);
 
         public static final Codec<CountedIngredient> CODEC = Codec.PASSTHROUGH.flatXmap(
                 CountedIngredient::decodeDynamic,
@@ -44,7 +48,7 @@ public class AncientTableRecipe implements Recipe<RecipeInput> {
         );
 
         public boolean matches(ItemStack stack) {
-            if (ingredient.isEmpty() || count <= 0) {
+            if (ingredient == null || ingredient.isEmpty() || count <= 0) {
                 return stack.isEmpty();
             }
             if (stack.isEmpty() || !ingredient.test(stack) || stack.getCount() < count) {
@@ -66,8 +70,20 @@ public class AncientTableRecipe implements Recipe<RecipeInput> {
                 return DataResult.success(EMPTY);
             }
             Optional<Dynamic<T>> nested = dyn.get("ingredient").result();
-            Dynamic<T> ingredientDyn = nested.orElseGet(() -> dyn.remove("count"));
-            return Ingredient.CODEC_NONEMPTY.parse(ingredientDyn).map(ing -> new CountedIngredient(ing, count));
+            Dynamic<T> ingredientDyn = normalizeIngredientDynamic(nested.orElseGet(() -> dyn.remove("count")));
+            return Ingredient.CODEC.parse(ingredientDyn).map(ing -> new CountedIngredient(ing, count));
+        }
+
+        private static <T> Dynamic<T> normalizeIngredientDynamic(Dynamic<T> ingredientDyn) {
+            Optional<Dynamic<T>> itemVal = ingredientDyn.get("item").result();
+            if (itemVal.isPresent()) {
+                return itemVal.get();
+            }
+            Optional<String> tagVal = ingredientDyn.get("tag").asString().result();
+            if (tagVal.isPresent()) {
+                return ingredientDyn.createString("#" + tagVal.get());
+            }
+            return ingredientDyn;
         }
 
         private static <T> DataResult<Dynamic<T>> encodeDynamic(CountedIngredient ci) {
@@ -183,38 +199,45 @@ public class AncientTableRecipe implements Recipe<RecipeInput> {
         return createOutputStack();
     }
 
-    @Override
     public boolean canCraftInDimensions(int width, int height) {
         return true;
     }
 
-    @Override
     public ItemStack getResultItem(HolderLookup.Provider registries) {
         return createOutputStack();
     }
 
-    @Override
     public NonNullList<Ingredient> getIngredients() {
         NonNullList<Ingredient> list = NonNullList.create();
-        if (req0.count() > 0 && !req0.ingredient().isEmpty()) {
+        if (req0.count() > 0 && req0.ingredient() != null && !req0.ingredient().isEmpty()) {
             list.add(req0.ingredient());
         }
-        if (req1.count() > 0 && !req1.ingredient().isEmpty()) {
+        if (req1.count() > 0 && req1.ingredient() != null && !req1.ingredient().isEmpty()) {
             list.add(req1.ingredient());
         }
-        if (req2.count() > 0 && !req2.ingredient().isEmpty()) {
+        if (req2.count() > 0 && req2.ingredient() != null && !req2.ingredient().isEmpty()) {
             list.add(req2.ingredient());
         }
         return list;
     }
 
     @Override
-    public RecipeSerializer<?> getSerializer() {
+    public PlacementInfo placementInfo() {
+        return PlacementInfo.NOT_PLACEABLE;
+    }
+
+    @Override
+    public RecipeBookCategory recipeBookCategory() {
+        return RecipeBookCategories.CRAFTING_MISC;
+    }
+
+    @Override
+    public RecipeSerializer<AncientTableRecipe> getSerializer() {
         return ModRecipes.ANCIENT_TABLE_CRAFTING_SERIALIZER.get();
     }
 
     @Override
-    public RecipeType<?> getType() {
+    public RecipeType<AncientTableRecipe> getType() {
         return ModRecipes.ANCIENT_TABLE_CRAFTING_TYPE.get();
     }
 
@@ -254,13 +277,13 @@ public class AncientTableRecipe implements Recipe<RecipeInput> {
 
         private static List<CountedIngredient> collectCountedIngredients(AncientTableRecipe recipe) {
             List<CountedIngredient> list = new ArrayList<>();
-            if (recipe.req0.count() > 0 && !recipe.req0.ingredient().isEmpty()) {
+            if (recipe.req0.count() > 0 && recipe.req0.ingredient() != null && !recipe.req0.ingredient().isEmpty()) {
                 list.add(recipe.req0);
             }
-            if (recipe.req1.count() > 0 && !recipe.req1.ingredient().isEmpty()) {
+            if (recipe.req1.count() > 0 && recipe.req1.ingredient() != null && !recipe.req1.ingredient().isEmpty()) {
                 list.add(recipe.req1);
             }
-            if (recipe.req2.count() > 0 && !recipe.req2.ingredient().isEmpty()) {
+            if (recipe.req2.count() > 0 && recipe.req2.ingredient() != null && !recipe.req2.ingredient().isEmpty()) {
                 list.add(recipe.req2);
             }
             if (list.isEmpty()) {
@@ -291,7 +314,7 @@ public class AncientTableRecipe implements Recipe<RecipeInput> {
         }
 
         private static void writeCountedIngredient(RegistryFriendlyByteBuf buf, CountedIngredient ci) {
-            if (ci == null || ci.count() <= 0 || ci.ingredient().isEmpty()) {
+            if (ci == null || ci.count() <= 0 || ci.ingredient() == null || ci.ingredient().isEmpty()) {
                 buf.writeVarInt(0);
                 return;
             }
@@ -314,6 +337,7 @@ public class AncientTableRecipe implements Recipe<RecipeInput> {
         }
 
         @Override
+        @SuppressWarnings("deprecation")
         public StreamCodec<RegistryFriendlyByteBuf, AncientTableRecipe> streamCodec() {
             return STREAM_CODEC;
         }

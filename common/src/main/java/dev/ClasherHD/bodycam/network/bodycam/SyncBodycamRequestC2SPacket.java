@@ -24,7 +24,9 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permissions;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 
@@ -62,18 +64,18 @@ public class SyncBodycamRequestC2SPacket implements CustomPacketPayload {
 
     public static void handle(SyncBodycamRequestC2SPacket msg, NetworkManager.PacketContext context) {
         context.queue(() -> {
-            if (!(context.getPlayer() instanceof ServerPlayer sender) || sender.server == null) {
+            if (!(context.getPlayer() instanceof ServerPlayer sender) || sender.level().getServer() == null) {
                 return;
             }
             CompoundTag senderData = PersistentDataAccess.get(sender);
             long now = sender.level().getGameTime();
-            long lastCd = senderData.getLong("bodycam_sync_req_cd");
+            long lastCd = senderData.getLongOr("bodycam_sync_req_cd", 0L);
             if (now - lastCd < 5L && now >= lastCd) {
                 return;
             }
             senderData.putLong("bodycam_sync_req_cd", now);
 
-            if (ModServerConfig.OP_ONLY_MODE.get() && !sender.hasPermissions(2)) {
+            if (ModServerConfig.OP_ONLY_MODE.get() && !sender.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
                 sender.sendSystemMessage(Component.translatable("message.bodycam.op_only").withStyle(ChatFormatting.RED));
                 return;
             }
@@ -114,13 +116,17 @@ public class SyncBodycamRequestC2SPacket implements CustomPacketPayload {
     }
 
     public static void sendAllSeeingEyeState(ServerPlayer sender) {
-        if (sender == null || sender.server == null) {
+        if (sender == null || sender.level().getServer() == null) {
             return;
         }
         syncForPlayer(sender, 2, false, true);
     }
 
     private static void syncForPlayer(ServerPlayer sender, int reachLevel, boolean isOnHologram, boolean isAllSeeingEye) {
+        MinecraftServer server = sender.level().getServer();
+        if (server == null) {
+            return;
+        }
         Map<UUID, Integer> jammers = new HashMap<>();
         Map<UUID, UUID> targets = new HashMap<>();
         Map<UUID, String> dimensions = new HashMap<>();
@@ -129,11 +135,11 @@ public class SyncBodycamRequestC2SPacket implements CustomPacketPayload {
         Set<UUID> hidden = new HashSet<>();
         Map<UUID, String> watchPoints = new LinkedHashMap<>();
 
-        String senderDim = sender.level().dimension().location().toString();
+        String senderDim = sender.level().dimension().identifier().toString();
         double maxDist = ModServerConfig.MAX_MONITOR_DISTANCE.get();
         double maxDistSq = maxDist * maxDist;
 
-        for (ServerPlayer p : sender.server.getPlayerList().getPlayers()) {
+        for (ServerPlayer p : server.getPlayerList().getPlayers()) {
             if (!isAllSeeingEye && EnchantmentLevels.isHiddenFromSelection(p)) {
                 hidden.add(p.getUUID());
                 continue;
@@ -148,23 +154,23 @@ public class SyncBodycamRequestC2SPacket implements CustomPacketPayload {
                     if (stack.getItem() instanceof JammerItem
                             && !ItemDurabilityHelper.isEmpty(stack)
                             && tag != null && tag.contains("JammerMode")) {
-                        mode = PodestBlockEntity.combineJammerModes(mode, tag.getInt("JammerMode"));
+                        mode = PodestBlockEntity.combineJammerModes(mode, tag.getIntOr("JammerMode", 0));
                     }
                     if (stack.getItem() instanceof AnonymizerItem
                             && !ItemDurabilityHelper.isEmpty(stack)
-                            && tag != null && tag.getBoolean("AnonymizerActive")) {
+                            && tag != null && tag.getBooleanOr("AnonymizerActive", false)) {
                         hasAnonymizer = true;
                     }
                 }
                 for (ItemStack accStack : BodycamPlatform.getEquippedAccessoryItems(p, ModItems.JAMMER.get())) {
                     CompoundTag tag = ItemNbtAccess.getReadOnlyTag(accStack);
                     if (!ItemDurabilityHelper.isEmpty(accStack) && tag != null && tag.contains("JammerMode")) {
-                        mode = PodestBlockEntity.combineJammerModes(mode, tag.getInt("JammerMode"));
+                        mode = PodestBlockEntity.combineJammerModes(mode, tag.getIntOr("JammerMode", 0));
                     }
                 }
                 for (ItemStack accStack : BodycamPlatform.getEquippedAccessoryItems(p, ModItems.ANONYMIZER.get())) {
                     CompoundTag tag = ItemNbtAccess.getReadOnlyTag(accStack);
-                    if (!ItemDurabilityHelper.isEmpty(accStack) && tag != null && tag.getBoolean("AnonymizerActive")) {
+                    if (!ItemDurabilityHelper.isEmpty(accStack) && tag != null && tag.getBooleanOr("AnonymizerActive", false)) {
                         hasAnonymizer = true;
                     }
                 }
@@ -177,13 +183,13 @@ public class SyncBodycamRequestC2SPacket implements CustomPacketPayload {
             anonymizers.put(p.getUUID(), hasAnonymizer);
 
             CompoundTag pData = PersistentDataAccess.get(p);
-            if (pData.getBoolean("bodycam_active") && pData.contains("bodycam_target_uuid")) {
-                targets.put(p.getUUID(), pData.getUUID("bodycam_target_uuid"));
+            if (pData.getBooleanOr("bodycam_active", false) && PersistentDataAccess.hasUUID(pData, "bodycam_target_uuid")) {
+                targets.put(p.getUUID(), PersistentDataAccess.getUUID(pData, "bodycam_target_uuid"));
             }
 
             BlockPos targetPos;
             String targetDim;
-            if (pData.getBoolean("bodycam_active")) {
+            if (pData.getBooleanOr("bodycam_active", false)) {
                 Vec3 dummyVec = BodycamDummyEntity.DUMMY_POS.get(p.getUUID());
                 if (dummyVec != null) {
                     targetPos = BlockPos.containing(dummyVec);
@@ -193,9 +199,9 @@ public class SyncBodycamRequestC2SPacket implements CustomPacketPayload {
                         targetPos = BlockPos.containing(origVec);
                     } else if (pData.contains("bodycam_orig_x")) {
                         targetPos = BlockPos.containing(
-                                pData.getDouble("bodycam_orig_x"),
-                                pData.getDouble("bodycam_orig_y"),
-                                pData.getDouble("bodycam_orig_z")
+                                pData.getDoubleOr("bodycam_orig_x", 0.0D),
+                                pData.getDoubleOr("bodycam_orig_y", 0.0D),
+                                pData.getDoubleOr("bodycam_orig_z", 0.0D)
                         );
                     } else {
                         targetPos = p.blockPosition();
@@ -203,11 +209,11 @@ public class SyncBodycamRequestC2SPacket implements CustomPacketPayload {
                 }
                 String origDim = BodycamSetCameraPacket.ORIGINAL_DIM.get(p.getUUID());
                 if (origDim == null && pData.contains("bodycam_orig_dim")) {
-                    origDim = pData.getString("bodycam_orig_dim");
+                    origDim = pData.getStringOr("bodycam_orig_dim", "");
                 }
-                targetDim = origDim != null ? origDim : p.level().dimension().location().toString();
+                targetDim = origDim != null && !origDim.isEmpty() ? origDim : p.level().dimension().identifier().toString();
             } else {
-                targetDim = p.level().dimension().location().toString();
+                targetDim = p.level().dimension().identifier().toString();
                 targetPos = p.blockPosition();
             }
 
@@ -244,7 +250,7 @@ public class SyncBodycamRequestC2SPacket implements CustomPacketPayload {
 
         if (ModServerConfig.ENABLE_WATCH_POINT.get()) {
             if (isAllSeeingEye) {
-                for (WatchPointDummyEntity wp : WatchPointDummyEntity.getAllActive(sender.server)) {
+                for (WatchPointDummyEntity wp : WatchPointDummyEntity.getAllActive(server)) {
                     UUID wpId = wp.getUUID();
                     String ownerName = wp.getOwnerName();
                     String wpName = wp.getSelectionDisplayName();
@@ -252,14 +258,14 @@ public class SyncBodycamRequestC2SPacket implements CustomPacketPayload {
                             ? ownerName + ": " + wpName
                             : wpName;
                     watchPoints.put(wpId, display);
-                    dimensions.put(wpId, wp.level().dimension().location().toString());
+                    dimensions.put(wpId, wp.level().dimension().identifier().toString());
                     positions.put(wpId, wp.blockPosition());
                 }
             } else {
-                for (WatchPointDummyEntity wp : WatchPointDummyEntity.getActiveForOwner(sender.server, sender.getUUID())) {
+                for (WatchPointDummyEntity wp : WatchPointDummyEntity.getActiveForOwner(server, sender.getUUID())) {
                     UUID wpId = wp.getUUID();
                     watchPoints.put(wpId, wp.getSelectionDisplayName());
-                    dimensions.put(wpId, wp.level().dimension().location().toString());
+                    dimensions.put(wpId, wp.level().dimension().identifier().toString());
                     positions.put(wpId, wp.blockPosition());
                 }
             }

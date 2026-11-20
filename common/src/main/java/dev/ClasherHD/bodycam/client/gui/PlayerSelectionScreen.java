@@ -1,6 +1,6 @@
 package dev.ClasherHD.bodycam.client.gui;
 
-import com.mojang.blaze3d.systems.RenderSystem;
+import dev.ClasherHD.bodycam.bodycam;
 import dev.ClasherHD.bodycam.client.cache.ClientBodycamCache;
 import dev.ClasherHD.bodycam.config.ModClientConfig;
 import dev.ClasherHD.bodycam.config.ModServerConfig;
@@ -13,12 +13,14 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.ObjectSelectionList;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.multiplayer.PlayerInfo;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import java.util.Map;
 import java.util.Set;
@@ -28,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @SuppressWarnings("null")
 public class PlayerSelectionScreen extends Screen {
     public static final Set<UUID> observingMe = ConcurrentHashMap.newKeySet();
-    private static final ResourceLocation WINDOW_TEXTURE = ResourceLocation.fromNamespaceAndPath("bodycam", "textures/gui/gui_window.png");
+    private static final Identifier WINDOW_TEXTURE = bodycam.id("textures/gui/gui_window.png");
     private final int reachLevel;
     private final boolean isOnHologram;
     private final boolean isAllSeeingEye;
@@ -71,7 +73,7 @@ public class PlayerSelectionScreen extends Screen {
         if (targetPos == null || targetDim == null) {
             return true;
         }
-        String myDim = mc.player.level().dimension().location().toString();
+        String myDim = mc.player.level().dimension().identifier().toString();
         if (!myDim.equals(targetDim)) {
             return true;
         }
@@ -87,7 +89,7 @@ public class PlayerSelectionScreen extends Screen {
             return false;
         }
         String targetDim = ClientBodycamCache.dimensions.get(targetId);
-        return targetDim != null && !mc.player.level().dimension().location().toString().equals(targetDim);
+        return targetDim != null && !mc.player.level().dimension().identifier().toString().equals(targetDim);
     }
 
     @Override
@@ -145,17 +147,17 @@ public class PlayerSelectionScreen extends Screen {
 
         if (!this.showingWatchPoints) {
             for (PlayerInfo info : this.minecraft.getConnection().getOnlinePlayers()) {
-                UUID infoId = info.getProfile().getId();
+                UUID infoId = info.getProfile().id();
                 if (this.minecraft.player != null && !infoId.equals(this.minecraft.player.getUUID())
                         && (this.isAllSeeingEye || !ClientBodycamCache.hidden.contains(infoId))) {
-                    this.listWidget.addPlayerEntry(new PlayerEntry(infoId, info.getProfile().getName(), info.getSkin().texture(), false));
+                    this.listWidget.addPlayerEntry(new PlayerEntry(infoId, info.getProfile().name(), info.getSkin().body().texturePath(), false));
                 }
             }
         } else if (this.minecraft.player != null) {
-            ResourceLocation mySkin = DefaultPlayerSkin.get(this.minecraft.player.getUUID()).texture();
+            Identifier mySkin = DefaultPlayerSkin.get(this.minecraft.player.getUUID()).body().texturePath();
             PlayerInfo myInfo = this.minecraft.getConnection().getPlayerInfo(this.minecraft.player.getUUID());
             if (myInfo != null) {
-                mySkin = myInfo.getSkin().texture();
+                mySkin = myInfo.getSkin().body().texturePath();
             }
             synchronized (ClientBodycamCache.watchPoints) {
                 for (Map.Entry<UUID, String> wpEntry : ClientBodycamCache.watchPoints.entrySet()) {
@@ -176,13 +178,8 @@ public class PlayerSelectionScreen extends Screen {
     @Override
     public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.renderBackground(graphics, mouseX, mouseY, partialTick);
-        if (this.isAllSeeingEye) {
-            RenderSystem.setShaderColor(1.0F, 0.85F, 0.3F, 1.0F);
-        }
-        GuiRenderUtils.drawNineSlice(graphics, WINDOW_TEXTURE, this.guiX, this.guiY, this.guiWidth, this.guiHeight, 32, 32, 32, 32, 256, 256);
-        if (this.isAllSeeingEye) {
-            RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        }
+        int windowTint = this.isAllSeeingEye ? 0xFFFFD94D : 0xFFFFFFFF;
+        GuiRenderUtils.drawNineSlice(graphics, WINDOW_TEXTURE, this.guiX, this.guiY, this.guiWidth, this.guiHeight, 32, 32, 32, 32, 256, 256, windowTint);
     }
 
     @Override
@@ -223,7 +220,7 @@ public class PlayerSelectionScreen extends Screen {
         }
 
         @Override
-        protected int getScrollbarPosition() {
+        protected int scrollBarX() {
             return this.listX + this.width - 6;
         }
 
@@ -248,22 +245,22 @@ public class PlayerSelectionScreen extends Screen {
         }
 
         @Override
-        public boolean mouseClicked(double mouseX, double mouseY, int button) {
-            if (mouseY < this.getY() || mouseY > this.getBottom()) {
+        public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+            if (event.y() < this.getY() || event.y() > this.getBottom()) {
                 return false;
             }
-            return super.mouseClicked(mouseX, mouseY, button);
+            return super.mouseClicked(event, doubleClick);
         }
     }
 
     public class PlayerEntry extends ObjectSelectionList.Entry<PlayerEntry> {
         private final UUID targetId;
         private final String displayName;
-        private final ResourceLocation skinLocation;
+        private final Identifier skinLocation;
         private final boolean isWatchPoint;
         private final Button selectButton;
 
-        public PlayerEntry(UUID targetId, String displayName, ResourceLocation skinLocation, boolean isWatchPoint) {
+        public PlayerEntry(UUID targetId, String displayName, Identifier skinLocation, boolean isWatchPoint) {
             this.targetId = targetId;
             this.displayName = displayName;
             this.skinLocation = skinLocation;
@@ -299,7 +296,7 @@ public class PlayerSelectionScreen extends Screen {
                 } else if (jammerMode == 2) {
                     BlockPos targetPos = ClientBodycamCache.positions.get(this.targetId);
                     String targetDim = ClientBodycamCache.dimensions.get(this.targetId);
-                    String myDim = Minecraft.getInstance().player.level().dimension().location().toString();
+                    String myDim = Minecraft.getInstance().player.level().dimension().identifier().toString();
 
                     if (targetPos == null || targetDim == null || !myDim.equals(targetDim)
                             || Math.sqrt(Minecraft.getInstance().player.blockPosition().distSqr(targetPos)) > (float) ModServerConfig.MAX_MONITOR_DISTANCE.get()) {
@@ -318,15 +315,19 @@ public class PlayerSelectionScreen extends Screen {
         }
 
         @Override
-        public void render(GuiGraphics graphics, int index, int top, int left, int width, int height, int mouseX, int mouseY, boolean isMouseOver, float partialTick) {
-            graphics.blit(this.skinLocation, left, top + 4, 32, 32, 8.0F, 8.0F, 8, 8, 64, 64);
-            graphics.blit(this.skinLocation, left, top + 4, 32, 32, 40.0F, 8.0F, 8, 8, 64, 64);
+        public void renderContent(GuiGraphics graphics, int mouseX, int mouseY, boolean isMouseOver, float partialTick) {
+            int left = this.getContentX();
+            int top = this.getContentY();
+            int width = this.getContentWidth();
+
+            graphics.blit(RenderPipelines.GUI_TEXTURED, this.skinLocation, left, top + 4, 8.0F, 8.0F, 32, 32, 8, 8, 64, 64);
+            graphics.blit(RenderPipelines.GUI_TEXTURED, this.skinLocation, left, top + 4, 40.0F, 8.0F, 32, 32, 8, 8, 64, 64);
             boolean hasAnonymizer = ClientBodycamCache.anonymizers.getOrDefault(this.targetId, false);
             int jammerMode = ClientBodycamCache.jammers.getOrDefault(this.targetId, 0);
 
             BlockPos targetPos = ClientBodycamCache.positions.get(this.targetId);
             String targetDim = ClientBodycamCache.dimensions.get(this.targetId);
-            String myDim = Minecraft.getInstance().player != null ? Minecraft.getInstance().player.level().dimension().location().toString() : "";
+            String myDim = Minecraft.getInstance().player != null ? Minecraft.getInstance().player.level().dimension().identifier().toString() : "";
 
             boolean isOutOfRangeOrDimension = targetPos == null || targetDim == null || !myDim.equals(targetDim);
             if (!isOutOfRangeOrDimension && Minecraft.getInstance().player != null) {
@@ -358,11 +359,8 @@ public class PlayerSelectionScreen extends Screen {
         }
 
         @Override
-        public boolean mouseClicked(double mouseX, double mouseY, int button) {
-            if (this.selectButton.mouseClicked(mouseX, mouseY, button)) {
-                return true;
-            }
-            return false;
+        public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+            return this.selectButton.mouseClicked(event, doubleClick);
         }
 
         @Override

@@ -1,0 +1,7 @@
+{
+    "textures":  {
+                     "layer0":  "minecraft:item/diamond_chestplate",
+                     "layer1":  "minecraft:trims/items/chestplate_trim_observation_crystal_darker"
+                 },
+    "parent":  "minecraft:item/generated"
+}

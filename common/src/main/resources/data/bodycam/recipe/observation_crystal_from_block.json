@@ -1,7 +1,7 @@
 {
   "type": "minecraft:crafting_shapeless",
   "ingredients": [
-    { "item": "bodycam:observation_crystal_block" }
+    "bodycam:observation_crystal_block"
   ],
   "result": {
     "id": "bodycam:observation_crystal",

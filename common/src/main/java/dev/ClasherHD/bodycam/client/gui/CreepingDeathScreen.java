@@ -1,6 +1,5 @@
 package dev.ClasherHD.bodycam.client.gui;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import dev.ClasherHD.bodycam.bodycam;
 import dev.ClasherHD.bodycam.client.render.CreepingDeathRenderer;
 import dev.ClasherHD.bodycam.network.PacketHandler;
@@ -11,8 +10,10 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.ObjectSelectionList;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import java.util.List;
 import java.util.UUID;
@@ -20,7 +21,7 @@ import java.util.UUID;
 @SuppressWarnings("null")
 public class CreepingDeathScreen extends Screen {
 
-    private static final ResourceLocation WINDOW_TEXTURE = bodycam.id("textures/gui/gui_window.png");
+    private static final Identifier WINDOW_TEXTURE = bodycam.id("textures/gui/gui_window.png");
 
     private final int mode;
     private final boolean offHand;
@@ -83,9 +84,7 @@ public class CreepingDeathScreen extends Screen {
     @Override
     public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.renderBackground(graphics, mouseX, mouseY, partialTick);
-        RenderSystem.setShaderColor(0.18F, 0.18F, 0.20F, 1.0F);
-        GuiRenderUtils.drawNineSlice(graphics, WINDOW_TEXTURE, this.guiX, this.guiY, this.guiWidth, this.guiHeight, 32, 32, 32, 32, 256, 256);
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        GuiRenderUtils.drawNineSlice(graphics, WINDOW_TEXTURE, this.guiX, this.guiY, this.guiWidth, this.guiHeight, 32, 32, 32, 32, 256, 256, 0xFF2E2E33);
     }
 
     @Override
@@ -132,7 +131,7 @@ public class CreepingDeathScreen extends Screen {
         }
 
         @Override
-        protected int getScrollbarPosition() {
+        protected int scrollBarX() {
             return this.listX + this.width - 6;
         }
 
@@ -146,11 +145,11 @@ public class CreepingDeathScreen extends Screen {
         }
 
         @Override
-        public boolean mouseClicked(double mouseX, double mouseY, int button) {
-            if (mouseY < this.getY() || mouseY > this.getBottom()) {
+        public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+            if (event.y() < this.getY() || event.y() > this.getBottom()) {
                 return false;
             }
-            return super.mouseClicked(mouseX, mouseY, button);
+            return super.mouseClicked(event, doubleClick);
         }
     }
 
@@ -186,10 +185,14 @@ public class CreepingDeathScreen extends Screen {
         }
 
         @Override
-        public void render(GuiGraphics graphics, int index, int top, int left, int width, int height, int mouseX, int mouseY, boolean isMouseOver, float partialTick) {
-            ResourceLocation skin = CreepingDeathRenderer.getSkinForPlayer(this.data.uuid(), this.data.name());
-            graphics.blit(skin, left, top + 4, 32, 32, 8.0F, 8.0F, 8, 8, 64, 64);
-            graphics.blit(skin, left, top + 4, 32, 32, 40.0F, 8.0F, 8, 8, 64, 64);
+        public void renderContent(GuiGraphics graphics, int mouseX, int mouseY, boolean isMouseOver, float partialTick) {
+            int left = this.getContentX();
+            int top = this.getContentY();
+            int width = this.getContentWidth();
+
+            Identifier skin = CreepingDeathRenderer.getSkinForPlayer(this.data.uuid(), this.data.name());
+            graphics.blit(RenderPipelines.GUI_TEXTURED, skin, left, top + 4, 8.0F, 8.0F, 32, 32, 8, 8, 64, 64);
+            graphics.blit(RenderPipelines.GUI_TEXTURED, skin, left, top + 4, 40.0F, 8.0F, 32, 32, 8, 8, 64, 64);
 
             graphics.drawString(CreepingDeathScreen.this.font, this.data.name(), left + 40, top + 16, 0xFFFFFFFF);
 
@@ -199,8 +202,8 @@ public class CreepingDeathScreen extends Screen {
         }
 
         @Override
-        public boolean mouseClicked(double mouseX, double mouseY, int button) {
-            return this.selectButton.mouseClicked(mouseX, mouseY, button);
+        public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+            return this.selectButton.mouseClicked(event, doubleClick);
         }
 
         @Override

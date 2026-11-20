@@ -1,7 +1,8 @@
 {
   "pack": {
     "description": "Bodycam resources",
-    "pack_format": 48,
-    "supported_formats": [34, 48]
+    "pack_format": 75,
+    "min_format": 75,
+    "max_format": 94
   }
 }

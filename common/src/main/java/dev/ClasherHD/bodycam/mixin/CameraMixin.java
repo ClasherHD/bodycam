@@ -3,7 +3,7 @@ package dev.ClasherHD.bodycam.mixin;
 import dev.ClasherHD.bodycam.client.camera.CameraSnapState;
 import net.minecraft.client.Camera;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class CameraMixin {
     @Inject(method = "setup", at = @At("HEAD"))
     private void bodycam$onCameraSetupHead(
-            BlockGetter level,
+            Level level,
             Entity focusedEntity,
             boolean detached,
             boolean thirdPersonReverse,

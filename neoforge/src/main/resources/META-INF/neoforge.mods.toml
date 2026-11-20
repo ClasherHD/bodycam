@@ -8,7 +8,7 @@ version="3.0"
 displayName="Bodycam"
 authors="ClasherHD"
 description='''
-Bodycam Security, Surveillance & Tacticals Mod (1.21.1 Architectury Port).
+Bodycam Security, Surveillance & Tacticals Mod (1.21.11 Architectury Port).
 '''
 
 [[mixins]]
@@ -17,20 +17,20 @@ config="bodycam.mixins.json"
 [[dependencies.bodycam]]
 modId="neoforge"
 type="required"
-versionRange="[21.1,)"
+versionRange="[21.11.0-beta,)"
 ordering="NONE"
 side="BOTH"
 
 [[dependencies.bodycam]]
 modId="minecraft"
 type="required"
-versionRange="[1.21.1,1.22)"
+versionRange="[1.21.11,1.22)"
 ordering="NONE"
 side="BOTH"
 
 [[dependencies.bodycam]]
 modId="architectury"
 type="required"
-versionRange="[13.0.8,)"
+versionRange="[19.0.1,)"
 ordering="AFTER"
 side="BOTH"

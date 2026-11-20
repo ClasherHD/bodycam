@@ -6,7 +6,7 @@
     "CCC"
   ],
   "key": {
-    "C": { "item": "bodycam:observation_crystal" }
+    "C": "bodycam:observation_crystal"
   },
   "result": {
     "id": "bodycam:observation_crystal_block",

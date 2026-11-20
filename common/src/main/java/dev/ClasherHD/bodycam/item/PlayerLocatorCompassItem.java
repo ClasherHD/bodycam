@@ -19,16 +19,19 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permissions;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.StructureTags;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -69,8 +72,8 @@ public class PlayerLocatorCompassItem extends Item {
         if (tag == null) {
             return false;
         }
-        int state = tag.getInt("LocatorState");
-        return state == 1 || state == 3 || tag.getBoolean("Tracking");
+        int state = tag.getIntOr("LocatorState", 0);
+        return state == 1 || state == 3 || tag.getBooleanOr("Tracking", false);
     }
 
     public static int getTargetX(ItemStack stack) {
@@ -79,9 +82,9 @@ public class PlayerLocatorCompassItem extends Item {
             return 0;
         }
         if (tag.contains("LocatorCachedStructX")) {
-            return tag.getInt("LocatorCachedStructX");
+            return tag.getIntOr("LocatorCachedStructX", 0);
         }
-        return tag.getInt("TargetX");
+        return tag.getIntOr("TargetX", 0);
     }
 
     public static int getTargetZ(ItemStack stack) {
@@ -90,9 +93,9 @@ public class PlayerLocatorCompassItem extends Item {
             return 0;
         }
         if (tag.contains("LocatorCachedStructZ")) {
-            return tag.getInt("LocatorCachedStructZ");
+            return tag.getIntOr("LocatorCachedStructZ", 0);
         }
-        return tag.getInt("TargetZ");
+        return tag.getIntOr("TargetZ", 0);
     }
 
     public static void handleSelection(ServerPlayer player, UUID targetUuid, boolean deselect) {
@@ -108,7 +111,8 @@ public class PlayerLocatorCompassItem extends Item {
             compass.resetToIdle(stack);
             return;
         }
-        ServerPlayer targetPlayer = player.server.getPlayerList().getPlayer(targetUuid);
+        MinecraftServer server = player.level().getServer();
+        ServerPlayer targetPlayer = server != null ? server.getPlayerList().getPlayer(targetUuid) : null;
         if (targetPlayer == null || EnchantmentLevels.isHiddenFromSelection(targetPlayer)) {
             compass.resetToIdle(stack);
             return;
@@ -119,34 +123,34 @@ public class PlayerLocatorCompassItem extends Item {
     }
 
     @Override
-    public void onCraftedBy(ItemStack stack, Level level, Player player) {
-        super.onCraftedBy(stack, level, player);
-        if (!level.isClientSide()) {
+    public void onCraftedBy(ItemStack stack, Player player) {
+        super.onCraftedBy(stack, player);
+        if (!player.level().isClientSide()) {
             syncConfiguredMaxDamage(stack);
         }
     }
 
     @Override
-    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+    public InteractionResult use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
         if (!level.isClientSide()) {
             syncConfiguredMaxDamage(stack);
         }
         if (ItemDurabilityHelper.isEmpty(stack)) {
-            return InteractionResultHolder.fail(stack);
+            return InteractionResult.FAIL;
         }
         if (!level.isClientSide() && player instanceof ServerPlayer sPlayer) {
-            if (ModServerConfig.OP_ONLY_MODE.get() && !sPlayer.hasPermissions(2)) {
+            if (ModServerConfig.OP_ONLY_MODE.get() && !sPlayer.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
                 sPlayer.sendSystemMessage(Component.translatable("message.bodycam.op_only").withStyle(ChatFormatting.RED));
-                return InteractionResultHolder.fail(stack);
+                return InteractionResult.FAIL;
             }
             if (ModServerConfig.isDimensionBlacklisted(level)) {
                 sPlayer.sendSystemMessage(Component.translatable("message.bodycam.dimension_blacklisted").withStyle(ChatFormatting.RED));
-                return InteractionResultHolder.fail(stack);
+                return InteractionResult.FAIL;
             }
             if (!ModServerConfig.ENABLE_PLAYER_LOCATOR.get()) {
                 sPlayer.sendSystemMessage(Component.translatable("message.bodycam.player_locator_disabled").withStyle(ChatFormatting.RED));
-                return InteractionResultHolder.fail(stack);
+                return InteractionResult.FAIL;
             }
 
             level.playSound(null, sPlayer.getX(), sPlayer.getY(), sPlayer.getZ(),
@@ -157,44 +161,47 @@ public class PlayerLocatorCompassItem extends Item {
             Map<UUID, BlockPos> positions = new HashMap<>();
 
             int reachLevel = EnchantmentLevels.reach(stack);
-            String myDim = sPlayer.level().dimension().location().toString();
+            String myDim = sPlayer.level().dimension().identifier().toString();
             double maxDist = ModServerConfig.MAX_MONITOR_DISTANCE.get();
             double maxDistSq = maxDist * maxDist;
 
-            for (ServerPlayer p : sPlayer.server.getPlayerList().getPlayers()) {
-                if (!p.getUUID().equals(sPlayer.getUUID()) && !EnchantmentLevels.isHiddenFromSelection(p)) {
-                    int jammerMode = getJammerMode(p);
-                    String targetDim = getTargetDimension(p);
-                    BlockPos targetPos = getTargetPosition(p);
-                    boolean sameDim = myDim.equals(targetDim);
-                    double distSq = sPlayer.blockPosition().distSqr(targetPos);
-                    boolean withinBaseDist = sameDim && (distSq <= maxDistSq);
-                    boolean isJammed = (jammerMode == 1) || (jammerMode == 2 && !withinBaseDist);
+            MinecraftServer server = sPlayer.level().getServer();
+            if (server != null) {
+                for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+                    if (!p.getUUID().equals(sPlayer.getUUID()) && !EnchantmentLevels.isHiddenFromSelection(p)) {
+                        int jammerMode = getJammerMode(p);
+                        String targetDim = getTargetDimension(p);
+                        BlockPos targetPos = getTargetPosition(p);
+                        boolean sameDim = myDim.equals(targetDim);
+                        double distSq = sPlayer.blockPosition().distSqr(targetPos);
+                        boolean withinBaseDist = sameDim && (distSq <= maxDistSq);
+                        boolean isJammed = (jammerMode == 1) || (jammerMode == 2 && !withinBaseDist);
 
-                    boolean inReach;
-                    if (reachLevel >= 2) {
-                        inReach = true;
-                    } else if (reachLevel >= 1) {
-                        inReach = sameDim;
-                    } else {
-                        inReach = withinBaseDist;
-                    }
+                        boolean inReach;
+                        if (reachLevel >= 2) {
+                            inReach = true;
+                        } else if (reachLevel >= 1) {
+                            inReach = sameDim;
+                        } else {
+                            inReach = withinBaseDist;
+                        }
 
-                    jammers.put(p.getUUID(), jammerMode);
-                    if (isJammed || EnchantmentLevels.isDimensionScrambled(p)) {
-                        dimensions.put(p.getUUID(), myDim);
-                    } else {
-                        dimensions.put(p.getUUID(), targetDim);
-                    }
-                    if (!isJammed && inReach) {
-                        positions.put(p.getUUID(), withinBaseDist ? sPlayer.blockPosition() : new BlockPos(30_000_000, 0, 30_000_000));
+                        jammers.put(p.getUUID(), jammerMode);
+                        if (isJammed || EnchantmentLevels.isDimensionScrambled(p)) {
+                            dimensions.put(p.getUUID(), myDim);
+                        } else {
+                            dimensions.put(p.getUUID(), targetDim);
+                        }
+                        if (!isJammed && inReach) {
+                            positions.put(p.getUUID(), withinBaseDist ? sPlayer.blockPosition() : new BlockPos(30_000_000, 0, 30_000_000));
+                        }
                     }
                 }
             }
 
             CompoundTag readTag = ItemNbtAccess.getReadOnlyTag(stack);
-            UUID currentTarget = (readTag != null && readTag.hasUUID("LocatorTargetUUID"))
-                    ? readTag.getUUID("LocatorTargetUUID")
+            UUID currentTarget = (readTag != null && PersistentDataAccess.hasUUID(readTag, "LocatorTargetUUID"))
+                    ? PersistentDataAccess.getUUID(readTag, "LocatorTargetUUID")
                     : null;
 
             PacketHandler.sendToPlayer(
@@ -202,34 +209,36 @@ public class PlayerLocatorCompassItem extends Item {
                     new PlayerLocatorSyncS2CPacket(jammers, dimensions, positions, currentTarget, reachLevel)
             );
         }
-        return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
+        return InteractionResult.SUCCESS;
     }
 
     @Override
-    public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
-        if (level.isClientSide() || !(entity instanceof ServerPlayer owner)) {
+    public void inventoryTick(ItemStack stack, ServerLevel level, Entity entity, EquipmentSlot slot) {
+        super.inventoryTick(stack, level, entity, slot);
+        if (!(entity instanceof ServerPlayer owner)) {
             return;
         }
         syncConfiguredMaxDamage(stack);
 
         if (ItemDurabilityHelper.isEmpty(stack)) {
             CompoundTag tag = ItemNbtAccess.getReadOnlyTag(stack);
-            if (tag != null && (tag.hasUUID("LocatorTargetUUID") || tag.getInt("LocatorState") != 0)) {
+            if (tag != null && (PersistentDataAccess.hasUUID(tag, "LocatorTargetUUID") || tag.getIntOr("LocatorState", 0) != 0)) {
                 resetToIdle(stack);
             }
             return;
         }
 
         CompoundTag tag = ItemNbtAccess.getReadOnlyTag(stack);
-        if (tag == null || !tag.hasUUID("LocatorTargetUUID")) {
-            if (tag != null && tag.getInt("LocatorState") != 0) {
+        if (tag == null || !PersistentDataAccess.hasUUID(tag, "LocatorTargetUUID")) {
+            if (tag != null && tag.getIntOr("LocatorState", 0) != 0) {
                 ItemNbtAccess.putInt(stack, "LocatorState", 0);
             }
             return;
         }
 
-        UUID targetUUID = tag.getUUID("LocatorTargetUUID");
-        ServerPlayer targetPlayer = owner.server.getPlayerList().getPlayer(targetUUID);
+        UUID targetUUID = PersistentDataAccess.getUUID(tag, "LocatorTargetUUID");
+        MinecraftServer server = owner.level().getServer();
+        ServerPlayer targetPlayer = server != null ? server.getPlayerList().getPlayer(targetUUID) : null;
 
         if (targetPlayer == null || EnchantmentLevels.isHiddenFromSelection(targetPlayer)) {
             resetToIdle(stack);
@@ -246,9 +255,9 @@ public class PlayerLocatorCompassItem extends Item {
             }
         }
 
-        int currentState = tag.getInt("LocatorState");
+        int currentState = tag.getIntOr("LocatorState", 0);
         if (currentState == 2 || currentState == 4) {
-            long timestamp = tag.getLong("LocatorStateTimestamp");
+            long timestamp = tag.getLongOr("LocatorStateTimestamp", 0L);
             if (currentTick - timestamp >= 200) {
                 resetToIdle(stack);
                 return;
@@ -265,12 +274,12 @@ public class PlayerLocatorCompassItem extends Item {
         }
 
         int reachLevel = EnchantmentLevels.reach(stack);
-        long lastCheck = tag.getLong("LocatorLastCheckTick");
-        String lastTargetDim = tag.getString("LocatorLastTargetDim");
-        String myLastDim = tag.getString("LocatorLastMyDim");
+        long lastCheck = tag.getLongOr("LocatorLastCheckTick", 0L);
+        String lastTargetDim = tag.getStringOr("LocatorLastTargetDim", "");
+        String myLastDim = tag.getStringOr("LocatorLastMyDim", "");
 
         String currentTargetDim = getTargetDimension(targetPlayer);
-        String currentMyDim = owner.level().dimension().location().toString();
+        String currentMyDim = owner.level().dimension().identifier().toString();
 
         int scanInterval = Math.max(1, ModServerConfig.LOCATOR_SCAN_INTERVAL_TICKS.get());
         boolean dimChanged = !currentTargetDim.equals(lastTargetDim) || !currentMyDim.equals(myLastDim);
@@ -286,10 +295,10 @@ public class PlayerLocatorCompassItem extends Item {
             tag.putLong("LocatorLastCheckTick", currentTick);
 
             String currentTargetDim = getTargetDimension(targetPlayer);
-            String currentMyDim = owner.level().dimension().location().toString();
+            String currentMyDim = owner.level().dimension().identifier().toString();
 
-            boolean dimChanged = !currentTargetDim.equals(tag.getString("LocatorLastTargetDim"))
-                    || !currentMyDim.equals(tag.getString("LocatorLastMyDim"));
+            boolean dimChanged = !currentTargetDim.equals(tag.getStringOr("LocatorLastTargetDim", ""))
+                    || !currentMyDim.equals(tag.getStringOr("LocatorLastMyDim", ""));
 
             if (dimChanged) {
                 tag.remove("LocatorStructSearchFailedTick");
@@ -306,7 +315,7 @@ public class PlayerLocatorCompassItem extends Item {
 
             boolean isJammed = (jammerMode == 1) || (jammerMode == 2 && (!sameDim || distSq > maxDistSq));
 
-            ResourceKey<Level> targetDimKey = ResourceKey.create(Registries.DIMENSION, ResourceLocation.parse(currentTargetDim));
+            ResourceKey<Level> targetDimKey = ResourceKey.create(Registries.DIMENSION, Identifier.parse(currentTargetDim));
 
             int newState;
             if (isJammed) {
@@ -325,7 +334,7 @@ public class PlayerLocatorCompassItem extends Item {
                 }
             }
 
-            int previousState = tag.contains("LocatorState") ? tag.getInt("LocatorState") : -1;
+            int previousState = tag.contains("LocatorState") ? tag.getIntOr("LocatorState", 0) : -1;
             boolean stateOrDimChanged = (newState != previousState) || dimChanged;
 
             if (newState == 3) {
@@ -347,7 +356,7 @@ public class PlayerLocatorCompassItem extends Item {
 
     private void updateCrossDimensionRouting(CompoundTag tag, ServerPlayer owner, ResourceKey<Level> targetDim,
                                              String currentMyDim, long currentTick, boolean forceRescan) {
-        ServerLevel level = owner.serverLevel();
+        ServerLevel level = owner.level();
         Block portalBlock = getRequiredPortalBlock(level.dimension(), targetDim);
         int chunkRadius = getEffectiveChunkRadius(owner);
 
@@ -367,7 +376,7 @@ public class PlayerLocatorCompassItem extends Item {
             return;
         }
 
-        if (tag.contains("LocatorStructSearchFailedTick") && (currentTick - tag.getLong("LocatorStructSearchFailedTick") < 1200)) {
+        if (tag.contains("LocatorStructSearchFailedTick") && (currentTick - tag.getLongOr("LocatorStructSearchFailedTick", 0L) < 1200)) {
             tag.putInt("LocatorState", 2);
             return;
         }
@@ -387,10 +396,10 @@ public class PlayerLocatorCompassItem extends Item {
     private void applyRoutingTarget(CompoundTag tag, ServerPlayer owner, BlockPos targetPos, String currentMyDim,
                                     long currentTick, boolean isActivePortal) {
         boolean posChanged = !tag.contains("LocatorCachedStructX")
-                || tag.getInt("LocatorCachedStructX") != targetPos.getX()
-                || tag.getInt("LocatorCachedStructZ") != targetPos.getZ()
-                || (isActivePortal && (!tag.contains("LocatorCachedPortalY") || tag.getInt("LocatorCachedPortalY") != targetPos.getY()));
-        boolean stateChanged = tag.getInt("LocatorState") != 3;
+                || tag.getIntOr("LocatorCachedStructX", 0) != targetPos.getX()
+                || tag.getIntOr("LocatorCachedStructZ", 0) != targetPos.getZ()
+                || (isActivePortal && (!tag.contains("LocatorCachedPortalY") || tag.getIntOr("LocatorCachedPortalY", 0) != targetPos.getY()));
+        boolean stateChanged = tag.getIntOr("LocatorState", 0) != 3;
 
         tag.putInt("LocatorState", 3);
         if (stateChanged) {
@@ -415,16 +424,16 @@ public class PlayerLocatorCompassItem extends Item {
     }
 
     private boolean isCachedPortalValid(CompoundTag tag, ServerLevel level, ServerPlayer owner, Block portalBlock, int chunkRadius) {
-        if (portalBlock == null || !tag.getBoolean("LocatorCachedIsPortal")) {
+        if (portalBlock == null || !tag.getBooleanOr("LocatorCachedIsPortal", false)) {
             return false;
         }
         if (!tag.contains("LocatorCachedStructX") || !tag.contains("LocatorCachedPortalY") || !tag.contains("LocatorCachedStructZ")) {
             return false;
         }
 
-        int x = tag.getInt("LocatorCachedStructX");
-        int y = tag.getInt("LocatorCachedPortalY");
-        int z = tag.getInt("LocatorCachedStructZ");
+        int x = tag.getIntOr("LocatorCachedStructX", 0);
+        int y = tag.getIntOr("LocatorCachedPortalY", 0);
+        int z = tag.getIntOr("LocatorCachedStructZ", 0);
 
         int chunkX = SectionPos.blockToSectionCoord(x);
         int chunkZ = SectionPos.blockToSectionCoord(z);
@@ -465,8 +474,9 @@ public class PlayerLocatorCompassItem extends Item {
 
     private int getEffectiveChunkRadius(ServerPlayer owner) {
         int configRadius = ModServerConfig.PORTAL_SEARCH_CHUNK_RADIUS.get();
-        int viewDist = owner.server.getPlayerList().getViewDistance();
-        int simDist = owner.server.getPlayerList().getSimulationDistance();
+        MinecraftServer server = owner.level().getServer();
+        int viewDist = server != null ? server.getPlayerList().getViewDistance() : configRadius;
+        int simDist = server != null ? server.getPlayerList().getSimulationDistance() : configRadius;
         int serverDist = Math.min(viewDist, simDist);
         return Math.max(1, Math.min(configRadius, serverDist));
     }
@@ -493,7 +503,7 @@ public class PlayerLocatorCompassItem extends Item {
                 }
 
                 LevelChunkSection[] sections = chunk.getSections();
-                int minSection = chunk.getMinSection();
+                int minSection = chunk.getMinSectionY();
                 int chunkMinX = SectionPos.sectionToBlockCoord(cx);
                 int chunkMinZ = SectionPos.sectionToBlockCoord(cz);
 
@@ -532,7 +542,7 @@ public class PlayerLocatorCompassItem extends Item {
     }
 
     private void clearPortalBlockCache(CompoundTag tag) {
-        if (tag.getBoolean("LocatorCachedIsPortal")) {
+        if (tag.getBooleanOr("LocatorCachedIsPortal", false)) {
             tag.remove("LocatorCachedStructX");
             tag.remove("LocatorCachedStructZ");
             tag.remove("LocatorCachedPortalY");
@@ -550,16 +560,6 @@ public class PlayerLocatorCompassItem extends Item {
     @Override
     public boolean isBarVisible(ItemStack stack) {
         return stack.isDamaged() && !ItemDurabilityHelper.isEmpty(stack);
-    }
-
-    @Override
-    public boolean isEnchantable(ItemStack stack) {
-        return true;
-    }
-
-    @Override
-    public int getEnchantmentValue() {
-        return 1;
     }
 
     public void resetToIdle(ItemStack stack) {
@@ -582,11 +582,11 @@ public class PlayerLocatorCompassItem extends Item {
     private int getJammerMode(ServerPlayer player) {
         int personalMode = 0;
         CompoundTag pData = PersistentDataAccess.get(player);
-        if (pData.hasUUID("bodycam_active_jammer_id")) {
-            long lastHeartbeat = pData.getLong("bodycam_jammer_heartbeat");
+        if (PersistentDataAccess.hasUUID(pData, "bodycam_active_jammer_id")) {
+            long lastHeartbeat = pData.getLongOr("bodycam_jammer_heartbeat", 0L);
             boolean isCreative = player.isCreative();
             if (isCreative || (player.level().getGameTime() - lastHeartbeat <= 10)) {
-                personalMode = pData.getInt("bodycam_jammer_mode");
+                personalMode = pData.getIntOr("bodycam_jammer_mode", 0);
             }
         }
         return PodestBlockEntity.combineJammerModes(personalMode, PodestBlockEntity.getPodestJammerMode(player));
@@ -597,7 +597,7 @@ public class PlayerLocatorCompassItem extends Item {
     }
 
     private BlockPos findRoutingStructure(ServerPlayer owner, ResourceKey<Level> targetDim) {
-        ServerLevel level = owner.serverLevel();
+        ServerLevel level = owner.level();
         ResourceKey<Level> myDim = level.dimension();
         BlockPos playerPos = owner.blockPosition();
 
@@ -617,7 +617,7 @@ public class PlayerLocatorCompassItem extends Item {
 
     private BlockPos getTargetPosition(ServerPlayer p) {
         CompoundTag pData = PersistentDataAccess.get(p);
-        if (pData.getBoolean("bodycam_active")) {
+        if (pData.getBooleanOr("bodycam_active", false)) {
             Vec3 dummyVec = BodycamDummyEntity.DUMMY_POS.get(p.getUUID());
             if (dummyVec != null) {
                 return BlockPos.containing(dummyVec);
@@ -628,9 +628,9 @@ public class PlayerLocatorCompassItem extends Item {
             }
             if (pData.contains("bodycam_orig_x")) {
                 return BlockPos.containing(
-                        pData.getDouble("bodycam_orig_x"),
-                        pData.getDouble("bodycam_orig_y"),
-                        pData.getDouble("bodycam_orig_z")
+                        pData.getDoubleOr("bodycam_orig_x", 0.0D),
+                        pData.getDoubleOr("bodycam_orig_y", 0.0D),
+                        pData.getDoubleOr("bodycam_orig_z", 0.0D)
                 );
             }
         }
@@ -639,18 +639,18 @@ public class PlayerLocatorCompassItem extends Item {
 
     private String getTargetDimension(ServerPlayer p) {
         CompoundTag pData = PersistentDataAccess.get(p);
-        if (pData.getBoolean("bodycam_active")) {
+        if (pData.getBooleanOr("bodycam_active", false)) {
             String origDim = BodycamSetCameraPacket.ORIGINAL_DIM.get(p.getUUID());
             if (origDim != null) {
                 return origDim;
             }
             if (pData.contains("bodycam_orig_dim")) {
-                return pData.getString("bodycam_orig_dim");
+                return pData.getStringOr("bodycam_orig_dim", "");
             }
             if (pData.contains("bodycam_original_dimension")) {
-                return pData.getString("bodycam_original_dimension");
+                return pData.getStringOr("bodycam_original_dimension", "");
             }
         }
-        return p.level().dimension().location().toString();
+        return p.level().dimension().identifier().toString();
     }
 }

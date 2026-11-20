@@ -9,21 +9,24 @@ import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 
+import java.util.Set;
+
+@SuppressWarnings("null")
 public class ModBlockEntities {
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
             DeferredRegister.create(bodycam.MODID, Registries.BLOCK_ENTITY_TYPE);
 
     public static final RegistrySupplier<BlockEntityType<AncientTableBlockEntity>> ANCIENT_TABLE =
             BLOCK_ENTITIES.register("ancient_table",
-                    () -> BlockEntityType.Builder.of(AncientTableBlockEntity::new, ModBlocks.ANCIENT_TABLE.get()).build(null));
+                    () -> new BlockEntityType<>(AncientTableBlockEntity::new, Set.of(ModBlocks.ANCIENT_TABLE.get())));
 
     public static final RegistrySupplier<BlockEntityType<WatchPointBlockEntity>> WATCH_POINT =
             BLOCK_ENTITIES.register("watch_point",
-                    () -> BlockEntityType.Builder.of(WatchPointBlockEntity::new, ModBlocks.WATCH_POINT.get()).build(null));
+                    () -> new BlockEntityType<>(WatchPointBlockEntity::new, Set.of(ModBlocks.WATCH_POINT.get())));
 
     public static final RegistrySupplier<BlockEntityType<PodestBlockEntity>> PODEST =
             BLOCK_ENTITIES.register("podest",
-                    () -> BlockEntityType.Builder.of(PodestBlockEntity::new, ModBlocks.PODEST.get()).build(null));
+                    () -> new BlockEntityType<>(PodestBlockEntity::new, Set.of(ModBlocks.PODEST.get())));
 
     public static void register() {
         BLOCK_ENTITIES.register();

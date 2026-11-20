@@ -26,6 +26,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.Set;
@@ -95,7 +97,7 @@ public class PodestBlockEntity extends BlockEntity {
         }
         ItemNbtAccess.updateTag(stack, tag -> {
             if (stack.getItem() instanceof JammerItem) {
-                if (tag.getInt("JammerMode") != 2) {
+                if (tag.getIntOr("JammerMode", 0) != 2) {
                     tag.putInt("JammerMode", 0);
                 }
                 tag.remove("active_id");
@@ -215,7 +217,7 @@ public class PodestBlockEntity extends BlockEntity {
 
     private static Vec3 getEffectivePlayerPos(ServerPlayer player) {
         CompoundTag pData = PersistentDataAccess.get(player);
-        if (pData.getBoolean("bodycam_active")) {
+        if (pData.getBooleanOr("bodycam_active", false)) {
             Vec3 dummyVec = BodycamDummyEntity.DUMMY_POS.get(player.getUUID());
             if (dummyVec != null) {
                 return dummyVec;
@@ -226,9 +228,9 @@ public class PodestBlockEntity extends BlockEntity {
             }
             if (pData.contains("bodycam_orig_x")) {
                 return new Vec3(
-                        pData.getDouble("bodycam_orig_x"),
-                        pData.getDouble("bodycam_orig_y"),
-                        pData.getDouble("bodycam_orig_z")
+                        pData.getDoubleOr("bodycam_orig_x", 0.0D),
+                        pData.getDoubleOr("bodycam_orig_y", 0.0D),
+                        pData.getDoubleOr("bodycam_orig_z", 0.0D)
                 );
             }
         }
@@ -237,23 +239,23 @@ public class PodestBlockEntity extends BlockEntity {
 
     private static String getEffectivePlayerDim(ServerPlayer player) {
         CompoundTag pData = PersistentDataAccess.get(player);
-        if (pData.getBoolean("bodycam_active")) {
+        if (pData.getBooleanOr("bodycam_active", false)) {
             String origDim = BodycamSetCameraPacket.ORIGINAL_DIM.get(player.getUUID());
             if (origDim != null && !origDim.isEmpty()) {
                 return origDim;
             }
             if (pData.contains("bodycam_orig_dim")) {
-                return pData.getString("bodycam_orig_dim");
+                return pData.getStringOr("bodycam_orig_dim", "");
             }
         }
-        return player.level().dimension().location().toString();
+        return player.level().dimension().identifier().toString();
     }
 
     private boolean isWithinSphere(String targetDim, Vec3 targetPos) {
         if (!isPodestActive() || this.level == null) {
             return false;
         }
-        String podestDim = this.level.dimension().location().toString();
+        String podestDim = this.level.dimension().identifier().toString();
         if (!podestDim.equals(targetDim)) {
             return false;
         }
@@ -347,10 +349,17 @@ public class PodestBlockEntity extends BlockEntity {
     }
 
     @Override
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        super.preRemoveSideEffects(pos, state);
+        LOADED_PODESTS.remove(this);
+        if (this.level != null && !this.level.isClientSide()) {
+            dropContents(this.level, pos);
+        }
+    }
+
+    @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
-        CompoundTag tag = super.getUpdateTag(registries);
-        saveAdditional(tag, registries);
-        return tag;
+        return saveCustomOnly(registries);
     }
 
     @Override
@@ -359,22 +368,18 @@ public class PodestBlockEntity extends BlockEntity {
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        tag.putInt("Charges", this.charges);
+    protected void saveAdditional(ValueOutput output) {
+        super.saveAdditional(output);
+        output.putInt("Charges", this.charges);
         if (!this.heldItem.isEmpty()) {
-            tag.put("HeldItem", this.heldItem.save(registries));
+            output.store("HeldItem", ItemStack.CODEC, this.heldItem);
         }
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        this.charges = Math.max(0, Math.min(MAX_CHARGES, tag.getInt("Charges")));
-        if (tag.contains("HeldItem")) {
-            this.heldItem = ItemStack.parseOptional(registries, tag.getCompound("HeldItem"));
-        } else {
-            this.heldItem = ItemStack.EMPTY;
-        }
+    protected void loadAdditional(ValueInput input) {
+        super.loadAdditional(input);
+        this.charges = Math.max(0, Math.min(MAX_CHARGES, input.getIntOr("Charges", 0)));
+        this.heldItem = input.read("HeldItem", ItemStack.CODEC).orElse(ItemStack.EMPTY);
     }
 }

@@ -1,0 +1,22 @@
+{
+  "model": {
+    "type": "minecraft:condition",
+    "property": "bodycam:empty",
+    "on_true": {
+      "type": "minecraft:model",
+      "model": "bodycam:item/anonymizer/anonymizer_empty"
+    },
+    "on_false": {
+      "type": "minecraft:condition",
+      "property": "bodycam:active",
+      "on_true": {
+        "type": "minecraft:model",
+        "model": "bodycam:item/anonymizer/anonymizer_on"
+      },
+      "on_false": {
+        "type": "minecraft:model",
+        "model": "bodycam:item/anonymizer"
+      }
+    }
+  }
+}

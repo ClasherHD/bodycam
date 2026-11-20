@@ -6,16 +6,20 @@ import dev.ClasherHD.bodycam.registry.ModItems;
 import dev.ClasherHD.bodycam.registry.ModSounds;
 import dev.ClasherHD.bodycam.util.ItemNbtAccess;
 import dev.ClasherHD.bodycam.util.ModAdvancements;
+import dev.ClasherHD.bodycam.util.PersistentDataAccess;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permissions;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -76,46 +80,44 @@ public class LoggerItem extends Item {
     }
 
     @Override
-    public void onCraftedBy(ItemStack stack, Level level, Player player) {
-        super.onCraftedBy(stack, level, player);
-        if (!level.isClientSide()) {
+    public void onCraftedBy(ItemStack stack, Player player) {
+        super.onCraftedBy(stack, player);
+        if (!player.level().isClientSide()) {
             syncConfiguredMaxDamage(stack);
         }
     }
 
     @Override
-    public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
-        super.inventoryTick(stack, level, entity, slotId, isSelected);
-        if (!level.isClientSide()) {
-            syncConfiguredMaxDamage(stack);
-        }
+    public void inventoryTick(ItemStack stack, ServerLevel level, Entity entity, EquipmentSlot slot) {
+        super.inventoryTick(stack, level, entity, slot);
+        syncConfiguredMaxDamage(stack);
     }
 
     @Override
-    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+    public InteractionResult use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
         if (level.isClientSide()) {
             if (ItemDurabilityHelper.isEmpty(stack) && !isActive(stack) && !player.isShiftKeyDown()) {
-                return InteractionResultHolder.fail(stack);
+                return InteractionResult.FAIL;
             }
-            return InteractionResultHolder.sidedSuccess(stack, true);
+            return InteractionResult.SUCCESS;
         }
         if (!(player instanceof ServerPlayer sPlayer)) {
-            return InteractionResultHolder.pass(stack);
+            return InteractionResult.PASS;
         }
         syncConfiguredMaxDamage(stack);
 
-        if (ModServerConfig.OP_ONLY_MODE.get() && !sPlayer.hasPermissions(2)) {
+        if (ModServerConfig.OP_ONLY_MODE.get() && !sPlayer.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
             sPlayer.sendSystemMessage(Component.translatable("message.bodycam.op_only").withStyle(ChatFormatting.RED));
-            return InteractionResultHolder.fail(stack);
+            return InteractionResult.FAIL;
         }
         if (ModServerConfig.isDimensionBlacklisted(level)) {
             sPlayer.sendSystemMessage(Component.translatable("message.bodycam.dimension_blacklisted").withStyle(ChatFormatting.RED));
-            return InteractionResultHolder.fail(stack);
+            return InteractionResult.FAIL;
         }
         if (!ModServerConfig.ENABLE_LOGGER.get()) {
             sPlayer.sendSystemMessage(Component.translatable("message.bodycam.logger_disabled").withStyle(ChatFormatting.RED));
-            return InteractionResultHolder.fail(stack);
+            return InteractionResult.FAIL;
         }
 
         if (player.isShiftKeyDown()) {
@@ -126,13 +128,13 @@ public class LoggerItem extends Item {
             } else {
                 sPlayer.displayClientMessage(Component.translatable("message.bodycam.logger.not_active").withStyle(ChatFormatting.GRAY), true);
             }
-            return InteractionResultHolder.sidedSuccess(stack, false);
+            return InteractionResult.SUCCESS;
         }
 
         if (!isActive(stack)) {
             if (ItemDurabilityHelper.isEmpty(stack)) {
                 sPlayer.displayClientMessage(Component.translatable("message.bodycam.logger.empty").withStyle(ChatFormatting.RED), true);
-                return InteractionResultHolder.fail(stack);
+                return InteractionResult.FAIL;
             }
             ItemNbtAccess.updateTag(stack, tag -> {
                 tag.putBoolean(TAG_ACTIVE, true);
@@ -140,16 +142,16 @@ public class LoggerItem extends Item {
             });
             level.playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.LOGGER_START.get(), SoundSource.PLAYERS, 0.6F, 1.2F);
             sPlayer.displayClientMessage(Component.translatable("message.bodycam.logger.started").withStyle(ChatFormatting.GREEN), true);
-            return InteractionResultHolder.sidedSuccess(stack, false);
+            return InteractionResult.SUCCESS;
         }
 
         CompoundTag stackTag = ItemNbtAccess.getReadOnlyTag(stack);
-        ListTag entries = stackTag != null ? stackTag.getList(TAG_ENTRIES, 10).copy() : new ListTag();
+        ListTag entries = stackTag != null ? stackTag.getListOrEmpty(TAG_ENTRIES).copy() : new ListTag();
 
         ItemStack paper = new ItemStack(ModItems.LOG_PAPER.get());
         ItemNbtAccess.updateTag(paper, paperTag -> {
             paperTag.putString(LogPaperItem.TAG_AUTHOR, sPlayer.getName().getString());
-            paperTag.putUUID(LogPaperItem.TAG_AUTHOR_UUID, sPlayer.getUUID());
+            PersistentDataAccess.putUUID(paperTag, LogPaperItem.TAG_AUTHOR_UUID, sPlayer.getUUID());
             paperTag.put(LogPaperItem.TAG_ENTRIES, entries);
         });
         int recorded = entries.size();
@@ -165,7 +167,7 @@ public class LoggerItem extends Item {
         }
         level.playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.LOGGER_STOP.get(), SoundSource.PLAYERS, 0.8F, 1.0F);
         sPlayer.displayClientMessage(Component.translatable("message.bodycam.logger.stopped", recorded).withStyle(ChatFormatting.AQUA), true);
-        return InteractionResultHolder.sidedSuccess(stack, false);
+        return InteractionResult.SUCCESS;
     }
 
     public static void recordObservation(ServerPlayer target, ServerPlayer observer, String observerDimension, Vec3 observerPosition) {
@@ -178,7 +180,7 @@ public class LoggerItem extends Item {
         }
         candidates.addAll(BodycamPlatform.getEquippedAccessoryItems(target, ModItems.LOGGER.get()));
 
-        boolean sameDim = observerDimension.equals(target.level().dimension().location().toString());
+        boolean sameDim = observerDimension.equals(target.level().dimension().identifier().toString());
         boolean far = !sameDim || observerPosition.distanceTo(target.position()) > FAR_DISTANCE;
         long now = System.currentTimeMillis();
 
@@ -187,10 +189,10 @@ public class LoggerItem extends Item {
                 continue;
             }
             ItemNbtAccess.updateTag(stack, tag -> {
-                ListTag entries = tag.getList(TAG_ENTRIES, 10);
+                ListTag entries = tag.getListOrEmpty(TAG_ENTRIES);
                 CompoundTag entry = new CompoundTag();
                 entry.putString(LogPaperItem.ENTRY_NAME, observer.getName().getString());
-                entry.putUUID(LogPaperItem.ENTRY_UUID, observer.getUUID());
+                PersistentDataAccess.putUUID(entry, LogPaperItem.ENTRY_UUID, observer.getUUID());
                 entry.putLong(LogPaperItem.ENTRY_TIME, now);
                 entry.putBoolean(LogPaperItem.ENTRY_FAR, far);
                 entry.putBoolean(LogPaperItem.ENTRY_SAME_DIM, sameDim);
@@ -206,10 +208,5 @@ public class LoggerItem extends Item {
     @Override
     public boolean isBarVisible(ItemStack stack) {
         return stack.isDamaged() && !ItemDurabilityHelper.isEmpty(stack);
-    }
-
-    @Override
-    public boolean isEnchantable(ItemStack stack) {
-        return false;
     }
 }

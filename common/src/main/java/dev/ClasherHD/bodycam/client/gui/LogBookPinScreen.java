@@ -7,10 +7,12 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.util.FormattedCharSequence;
+import org.lwjgl.glfw.GLFW;
 
 @SuppressWarnings("null")
 public class LogBookPinScreen extends Screen {
@@ -35,7 +37,7 @@ public class LogBookPinScreen extends Screen {
         EditBox box = new EditBox(this.font, x, y, 100, 20, Component.empty());
         box.setMaxLength(4);
         box.setFilter(text -> text.chars().allMatch(Character::isDigit));
-        box.setFormatter((text, index) -> FormattedCharSequence.forward("*".repeat(text.length()), Style.EMPTY));
+        box.addFormatter((text, index) -> FormattedCharSequence.forward("*".repeat(text.length()), Style.EMPTY));
         box.setResponder(text -> this.updateConfirm());
         this.addRenderableWidget(box);
         return box;
@@ -43,6 +45,7 @@ public class LogBookPinScreen extends Screen {
 
     @Override
     protected void init() {
+        super.init();
         int cx = this.width / 2;
         int top = this.height / 2 - 50;
 
@@ -96,12 +99,13 @@ public class LogBookPinScreen extends Screen {
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if ((keyCode == 257 || keyCode == 335) && this.confirmButton != null && this.confirmButton.active) {
+    public boolean keyPressed(KeyEvent event) {
+        if ((event.key() == GLFW.GLFW_KEY_ENTER || event.key() == GLFW.GLFW_KEY_KP_ENTER)
+                && this.confirmButton != null && this.confirmButton.active) {
             this.submit(false);
             return true;
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(event);
     }
 
     @Override
@@ -109,16 +113,16 @@ public class LogBookPinScreen extends Screen {
         super.render(graphics, mouseX, mouseY, partialTick);
         int cx = this.width / 2;
         int top = this.height / 2 - 50;
-        graphics.drawCenteredString(this.font, this.title, cx, top - 12, 0xFFFFFF);
+        graphics.drawCenteredString(this.font, this.title, cx, top - 12, 0xFFFFFFFF);
 
         Component primaryLabel = Component.translatable(this.mode == OpenLogBookPinScreenS2CPacket.MODE_SET
                 ? "gui.bodycam.logbook.new_pin" : "gui.bodycam.logbook.current_pin");
         if (this.mode == OpenLogBookPinScreenS2CPacket.MODE_UNLOCK) {
             primaryLabel = Component.translatable("gui.bodycam.logbook.pin");
         }
-        graphics.drawCenteredString(this.font, primaryLabel, cx, top + 8, 0xA0A0A0);
+        graphics.drawCenteredString(this.font, primaryLabel, cx, top + 8, 0xFFA0A0A0);
         if (this.secondaryBox != null) {
-            graphics.drawCenteredString(this.font, Component.translatable("gui.bodycam.logbook.new_pin"), cx, top + 48, 0xA0A0A0);
+            graphics.drawCenteredString(this.font, Component.translatable("gui.bodycam.logbook.new_pin"), cx, top + 48, 0xFFA0A0A0);
         }
     }
 

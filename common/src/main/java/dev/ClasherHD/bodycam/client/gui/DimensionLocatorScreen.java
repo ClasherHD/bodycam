@@ -8,10 +8,12 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.ObjectSelectionList;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.multiplayer.PlayerInfo;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import java.util.Map;
 import java.util.UUID;
@@ -19,7 +21,7 @@ import java.util.UUID;
 @SuppressWarnings("null")
 public class DimensionLocatorScreen extends Screen {
 
-    private static final ResourceLocation WINDOW_TEXTURE = bodycam.id("textures/gui/gui_window.png");
+    private static final Identifier WINDOW_TEXTURE = bodycam.id("textures/gui/gui_window.png");
     private DimensionListWidget listWidget;
     private int guiWidth;
     private int guiHeight;
@@ -49,8 +51,8 @@ public class DimensionLocatorScreen extends Screen {
 
         if (this.minecraft != null && this.minecraft.getConnection() != null) {
             for (PlayerInfo info : this.minecraft.getConnection().getOnlinePlayers()) {
-                if (this.dimensions != null && this.dimensions.containsKey(info.getProfile().getId())) {
-                    this.listWidget.addPlayerEntry(new DimensionEntry(info, info.getProfile().getName(), this.dimensions.get(info.getProfile().getId())));
+                if (this.dimensions != null && this.dimensions.containsKey(info.getProfile().id())) {
+                    this.listWidget.addPlayerEntry(new DimensionEntry(info, info.getProfile().name(), this.dimensions.get(info.getProfile().id())));
                 }
             }
         }
@@ -97,7 +99,7 @@ public class DimensionLocatorScreen extends Screen {
         }
 
         @Override
-        protected int getScrollbarPosition() {
+        protected int scrollBarX() {
             return this.listX + this.width - 6;
         }
 
@@ -150,10 +152,14 @@ public class DimensionLocatorScreen extends Screen {
         }
 
         @Override
-        public void render(GuiGraphics graphics, int index, int top, int left, int width, int height, int mouseX, int mouseY, boolean isMouseOver, float partialTick) {
-            ResourceLocation skin = this.playerInfo.getSkin().texture();
-            graphics.blit(skin, left, top + 4, 32, 32, 8.0F, 8.0F, 8, 8, 64, 64);
-            graphics.blit(skin, left, top + 4, 32, 32, 40.0F, 8.0F, 8, 8, 64, 64);
+        public void renderContent(GuiGraphics graphics, int mouseX, int mouseY, boolean isMouseOver, float partialTick) {
+            int left = this.getContentX();
+            int top = this.getContentY();
+            int width = this.getContentWidth();
+
+            Identifier skin = this.playerInfo.getSkin().body().texturePath();
+            graphics.blit(RenderPipelines.GUI_TEXTURED, skin, left, top + 4, 8.0F, 8.0F, 32, 32, 8, 8, 64, 64);
+            graphics.blit(RenderPipelines.GUI_TEXTURED, skin, left, top + 4, 40.0F, 8.0F, 32, 32, 8, 8, 64, 64);
             graphics.drawString(DimensionLocatorScreen.this.font, this.displayName, left + 40, top + 16, 0xFFFFFFFF);
             if (this.isScrambled) {
                 Component scrambled = Component.literal("0".repeat(10)).withStyle(ChatFormatting.OBFUSCATED);
@@ -164,7 +170,7 @@ public class DimensionLocatorScreen extends Screen {
         }
 
         @Override
-        public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
             return false;
         }
 

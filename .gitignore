@@ -1,8 +1,10 @@
 .gradle/
 build/
 out/
+bin/
 */build/
 */out/
+*/bin/
 run/
 */run/
 */run_client*/

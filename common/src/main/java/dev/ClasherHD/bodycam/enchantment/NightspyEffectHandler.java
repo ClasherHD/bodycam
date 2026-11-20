@@ -12,6 +12,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
+@SuppressWarnings("null")
 public final class NightspyEffectHandler {
 
     private static final String LEVEL_KEY = "bodycam_nightspy_level";
@@ -42,7 +43,7 @@ public final class NightspyEffectHandler {
             return;
         }
         CompoundTag data = PersistentDataAccess.get(observer);
-        int level = data.getInt(LEVEL_KEY);
+        int level = data.getIntOr(LEVEL_KEY, 0);
         if (level <= 0) {
             return;
         }
@@ -51,10 +52,10 @@ public final class NightspyEffectHandler {
             refresh(observer, data);
             return;
         }
-        if (!data.getBoolean(APPLIED_KEY)) {
+        if (!data.getBooleanOr(APPLIED_KEY, false)) {
             return;
         }
-        int grace = data.getInt(GRACE_KEY) - 1;
+        int grace = data.getIntOr(GRACE_KEY, 0) - 1;
         if (grace <= 0) {
             removeEffect(observer, data);
             return;
@@ -105,7 +106,7 @@ public final class NightspyEffectHandler {
 
     private static void refresh(ServerPlayer observer, CompoundTag data) {
         MobEffectInstance current = observer.getEffect(MobEffects.NIGHT_VISION);
-        if (current != null && !data.getBoolean(APPLIED_KEY)) {
+        if (current != null && !data.getBooleanOr(APPLIED_KEY, false)) {
             return;
         }
         if (current == null || current.getDuration() < REFRESH_BELOW) {
@@ -115,7 +116,7 @@ public final class NightspyEffectHandler {
     }
 
     private static void removeEffect(ServerPlayer observer, CompoundTag data) {
-        if (data.getBoolean(APPLIED_KEY)) {
+        if (data.getBooleanOr(APPLIED_KEY, false)) {
             observer.removeEffect(MobEffects.NIGHT_VISION);
         }
         data.remove(APPLIED_KEY);

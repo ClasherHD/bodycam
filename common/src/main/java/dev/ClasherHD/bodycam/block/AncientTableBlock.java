@@ -8,6 +8,7 @@ import dev.ClasherHD.bodycam.registry.ModBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permissions;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -23,7 +24,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.BlockHitResult;
 
@@ -31,7 +32,7 @@ import net.minecraft.world.phys.BlockHitResult;
 public class AncientTableBlock extends BaseEntityBlock {
 
     public static final MapCodec<AncientTableBlock> CODEC = simpleCodec(AncientTableBlock::new);
-    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
+    public static final EnumProperty<Direction> FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final IntegerProperty FUEL_LEVEL = IntegerProperty.create("fuel_level", 0, AncientTableBlockEntity.MAX_FUEL);
 
     public AncientTableBlock(Properties properties) {
@@ -46,6 +47,7 @@ public class AncientTableBlock extends BaseEntityBlock {
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        super.createBlockStateDefinition(builder);
         builder.add(FACING, FUEL_LEVEL);
     }
 
@@ -78,23 +80,15 @@ public class AncientTableBlock extends BaseEntityBlock {
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer
                 && level.getBlockEntity(pos) instanceof AncientTableBlockEntity table) {
-            if (ModServerConfig.OP_ONLY_MODE.get() && !serverPlayer.hasPermissions(2)) {
-                return InteractionResult.sidedSuccess(level.isClientSide());
+            if (ModServerConfig.OP_ONLY_MODE.get() && !serverPlayer.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
+                return InteractionResult.SUCCESS;
             }
             if (ModServerConfig.isDimensionBlacklisted(level)) {
-                return InteractionResult.sidedSuccess(level.isClientSide());
+                return InteractionResult.SUCCESS;
             }
             BodycamPlatform.openExtendedMenu(serverPlayer, table, pos);
         }
-        return InteractionResult.sidedSuccess(level.isClientSide());
-    }
-
-    @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
-        if (!state.is(newState.getBlock()) && level.getBlockEntity(pos) instanceof AncientTableBlockEntity table) {
-            table.dropContents(level, pos);
-        }
-        super.onRemove(state, level, pos, newState, movedByPiston);
+        return InteractionResult.SUCCESS;
     }
 
     @Override

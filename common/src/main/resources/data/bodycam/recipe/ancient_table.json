@@ -6,9 +6,9 @@
     "WWW"
   ],
   "key": {
-    "I": { "item": "minecraft:iron_ingot" },
-    "W": { "item": "minecraft:warped_planks" },
-    "A": { "item": "minecraft:ancient_debris" }
+    "I": "minecraft:iron_ingot",
+    "W": "minecraft:warped_planks",
+    "A": "minecraft:ancient_debris"
   },
   "result": {
     "id": "bodycam:ancient_table",

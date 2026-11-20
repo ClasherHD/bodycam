@@ -1,0 +1,120 @@
+{
+  "model": {
+    "type": "minecraft:condition",
+    "property": "bodycam:empty",
+    "on_true": {
+      "type": "minecraft:model",
+      "model": "bodycam:item/player_locator/player_locator_compass_empty"
+    },
+    "on_false": {
+      "type": "minecraft:range_dispatch",
+      "property": "bodycam:state",
+      "entries": [
+        {
+          "threshold": 0.5,
+          "model": {
+            "type": "minecraft:range_dispatch",
+            "property": "bodycam:angle",
+            "scale": 32.0,
+            "entries": [
+              { "threshold": 0.0, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_same_dimension_16" } },
+              { "threshold": 0.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_same_dimension_17" } },
+              { "threshold": 1.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_same_dimension_18" } },
+              { "threshold": 2.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_same_dimension_19" } },
+              { "threshold": 3.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_same_dimension_20" } },
+              { "threshold": 4.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_same_dimension_21" } },
+              { "threshold": 5.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_same_dimension_22" } },
+              { "threshold": 6.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_same_dimension_23" } },
+              { "threshold": 7.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_same_dimension_24" } },
+              { "threshold": 8.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_same_dimension_25" } },
+              { "threshold": 9.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_same_dimension_26" } },
+              { "threshold": 10.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_same_dimension_27" } },
+              { "threshold": 11.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_same_dimension_28" } },
+              { "threshold": 12.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_same_dimension_29" } },
+              { "threshold": 13.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_same_dimension_30" } },
+              { "threshold": 14.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_same_dimension_31" } },
+              { "threshold": 15.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_same_dimension_00" } },
+              { "threshold": 16.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_same_dimension_01" } },
+              { "threshold": 17.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_same_dimension_02" } },
+              { "threshold": 18.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_same_dimension_03" } },
+              { "threshold": 19.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_same_dimension_04" } },
+              { "threshold": 20.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_same_dimension_05" } },
+              { "threshold": 21.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_same_dimension_06" } },
+              { "threshold": 22.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_same_dimension_07" } },
+              { "threshold": 23.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_same_dimension_08" } },
+              { "threshold": 24.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_same_dimension_09" } },
+              { "threshold": 25.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_same_dimension_10" } },
+              { "threshold": 26.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_same_dimension_11" } },
+              { "threshold": 27.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_same_dimension_12" } },
+              { "threshold": 28.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_same_dimension_13" } },
+              { "threshold": 29.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_same_dimension_14" } },
+              { "threshold": 30.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_same_dimension_15" } },
+              { "threshold": 31.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_same_dimension_16" } }
+            ]
+          }
+        },
+        {
+          "threshold": 1.5,
+          "model": {
+            "type": "minecraft:model",
+            "model": "bodycam:item/player_locator/player_locator_compass_not_in_range"
+          }
+        },
+        {
+          "threshold": 2.5,
+          "model": {
+            "type": "minecraft:range_dispatch",
+            "property": "bodycam:angle",
+            "scale": 32.0,
+            "entries": [
+              { "threshold": 0.0, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_other_dimension_16" } },
+              { "threshold": 0.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_other_dimension_17" } },
+              { "threshold": 1.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_other_dimension_18" } },
+              { "threshold": 2.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_other_dimension_19" } },
+              { "threshold": 3.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_other_dimension_20" } },
+              { "threshold": 4.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_other_dimension_21" } },
+              { "threshold": 5.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_other_dimension_22" } },
+              { "threshold": 6.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_other_dimension_23" } },
+              { "threshold": 7.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_other_dimension_24" } },
+              { "threshold": 8.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_other_dimension_25" } },
+              { "threshold": 9.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_other_dimension_26" } },
+              { "threshold": 10.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_other_dimension_27" } },
+              { "threshold": 11.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_other_dimension_28" } },
+              { "threshold": 12.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_other_dimension_29" } },
+              { "threshold": 13.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_other_dimension_30" } },
+              { "threshold": 14.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_other_dimension_31" } },
+              { "threshold": 15.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_other_dimension_00" } },
+              { "threshold": 16.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_other_dimension_01" } },
+              { "threshold": 17.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_other_dimension_02" } },
+              { "threshold": 18.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_other_dimension_03" } },
+              { "threshold": 19.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_other_dimension_04" } },
+              { "threshold": 20.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_other_dimension_05" } },
+              { "threshold": 21.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_other_dimension_06" } },
+              { "threshold": 22.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_other_dimension_07" } },
+              { "threshold": 23.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_other_dimension_08" } },
+              { "threshold": 24.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_other_dimension_09" } },
+              { "threshold": 25.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_other_dimension_10" } },
+              { "threshold": 26.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_other_dimension_11" } },
+              { "threshold": 27.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_other_dimension_12" } },
+              { "threshold": 28.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_other_dimension_13" } },
+              { "threshold": 29.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_other_dimension_14" } },
+              { "threshold": 30.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_other_dimension_15" } },
+              { "threshold": 31.5, "model": { "type": "minecraft:model", "model": "bodycam:item/player_locator/player_locator_compass_other_dimension_16" } }
+            ]
+          }
+        },
+        {
+          "threshold": 3.5,
+          "model": {
+            "type": "minecraft:model",
+            "model": "bodycam:item/player_locator/player_locator_compass_jammed"
+          }
+        }
+      ],
+      "fallback": {
+        "type": "minecraft:model",
+        "model": "bodycam:item/player_locator_compass"
+      }
+    }
+  }
+}

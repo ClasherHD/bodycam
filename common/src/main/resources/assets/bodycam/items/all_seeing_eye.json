@@ -1,0 +1,14 @@
+{
+  "model": {
+    "type": "minecraft:condition",
+    "property": "bodycam:deactivated",
+    "on_true": {
+      "type": "minecraft:model",
+      "model": "bodycam:item/all_seeing_eye/all_seeing_eye_deactivated"
+    },
+    "on_false": {
+      "type": "minecraft:model",
+      "model": "bodycam:item/all_seeing_eye"
+    }
+  }
+}

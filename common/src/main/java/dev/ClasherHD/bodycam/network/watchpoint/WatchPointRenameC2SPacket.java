@@ -9,6 +9,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permissions;
 
 @SuppressWarnings("null")
 public class WatchPointRenameC2SPacket implements CustomPacketPayload {
@@ -43,7 +44,7 @@ public class WatchPointRenameC2SPacket implements CustomPacketPayload {
             if (!(context.getPlayer() instanceof ServerPlayer player)) {
                 return;
             }
-            if (ModServerConfig.OP_ONLY_MODE.get() && !player.hasPermissions(2)) {
+            if (ModServerConfig.OP_ONLY_MODE.get() && !player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
                 return;
             }
             if (!ModServerConfig.ENABLE_WATCH_POINT.get()) {

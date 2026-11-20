@@ -4,23 +4,26 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.mojang.authlib.GameProfile;
 import dev.ClasherHD.bodycam.config.ModServerConfig;
 import dev.ClasherHD.bodycam.entity.CreepingDeathEntity;
 import dev.ClasherHD.bodycam.network.PacketHandler;
 import dev.ClasherHD.bodycam.network.creepingdeath.OpenCreepingDeathScreenS2CPacket;
 import dev.ClasherHD.bodycam.util.ItemNbtAccess;
+import dev.ClasherHD.bodycam.util.PersistentDataAccess;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permissions;
+import net.minecraft.server.players.NameAndId;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.LevelResource;
 
@@ -36,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 @SuppressWarnings("null")
 public class CreepingDeathItem extends Item {
@@ -54,23 +58,20 @@ public class CreepingDeathItem extends Item {
 
     public static boolean hasCustomSkin(ItemStack stack) {
         CompoundTag tag = ItemNbtAccess.getReadOnlyTag(stack);
-        return tag != null && tag.hasUUID(TAG_SKIN_UUID);
+        return tag != null && PersistentDataAccess.hasUUID(tag, TAG_SKIN_UUID);
     }
 
     public static UUID getSkinUUID(ItemStack stack) {
         CompoundTag tag = ItemNbtAccess.getReadOnlyTag(stack);
-        if (tag != null && tag.hasUUID(TAG_SKIN_UUID)) {
-            return tag.getUUID(TAG_SKIN_UUID);
+        if (tag != null && PersistentDataAccess.hasUUID(tag, TAG_SKIN_UUID)) {
+            return PersistentDataAccess.getUUID(tag, TAG_SKIN_UUID);
         }
         return null;
     }
 
     public static String getSkinName(ItemStack stack) {
         CompoundTag tag = ItemNbtAccess.getReadOnlyTag(stack);
-        if (tag != null && tag.contains(TAG_SKIN_NAME)) {
-            return tag.getString(TAG_SKIN_NAME);
-        }
-        return "";
+        return tag != null ? tag.getStringOr(TAG_SKIN_NAME, "") : "";
     }
 
     public static void setSkin(ItemStack stack, UUID skinUUID, String skinName) {
@@ -79,7 +80,7 @@ public class CreepingDeathItem extends Item {
             return;
         }
         ItemNbtAccess.updateTag(stack, tag -> {
-            tag.putUUID(TAG_SKIN_UUID, skinUUID);
+            PersistentDataAccess.putUUID(tag, TAG_SKIN_UUID, skinUUID);
             tag.putString(TAG_SKIN_NAME, skinName);
         });
     }
@@ -93,47 +94,48 @@ public class CreepingDeathItem extends Item {
 
     @Override
     public Component getName(ItemStack stack) {
-        return Component.translatable(this.getDescriptionId(stack))
+        return Component.translatable(this.getDescriptionId())
                 .withStyle(style -> style.withColor(0x666670).withBold(true));
     }
 
     @Override
-    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+    public InteractionResult use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
         if (level.isClientSide()) {
-            return InteractionResultHolder.sidedSuccess(stack, true);
+            return InteractionResult.SUCCESS;
         }
         if (!(player instanceof ServerPlayer sPlayer)) {
-            return InteractionResultHolder.pass(stack);
+            return InteractionResult.PASS;
         }
 
-        if (ModServerConfig.OP_ONLY_MODE.get() && !sPlayer.hasPermissions(2)) {
+        if (ModServerConfig.OP_ONLY_MODE.get() && !sPlayer.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
             sPlayer.sendSystemMessage(Component.translatable("message.bodycam.op_only").withStyle(ChatFormatting.RED));
-            return InteractionResultHolder.fail(stack);
+            return InteractionResult.FAIL;
         }
         if (ModServerConfig.isDimensionBlacklisted(level)) {
             sPlayer.sendSystemMessage(Component.translatable("message.bodycam.dimension_blacklisted").withStyle(ChatFormatting.RED));
-            return InteractionResultHolder.fail(stack);
+            return InteractionResult.FAIL;
         }
         if (!ModServerConfig.ENABLE_CREEPING_DEATH.get()) {
             sPlayer.sendSystemMessage(Component.translatable("message.bodycam.creeping_death_disabled").withStyle(ChatFormatting.RED));
-            return InteractionResultHolder.fail(stack);
+            return InteractionResult.FAIL;
         }
 
+        MinecraftServer server = sPlayer.level().getServer();
         boolean offHand = (hand == InteractionHand.OFF_HAND);
         if (sPlayer.isShiftKeyDown()) {
-            List<OpenCreepingDeathScreenS2CPacket.PlayerEntryData> skinEntries = collectAllKnownPlayers(sPlayer.server);
+            List<OpenCreepingDeathScreenS2CPacket.PlayerEntryData> skinEntries = collectAllKnownPlayers(server);
             PacketHandler.sendToPlayer(sPlayer, new OpenCreepingDeathScreenS2CPacket(
                     OpenCreepingDeathScreenS2CPacket.MODE_SKIN,
                     offHand,
                     skinEntries,
                     getSkinUUID(stack)
             ));
-            return InteractionResultHolder.success(stack);
+            return InteractionResult.SUCCESS;
         }
 
         List<OpenCreepingDeathScreenS2CPacket.PlayerEntryData> targetEntries = new ArrayList<>();
-        for (ServerPlayer other : sPlayer.server.getPlayerList().getPlayers()) {
+        for (ServerPlayer other : server.getPlayerList().getPlayers()) {
             if (other.getUUID().equals(sPlayer.getUUID())) {
                 continue;
             }
@@ -143,10 +145,10 @@ public class CreepingDeathItem extends Item {
             if (other.isCreative() || other.isSpectator() || !other.isAlive()) {
                 continue;
             }
-            boolean alreadyHunted = CreepingDeathEntity.isTargetAlreadyHunted(sPlayer.server, other.getUUID());
+            boolean alreadyHunted = CreepingDeathEntity.isTargetAlreadyHunted(server, other.getUUID());
             targetEntries.add(new OpenCreepingDeathScreenS2CPacket.PlayerEntryData(
                     other.getUUID(),
-                    other.getGameProfile().getName(),
+                    other.getGameProfile().name(),
                     alreadyHunted
             ));
         }
@@ -158,7 +160,7 @@ public class CreepingDeathItem extends Item {
                 targetEntries,
                 getSkinUUID(stack)
         ));
-        return InteractionResultHolder.success(stack);
+        return InteractionResult.SUCCESS;
     }
 
     public static void invalidateKnownPlayersCache() {
@@ -174,7 +176,7 @@ public class CreepingDeathItem extends Item {
         Map<UUID, String> known = new LinkedHashMap<>();
 
         for (ServerPlayer online : server.getPlayerList().getPlayers()) {
-            known.put(online.getUUID(), online.getGameProfile().getName());
+            known.put(online.getUUID(), online.getGameProfile().name());
         }
 
         long nowMs = System.currentTimeMillis();
@@ -222,7 +224,8 @@ public class CreepingDeathItem extends Item {
 
         try {
             Path playerDataDir = server.getWorldPath(LevelResource.PLAYER_DATA_DIR);
-            if (Files.isDirectory(playerDataDir) && server.getProfileCache() != null) {
+            var resolver = server.services().nameToIdCache();
+            if (Files.isDirectory(playerDataDir) && resolver != null) {
                 try (DirectoryStream<Path> stream = Files.newDirectoryStream(playerDataDir, "*.dat")) {
                     for (Path entry : stream) {
                         String fileName = entry.getFileName().toString();
@@ -231,9 +234,9 @@ public class CreepingDeathItem extends Item {
                             try {
                                 UUID id = UUID.fromString(uuidStr);
                                 if (!known.containsKey(id)) {
-                                    Optional<GameProfile> prof = server.getProfileCache().get(id);
-                                    if (prof.isPresent() && prof.get().getName() != null && !prof.get().getName().isEmpty()) {
-                                        known.put(id, prof.get().getName());
+                                    Optional<NameAndId> prof = resolver.get(id);
+                                    if (prof.isPresent() && prof.get().name() != null && !prof.get().name().isEmpty()) {
+                                        known.put(id, prof.get().name());
                                     }
                                 }
                             } catch (IllegalArgumentException ignored) {
@@ -249,18 +252,14 @@ public class CreepingDeathItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, context, tooltip, flag);
-        tooltip.add(Component.translatable("tooltip.bodycam.creeping_death.desc").withStyle(ChatFormatting.DARK_GRAY));
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay tooltipDisplay,
+            Consumer<Component> tooltipAdder, TooltipFlag flag) {
+        super.appendHoverText(stack, context, tooltipDisplay, tooltipAdder, flag);
+        tooltipAdder.accept(Component.translatable("tooltip.bodycam.creeping_death.desc").withStyle(ChatFormatting.DARK_GRAY));
         if (hasCustomSkin(stack)) {
-            tooltip.add(Component.translatable("tooltip.bodycam.creeping_death.skin", getSkinName(stack)).withStyle(ChatFormatting.GRAY));
+            tooltipAdder.accept(Component.translatable("tooltip.bodycam.creeping_death.skin", getSkinName(stack)).withStyle(ChatFormatting.GRAY));
         } else {
-            tooltip.add(Component.translatable("tooltip.bodycam.creeping_death.skin_default").withStyle(ChatFormatting.DARK_GRAY));
+            tooltipAdder.accept(Component.translatable("tooltip.bodycam.creeping_death.skin_default").withStyle(ChatFormatting.DARK_GRAY));
         }
-    }
-
-    @Override
-    public boolean isEnchantable(ItemStack stack) {
-        return false;
     }
 }

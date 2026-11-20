@@ -6,11 +6,14 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.PageButton;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
+import org.lwjgl.glfw.GLFW;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -19,7 +22,7 @@ import java.time.format.DateTimeFormatter;
 @SuppressWarnings("null")
 public class LogBookScreen extends Screen {
 
-    private static final ResourceLocation BOOK_TEXTURE = bodycam.id("textures/gui/log_book.png");
+    private static final Identifier BOOK_TEXTURE = bodycam.id("textures/gui/log_book.png");
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("dd.MM HH:mm:ss").withZone(ZoneId.systemDefault());
     private static final float TEXT_SCALE = 0.58F;
     private static final int LINE_STEP = 11;
@@ -34,11 +37,12 @@ public class LogBookScreen extends Screen {
 
     public LogBookScreen(CompoundTag data) {
         super(Component.translatable("item.bodycam.log_book"));
-        this.pages = data != null ? data.getList("Pages", 10) : new ListTag();
+        this.pages = data != null ? data.getListOrEmpty("Pages") : new ListTag();
     }
 
     @Override
     protected void init() {
+        super.init();
         int left = (this.width - 192) / 2;
         this.addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, btn -> this.onClose())
                 .bounds(this.width / 2 - 100, 196, 200, 20).build());
@@ -61,23 +65,23 @@ public class LogBookScreen extends Screen {
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (keyCode == 262 || keyCode == 267) {
+    public boolean keyPressed(KeyEvent event) {
+        if (event.key() == GLFW.GLFW_KEY_RIGHT || event.key() == GLFW.GLFW_KEY_PAGE_DOWN) {
             this.turnPage(1);
             return true;
         }
-        if (keyCode == 263 || keyCode == 266) {
+        if (event.key() == GLFW.GLFW_KEY_LEFT || event.key() == GLFW.GLFW_KEY_PAGE_UP) {
             this.turnPage(-1);
             return true;
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(event);
     }
 
     @Override
     public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.renderBackground(graphics, mouseX, mouseY, partialTick);
         int left = (this.width - 192) / 2;
-        graphics.blit(BOOK_TEXTURE, left, 2, 0, 0, 192, 192);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, BOOK_TEXTURE, left, 2, 0.0F, 0.0F, 192, 192, 256, 256);
     }
 
     @Override
@@ -89,11 +93,11 @@ public class LogBookScreen extends Screen {
         Component indicator = Component.translatable("book.pageIndicator", this.currentPage + 1, total);
         graphics.drawString(this.font, indicator, left - this.font.width(indicator) + 192 - 44, 18, 0xFF4A4A4A, false);
 
-        graphics.pose().pushPose();
-        graphics.pose().translate(left + 36, 30, 0);
-        graphics.pose().scale(TEXT_SCALE, TEXT_SCALE, 1.0F);
+        graphics.pose().pushMatrix();
+        graphics.pose().translate((float) (left + 36), 30.0F);
+        graphics.pose().scale(TEXT_SCALE, TEXT_SCALE);
         this.renderPage(graphics);
-        graphics.pose().popPose();
+        graphics.pose().popMatrix();
     }
 
     private void renderPage(GuiGraphics graphics) {
@@ -105,9 +109,9 @@ public class LogBookScreen extends Screen {
             return;
         }
 
-        CompoundTag page = this.pages.getCompound(this.currentPage);
-        ListTag entries = page.getList(LogPaperItem.TAG_ENTRIES, 10);
-        String author = page.getString(LogPaperItem.TAG_AUTHOR);
+        CompoundTag page = this.pages.getCompoundOrEmpty(this.currentPage);
+        ListTag entries = page.getListOrEmpty(LogPaperItem.TAG_ENTRIES);
+        String author = page.getStringOr(LogPaperItem.TAG_AUTHOR, "");
         if (author.isEmpty()) {
             author = "???";
         }
@@ -125,12 +129,12 @@ public class LogBookScreen extends Screen {
         String far = Component.translatable("gui.bodycam.logbook.far").getString();
 
         for (int i = 0; i < entries.size() && i < 5; i++) {
-            CompoundTag entry = entries.getCompound(i);
-            String name = this.font.plainSubstrByWidth(entry.getString(LogPaperItem.ENTRY_NAME), 180);
+            CompoundTag entry = entries.getCompoundOrEmpty(i);
+            String name = this.font.plainSubstrByWidth(entry.getStringOr(LogPaperItem.ENTRY_NAME, ""), 180);
             graphics.drawString(this.font, (i + 1) + ". " + name, 0, line++ * LINE_STEP, TITLE_COLOR, false);
-            String time = TIME_FORMAT.format(Instant.ofEpochMilli(entry.getLong(LogPaperItem.ENTRY_TIME)));
-            String detail = "   " + time + " | " + (entry.getBoolean(LogPaperItem.ENTRY_FAR) ? far : near)
-                    + " | " + (entry.getBoolean(LogPaperItem.ENTRY_SAME_DIM) ? sameDim : otherDim);
+            String time = TIME_FORMAT.format(Instant.ofEpochMilli(entry.getLongOr(LogPaperItem.ENTRY_TIME, 0L)));
+            String detail = "   " + time + " | " + (entry.getBooleanOr(LogPaperItem.ENTRY_FAR, false) ? far : near)
+                    + " | " + (entry.getBooleanOr(LogPaperItem.ENTRY_SAME_DIM, false) ? sameDim : otherDim);
             graphics.drawString(this.font, detail, 0, line++ * LINE_STEP, TEXT_COLOR, false);
         }
 
@@ -153,7 +157,7 @@ public class LogBookScreen extends Screen {
         }
 
         @Override
-        public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        public void renderContents(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
             int u = 0;
             int v = 192;
             if (this.isHoveredOrFocused()) {
@@ -162,7 +166,7 @@ public class LogBookScreen extends Screen {
             if (!this.forward) {
                 v += 13;
             }
-            graphics.blit(BOOK_TEXTURE, this.getX(), this.getY(), u, v, 23, 13);
+            graphics.blit(RenderPipelines.GUI_TEXTURED, BOOK_TEXTURE, this.getX(), this.getY(), (float) u, (float) v, 23, 13, 256, 256);
         }
     }
 }

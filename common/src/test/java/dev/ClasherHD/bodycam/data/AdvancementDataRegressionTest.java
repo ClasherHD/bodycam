@@ -69,12 +69,12 @@ class AdvancementDataRegressionTest {
     }
 
     @Test
-    void packMcmeta_usesPackFormat48() throws Exception {
+    void packMcmeta_usesPackFormat75() throws Exception {
         Path resourcesRoot = resolveResourcesRoot();
         JsonObject root = readJson(resourcesRoot.resolve("pack.mcmeta"));
         assertThat(root.has("pack")).isTrue();
         JsonObject pack = root.getAsJsonObject("pack");
-        assertThat(pack.get("pack_format").getAsInt()).isEqualTo(48);
+        assertThat(pack.get("pack_format").getAsInt()).isEqualTo(75);
     }
 
     @Test

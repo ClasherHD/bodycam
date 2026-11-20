@@ -8,6 +8,7 @@ import dev.ClasherHD.bodycam.bodycam;
 import dev.architectury.registry.registries.DeferredRegister;
 import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -15,6 +16,7 @@ import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 
+@SuppressWarnings("null")
 public class ModBlocks {
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(bodycam.MODID, Registries.BLOCK);
 
@@ -29,35 +31,40 @@ public class ModBlocks {
     );
 
     public static final RegistrySupplier<Block> HOLOGRAM_BLOCK = BLOCKS.register("hologram_block",
-            () -> new HologramBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.GLASS)
+            () -> new HologramBlock(blockProperties("hologram_block", Blocks.GLASS)
                     .noOcclusion()
                     .strength(0.3F)
                     .sound(SoundType.GLASS)));
 
     public static final RegistrySupplier<Block> OBSERVATION_CRYSTAL_BLOCK = BLOCKS.register("observation_crystal_block",
-            () -> new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.AMETHYST_BLOCK)
+            () -> new Block(blockProperties("observation_crystal_block", Blocks.AMETHYST_BLOCK)
                     .sound(OBSERVATION_CRYSTAL_SOUNDS)
                     .lightLevel(state -> 5)));
 
     public static final RegistrySupplier<Block> ANCIENT_TABLE = BLOCKS.register("ancient_table",
-            () -> new AncientTableBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.SMITHING_TABLE)
+            () -> new AncientTableBlock(blockProperties("ancient_table", Blocks.SMITHING_TABLE)
                     .strength(2.5F)
                     .sound(SoundType.WOOD)
                     .lightLevel(ModBlocks::getAncientTableLightLevel)));
 
     public static final RegistrySupplier<Block> WATCH_POINT = BLOCKS.register("watch_point",
-            () -> new WatchPointBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.GLASS)
+            () -> new WatchPointBlock(blockProperties("watch_point", Blocks.GLASS)
                     .noOcclusion()
                     .strength(1.5F)
                     .sound(SoundType.DEEPSLATE)
                     .lightLevel(state -> 5)));
 
     public static final RegistrySupplier<Block> PODEST = BLOCKS.register("podest",
-            () -> new PodestBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.LECTERN)
+            () -> new PodestBlock(blockProperties("podest", Blocks.LECTERN)
                     .noOcclusion()
                     .strength(2.5F)
                     .sound(SoundType.STONE)
                     .lightLevel(ModBlocks::getPodestLightLevel)));
+
+    private static BlockBehaviour.Properties blockProperties(String name, Block copyFrom) {
+        return BlockBehaviour.Properties.ofFullCopy(copyFrom)
+                .setId(ResourceKey.create(Registries.BLOCK, bodycam.id(name)));
+    }
 
     private static int getAncientTableLightLevel(BlockState state) {
         for (var entry : state.getValues().entrySet()) {

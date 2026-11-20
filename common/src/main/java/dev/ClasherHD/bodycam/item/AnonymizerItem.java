@@ -10,11 +10,14 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permissions;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -44,7 +47,7 @@ public class AnonymizerItem extends Item {
     }
 
     @Override
-    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+    public InteractionResult use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
         if (!level.isClientSide()) {
             syncConfiguredMaxDamage(stack);
@@ -56,20 +59,20 @@ public class AnonymizerItem extends Item {
                     tag.remove("active_id");
                 });
             }
-            return InteractionResultHolder.fail(stack);
+            return InteractionResult.FAIL;
         }
         if (!level.isClientSide() && player instanceof ServerPlayer sp) {
-            if (ModServerConfig.OP_ONLY_MODE.get() && !sp.hasPermissions(2)) {
+            if (ModServerConfig.OP_ONLY_MODE.get() && !sp.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
                 sp.sendSystemMessage(Component.translatable("message.bodycam.op_only").withStyle(ChatFormatting.RED));
-                return InteractionResultHolder.fail(stack);
+                return InteractionResult.FAIL;
             }
             if (ModServerConfig.isDimensionBlacklisted(level)) {
                 sp.sendSystemMessage(Component.translatable("message.bodycam.dimension_blacklisted").withStyle(ChatFormatting.RED));
-                return InteractionResultHolder.fail(stack);
+                return InteractionResult.FAIL;
             }
             if (!ModServerConfig.ENABLE_ANONYMIZER.get()) {
                 sp.sendSystemMessage(Component.translatable("message.bodycam.anonymizer_disabled").withStyle(ChatFormatting.RED));
-                return InteractionResultHolder.fail(stack);
+                return InteractionResult.FAIL;
             }
 
             boolean currentState = ItemNbtAccess.getBoolean(stack, "AnonymizerActive");
@@ -79,7 +82,7 @@ public class AnonymizerItem extends Item {
             UUID activeId = null;
             if (newState) {
                 activeId = UUID.randomUUID();
-                pData.putUUID("bodycam_active_anonymizer_id", activeId);
+                PersistentDataAccess.putUUID(pData, "bodycam_active_anonymizer_id", activeId);
                 pData.putLong("bodycam_anonymizer_heartbeat", level.getGameTime());
             } else {
                 pData.remove("bodycam_active_anonymizer_id");
@@ -98,7 +101,7 @@ public class AnonymizerItem extends Item {
                         ItemNbtAccess.updateTag(invStack, tag -> {
                             tag.putBoolean("AnonymizerActive", newState);
                             if (finalActiveId != null) {
-                                tag.putUUID("active_id", finalActiveId);
+                                PersistentDataAccess.putUUID(tag, "active_id", finalActiveId);
                             } else {
                                 tag.remove("active_id");
                             }
@@ -117,7 +120,7 @@ public class AnonymizerItem extends Item {
                 sp.displayClientMessage(Component.translatable("message.bodycam.anonymizer_off").withStyle(ChatFormatting.RED), true);
             }
         }
-        return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
+        return InteractionResult.SUCCESS;
     }
 
     @Override
@@ -126,18 +129,9 @@ public class AnonymizerItem extends Item {
     }
 
     @Override
-    public boolean isEnchantable(ItemStack stack) {
-        return true;
-    }
-
-    @Override
-    public int getEnchantmentValue() {
-        return 1;
-    }
-
-    @Override
-    public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
-        if (!level.isClientSide() && entity instanceof ServerPlayer player) {
+    public void inventoryTick(ItemStack stack, ServerLevel level, Entity entity, EquipmentSlot slot) {
+        super.inventoryTick(stack, level, entity, slot);
+        if (entity instanceof ServerPlayer player) {
             syncConfiguredMaxDamage(stack);
             if (ItemDurabilityHelper.isEmpty(stack)) {
                 if (ItemNbtAccess.getBoolean(stack, "AnonymizerActive")) {
@@ -152,12 +146,12 @@ public class AnonymizerItem extends Item {
             CompoundTag pData = PersistentDataAccess.get(player);
             boolean hasActivePlayerAnonymizer = false;
             UUID playerActiveId = null;
-            if (pData.hasUUID("bodycam_active_anonymizer_id")) {
-                long lastHeartbeat = pData.getLong("bodycam_anonymizer_heartbeat");
+            if (PersistentDataAccess.hasUUID(pData, "bodycam_active_anonymizer_id")) {
+                long lastHeartbeat = pData.getLongOr("bodycam_anonymizer_heartbeat", 0L);
                 boolean isCreative = player.isCreative();
                 if (isCreative || (level.getGameTime() - lastHeartbeat <= 10)) {
                     hasActivePlayerAnonymizer = true;
-                    playerActiveId = pData.getUUID("bodycam_active_anonymizer_id");
+                    playerActiveId = PersistentDataAccess.getUUID(pData, "bodycam_active_anonymizer_id");
                 }
             }
 
@@ -169,14 +163,14 @@ public class AnonymizerItem extends Item {
                 if (!playerActiveId.equals(itemActiveId)) {
                     ItemNbtAccess.updateTag(stack, tag -> {
                         tag.putBoolean("AnonymizerActive", true);
-                        tag.putUUID("active_id", finalPlayerActiveId);
+                        PersistentDataAccess.putUUID(tag, "active_id", finalPlayerActiveId);
                     });
                 }
 
                 long gameTime = level.getGameTime();
                 int interval = Math.max(1, ModServerConfig.ANONYMIZER_INTERVAL_TICKS.get());
                 if (!player.isCreative() && gameTime % interval == 0
-                        && pData.getLong("bodycam_anonymizer_last_durability_tick") != gameTime) {
+                        && pData.getLongOr("bodycam_anonymizer_last_durability_tick", 0L) != gameTime) {
                     pData.putLong("bodycam_anonymizer_last_durability_tick", gameTime);
                     ItemDurabilityHelper.damagePerTime(stack, player, 1);
                     if (ItemDurabilityHelper.isEmpty(stack)) {

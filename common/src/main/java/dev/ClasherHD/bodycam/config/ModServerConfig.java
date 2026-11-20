@@ -263,7 +263,7 @@ public class ModServerConfig {
         if (level == null) {
             return false;
         }
-        return isDimensionBlacklisted(level.dimension().location().toString());
+        return isDimensionBlacklisted(level.dimension().identifier().toString());
     }
 
     public static boolean isDimensionBlacklisted(String dimensionId) {

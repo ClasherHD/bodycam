@@ -1,0 +1,50 @@
+{
+  "model": {
+    "type": "minecraft:condition",
+    "property": "bodycam:empty",
+    "on_true": {
+      "type": "minecraft:select",
+      "property": "minecraft:display_context",
+      "cases": [
+        {
+          "when": [
+            "gui",
+            "ground",
+            "fixed",
+            "on_shelf"
+          ],
+          "model": {
+            "type": "minecraft:model",
+            "model": "bodycam:item/observation_spyglass/bodycam_monitor_gui_empty"
+          }
+        }
+      ],
+      "fallback": {
+        "type": "minecraft:model",
+        "model": "bodycam:item/observation_spyglass/bodycam_monitor_in_hand_empty"
+      }
+    },
+    "on_false": {
+      "type": "minecraft:select",
+      "property": "minecraft:display_context",
+      "cases": [
+        {
+          "when": [
+            "gui",
+            "ground",
+            "fixed",
+            "on_shelf"
+          ],
+          "model": {
+            "type": "minecraft:model",
+            "model": "bodycam:item/observation_spyglass/bodycam_monitor_gui"
+          }
+        }
+      ],
+      "fallback": {
+        "type": "minecraft:model",
+        "model": "bodycam:item/observation_spyglass/bodycam_monitor_in_hand"
+      }
+    }
+  }
+}

@@ -3,40 +3,53 @@ package dev.ClasherHD.bodycam.client.render;
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.ClasherHD.bodycam.client.gui.BodycamViewScreen;
 import dev.ClasherHD.bodycam.entity.BodycamDummyEntity;
-import dev.ClasherHD.bodycam.item.BodycamMonitorItem;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.model.HumanoidArmorModel;
-import net.minecraft.client.model.HumanoidModel;
-import net.minecraft.client.model.PlayerModel;
+import dev.ClasherHD.bodycam.entity.HologramDummyEntity;
 import net.minecraft.client.model.geom.ModelLayers;
-import net.minecraft.client.multiplayer.PlayerInfo;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.model.player.PlayerModel;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.culling.Frustum;
+import net.minecraft.client.renderer.entity.ArmorModelSet;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.layers.CustomHeadLayer;
 import net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer;
+import net.minecraft.client.renderer.entity.layers.WingsLayer;
+import net.minecraft.client.renderer.entity.state.AvatarRenderState;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.client.renderer.state.CameraRenderState;
 import net.minecraft.client.resources.DefaultPlayerSkin;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.item.ItemStack;
-
-import java.util.Optional;
-import java.util.UUID;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.ARGB;
+import net.minecraft.world.entity.player.PlayerModelType;
 
 @SuppressWarnings("null")
-public class BodycamDummyRenderer<T extends BodycamDummyEntity> extends LivingEntityRenderer<T, PlayerModel<T>> {
+public class BodycamDummyRenderer<T extends BodycamDummyEntity>
+        extends LivingEntityRenderer<T, AvatarRenderState, PlayerModel> {
+
+    private static final int HOLOGRAM_TINT = ARGB.color(145, 95, 220, 255);
+
+    private final PlayerModel classicModel;
+    private final PlayerModel slimModel;
+
     public BodycamDummyRenderer(EntityRendererProvider.Context context) {
-        super(context, new PlayerModel<>(context.bakeLayer(ModelLayers.PLAYER), false), 0.5F);
+        super(context, new PlayerModel(context.bakeLayer(ModelLayers.PLAYER), false), 0.5F);
+        this.classicModel = this.model;
+        this.slimModel = new PlayerModel(context.bakeLayer(ModelLayers.PLAYER_SLIM), true);
         this.addLayer(new HumanoidArmorLayer<>(
                 this,
-                new HumanoidArmorModel<>(context.bakeLayer(ModelLayers.PLAYER_INNER_ARMOR)),
-                new HumanoidArmorModel<>(context.bakeLayer(ModelLayers.PLAYER_OUTER_ARMOR)),
-                context.getModelManager()
+                ArmorModelSet.bake(ModelLayers.PLAYER_ARMOR, context.getModelSet(), part -> new PlayerModel(part, false)),
+                context.getEquipmentRenderer()
         ));
-        this.addLayer(new GlowingArmorTrimLayer<>(this));
-        this.addLayer(new BodycamItemInHandLayer<>(this, context.getItemInHandRenderer()));
-        this.addLayer(new CustomHeadLayer<>(this, context.getModelSet(), context.getItemInHandRenderer()));
+        this.addLayer(new GlowingArmorTrimLayer<>(this, context.getModelSet()));
+        this.addLayer(new BodycamItemInHandLayer<>(this));
+        this.addLayer(new WingsLayer<>(this, context.getModelSet(), context.getEquipmentRenderer()));
+        this.addLayer(new CustomHeadLayer<>(this, context.getModelSet(), context.getPlayerSkinRenderCache()));
+    }
+
+    @Override
+    public AvatarRenderState createRenderState() {
+        return new AvatarRenderState();
     }
 
     @Override
@@ -48,49 +61,69 @@ public class BodycamDummyRenderer<T extends BodycamDummyEntity> extends LivingEn
     }
 
     @Override
-    protected void scale(T entity, PoseStack poseStack, float partialTick) {
-        poseStack.scale(0.9375F, 0.9375F, 0.9375F);
+    public void extractRenderState(T entity, AvatarRenderState state, float partialTick) {
+        super.extractRenderState(entity, state, partialTick);
+        HumanoidRenderHelper.populateAvatarState(entity, state, this.itemModelResolver, partialTick);
+        state.skin = HumanoidRenderHelper.resolvePlayerSkin(entity.getOwnerUuidOrNull(), entity.getOwnerName(), null);
+        BodycamHologramState hologramState = (BodycamHologramState) (Object) state;
+        hologramState.bodycam$setHologram(entity instanceof HologramDummyEntity);
+        hologramState.bodycam$setPartialTick(partialTick);
+        hologramState.bodycam$setGameTime(entity.level() != null ? entity.level().getGameTime() : 0L);
     }
 
     @Override
-    public void render(
-            T entity,
-            float entityYaw,
-            float partialTick,
-            PoseStack poseStack,
-            MultiBufferSource buffer,
-            int packedLight
+    protected float getShadowRadius(AvatarRenderState state) {
+        return ((BodycamHologramState) (Object) state).bodycam$isHologram() ? 0.0F : super.getShadowRadius(state);
+    }
+
+    @Override
+    protected RenderType getRenderType(
+            AvatarRenderState state,
+            boolean isVisible,
+            boolean renderTranslucent,
+            boolean appearsGlowing
     ) {
-        PlayerModel<T> model = this.getModel();
-        model.crouching = entity.isCrouching();
-        model.rightArmPose = getArmPose(entity, InteractionHand.MAIN_HAND);
-        model.leftArmPose = getArmPose(entity, InteractionHand.OFF_HAND);
-        super.render(entity, entityYaw, partialTick, poseStack, buffer, packedLight);
-    }
-
-    private static <T extends BodycamDummyEntity> HumanoidModel.ArmPose getArmPose(T entity, InteractionHand hand) {
-        ItemStack stack = entity.getItemInHand(hand);
-        if (stack.isEmpty()) {
-            return HumanoidModel.ArmPose.EMPTY;
+        if (((BodycamHologramState) (Object) state).bodycam$isHologram()) {
+            return RenderTypes.entityTranslucent(this.getTextureLocation(state));
         }
-        return stack.getItem() instanceof BodycamMonitorItem
-                ? HumanoidModel.ArmPose.SPYGLASS
-                : HumanoidModel.ArmPose.ITEM;
+        return super.getRenderType(state, isVisible, renderTranslucent, appearsGlowing);
     }
 
     @Override
-    public ResourceLocation getTextureLocation(T entity) {
-        Optional<UUID> ownerId = entity.getOwnerUUID();
-        if (ownerId != null && ownerId.isPresent()) {
-            UUID uuid = ownerId.get();
-            if (Minecraft.getInstance().getConnection() != null) {
-                PlayerInfo info = Minecraft.getInstance().getConnection().getPlayerInfo(uuid);
-                if (info != null) {
-                    return info.getSkin().texture();
-                }
-            }
-            return DefaultPlayerSkin.get(uuid).texture();
+    protected int getModelTint(AvatarRenderState state) {
+        return ((BodycamHologramState) (Object) state).bodycam$isHologram() ? HOLOGRAM_TINT : super.getModelTint(state);
+    }
+
+    @Override
+    protected void scale(AvatarRenderState state, PoseStack poseStack) {
+        super.scale(state, poseStack);
+        poseStack.scale(0.9375F, 0.9375F, 0.9375F);
+        BodycamHologramState hologramState = (BodycamHologramState) (Object) state;
+        if (hologramState.bodycam$isHologram()) {
+            float bob = (float) Math.sin((hologramState.bodycam$getGameTime() + hologramState.bodycam$getPartialTick()) * 0.1D) * 0.04F;
+            poseStack.translate(0.0F, bob, 0.0F);
         }
-        return DefaultPlayerSkin.getDefaultTexture();
+    }
+
+    @Override
+    protected void setupRotations(AvatarRenderState state, PoseStack poseStack, float ageInTicks, float bodyRot) {
+        super.setupRotations(state, poseStack, ageInTicks, bodyRot);
+        HumanoidRenderHelper.applyPlayerRotations(state, poseStack);
+    }
+
+    @Override
+    public void submit(
+            AvatarRenderState state,
+            PoseStack poseStack,
+            SubmitNodeCollector submitNodeCollector,
+            CameraRenderState cameraRenderState
+    ) {
+        this.model = state.skin != null && state.skin.model() == PlayerModelType.SLIM ? this.slimModel : this.classicModel;
+        super.submit(state, poseStack, submitNodeCollector, cameraRenderState);
+    }
+
+    @Override
+    public Identifier getTextureLocation(AvatarRenderState state) {
+        return state.skin != null ? state.skin.body().texturePath() : DefaultPlayerSkin.getDefaultTexture();
     }
 }

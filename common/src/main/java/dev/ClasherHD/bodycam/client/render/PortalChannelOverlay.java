@@ -1,115 +1,73 @@
 package dev.ClasherHD.bodycam.client.render;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import dev.ClasherHD.bodycam.item.PortableNetherPortalItem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
-import net.minecraft.client.resources.sounds.SoundInstance;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.util.ARGB;
+import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 
 @SuppressWarnings("null")
-public class PortalChannelOverlay {
+public final class PortalChannelOverlay {
 
-    public static final PortalChannelOverlay INSTANCE = new PortalChannelOverlay();
-    private PortalChannelSoundInstance activeSound;
+    private static float lastAlpha = 0.0F;
 
-    public static void startChannel(long startTick, int durationTicks) {
-    }
-
-    public static void stopChannel() {
+    private PortalChannelOverlay() {
     }
 
     public static void render(GuiGraphics graphics, float partialTick) {
-        INSTANCE.renderOverlay(graphics, partialTick);
-    }
-
-    public void renderOverlay(GuiGraphics graphics, float partialTick) {
         Minecraft mc = Minecraft.getInstance();
-        Player player = mc.player;
-        if (player == null) {
-            stopSound(mc);
+        if (mc.player == null || mc.options.hideGui) {
+            lastAlpha = 0.0F;
             return;
         }
 
-        if (player.isUsingItem()) {
-            ItemStack usedItem = player.getUseItem();
-            if (usedItem.getItem() instanceof PortableNetherPortalItem) {
-                int totalDuration = usedItem.getUseDuration(player);
-                int remainingTicks = player.getUseItemRemainingTicks();
-                int ticksUsed = Math.max(0, totalDuration - remainingTicks);
-
-                if (ticksUsed >= 1 && (activeSound == null || activeSound.isStopped())) {
-                    activeSound = new PortalChannelSoundInstance(player);
-                    mc.getSoundManager().play(activeSound);
-                }
-
-                float progress = Math.min(1.0F, (ticksUsed + partialTick) / (float) totalDuration);
-                float alpha = progress * progress * 0.8F + 0.2F;
-
-                int screenWidth = mc.getWindow().getGuiScaledWidth();
-                int screenHeight = mc.getWindow().getGuiScaledHeight();
-
-                RenderSystem.disableDepthTest();
-                RenderSystem.depthMask(false);
-                RenderSystem.enableBlend();
-                RenderSystem.defaultBlendFunc();
-                graphics.setColor(1.0F, 1.0F, 1.0F, alpha);
-
-                TextureAtlasSprite sprite = mc.getBlockRenderer().getBlockModel(Blocks.NETHER_PORTAL.defaultBlockState())
-                        .getParticleIcon();
-                graphics.blit(0, 0, -90, screenWidth, screenHeight, sprite);
-
-                graphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
-                RenderSystem.depthMask(true);
-                RenderSystem.enableDepthTest();
-                RenderSystem.disableBlend();
+        if (!mc.player.isUsingItem()) {
+            lastAlpha = Math.max(0.0F, lastAlpha - 0.1F);
+            if (lastAlpha <= 0.01F) {
+                lastAlpha = 0.0F;
                 return;
             }
+            drawNetherPortalOverlay(mc, graphics, lastAlpha);
+            return;
         }
 
-        stopSound(mc);
+        ItemStack usedItem = mc.player.getUseItem();
+        if (!(usedItem.getItem() instanceof PortableNetherPortalItem)) {
+            lastAlpha = 0.0F;
+            return;
+        }
+
+        int total = usedItem.getUseDuration(mc.player);
+        if (total <= 0) {
+            lastAlpha = 0.0F;
+            return;
+        }
+
+        int remaining = mc.player.getUseItemRemainingTicks();
+        float elapsed = (total - remaining) + partialTick;
+        float progress = Mth.clamp(elapsed / (float) total, 0.0F, 1.0F);
+        float alpha = Mth.clamp(progress * 0.9F, 0.05F, 0.9F);
+        lastAlpha = alpha;
+
+        drawNetherPortalOverlay(mc, graphics, alpha);
     }
 
-    private void stopSound(Minecraft mc) {
-        if (activeSound != null) {
-            activeSound.stopSound();
-            mc.getSoundManager().stop(activeSound);
-            activeSound = null;
-        }
-    }
-
-    public static class PortalChannelSoundInstance extends AbstractTickableSoundInstance {
-        private final Player player;
-
-        public PortalChannelSoundInstance(Player player) {
-            super(SoundEvents.PORTAL_TRIGGER, SoundSource.AMBIENT, SoundInstance.createUnseededRandom());
-            this.player = player;
-            this.looping = false;
-            this.delay = 0;
-            this.volume = 0.25F;
-            this.pitch = player.getRandom().nextFloat() * 0.4F + 0.8F;
-            this.attenuation = SoundInstance.Attenuation.NONE;
-            this.relative = true;
-            this.x = 0.0D;
-            this.y = 0.0D;
-            this.z = 0.0D;
-        }
-
-        public void stopSound() {
-            this.stop();
-        }
-
-        @Override
-        public void tick() {
-            if (this.player.isRemoved() || !this.player.isUsingItem() || !(this.player.getUseItem().getItem() instanceof PortableNetherPortalItem)) {
-                this.stop();
-            }
-        }
+    private static void drawNetherPortalOverlay(Minecraft mc, GuiGraphics graphics, float alpha) {
+        TextureAtlasSprite sprite = mc.getBlockRenderer()
+                .getBlockModelShaper()
+                .getParticleIcon(Blocks.NETHER_PORTAL.defaultBlockState());
+        graphics.blitSprite(
+                RenderPipelines.GUI_TEXTURED,
+                sprite,
+                0,
+                0,
+                graphics.guiWidth(),
+                graphics.guiHeight(),
+                ARGB.white(alpha)
+        );
     }
 }

@@ -10,15 +10,20 @@
     "MobTargetMixin"
   ],
   "client": [
+    "AvatarRendererMixin",
+    "AvatarRenderStateMixin",
     "CameraMixin",
     "ClientPacketListenerMixin",
+    "ConditionalItemModelPropertiesAccessor",
+    "EntityRenderDispatcherMixin",
+    "GuiGraphicsAccessor",
     "GuiMixin",
     "ItemFrameRendererMixin",
+    "ItemFrameRenderStateMixin",
     "ItemInHandRendererMixin",
-    "ItemPropertiesAccessor",
-    "ItemRendererMixin",
     "LivingEntityRendererAccessor",
-    "ModelBakeryMixin"
+    "RangeSelectItemModelPropertiesAccessor",
+    "SelectItemModelUnbakedSwitchMixin"
   ],
   "injectors": {
     "defaultRequire": 1

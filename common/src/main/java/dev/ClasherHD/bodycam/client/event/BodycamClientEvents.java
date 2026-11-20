@@ -8,15 +8,15 @@ import dev.ClasherHD.bodycam.client.gui.PlayerSelectionScreen;
 import dev.ClasherHD.bodycam.network.PacketHandler;
 import dev.ClasherHD.bodycam.network.bodycam.SyncBodycamRequestC2SPacket;
 import dev.ClasherHD.bodycam.registry.ModBlocks;
-import dev.architectury.event.CompoundEventResult;
-import dev.architectury.event.EventResult;
 import dev.architectury.event.events.client.ClientPlayerEvent;
 import dev.architectury.event.events.client.ClientTickEvent;
 import dev.architectury.event.events.common.InteractionEvent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 
+@SuppressWarnings("null")
 public final class BodycamClientEvents {
     private BodycamClientEvents() {
     }
@@ -35,19 +35,13 @@ public final class BodycamClientEvents {
             PlayerSelectionScreen.observingMe.clear();
             CameraSnapState.clearAll();
         });
-        InteractionEvent.RIGHT_CLICK_ITEM.register((player, hand) -> {
-            if (handleHologramInteraction(player, hand)) {
-                return CompoundEventResult.interruptTrue(player.getItemInHand(hand));
-            }
-            return CompoundEventResult.pass();
-        });
+        InteractionEvent.RIGHT_CLICK_ITEM.register((player, hand) ->
+                handleHologramInteraction(player, hand) ? InteractionResult.SUCCESS : InteractionResult.PASS
+        );
         InteractionEvent.CLIENT_RIGHT_CLICK_AIR.register(BodycamClientEvents::handleHologramInteraction);
-        InteractionEvent.RIGHT_CLICK_BLOCK.register((player, hand, pos, face) -> {
-            if (handleHologramInteraction(player, hand)) {
-                return EventResult.interruptTrue();
-            }
-            return EventResult.pass();
-        });
+        InteractionEvent.RIGHT_CLICK_BLOCK.register((player, hand, pos, face) ->
+                handleHologramInteraction(player, hand) ? InteractionResult.SUCCESS : InteractionResult.PASS
+        );
     }
 
     private static void onClientTick(Minecraft mc) {

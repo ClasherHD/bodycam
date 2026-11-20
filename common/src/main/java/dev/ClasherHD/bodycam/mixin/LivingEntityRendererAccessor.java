@@ -2,6 +2,7 @@ package dev.ClasherHD.bodycam.mixin;
 
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
+import net.minecraft.client.renderer.item.ItemModelResolver;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
@@ -11,4 +12,7 @@ import java.util.List;
 public interface LivingEntityRendererAccessor {
     @Accessor("layers")
     List<RenderLayer<?, ?>> bodycam$getLayers();
+
+    @Accessor("itemModelResolver")
+    ItemModelResolver bodycam$getItemModelResolver();
 }

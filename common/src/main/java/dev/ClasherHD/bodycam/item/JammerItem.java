@@ -10,11 +10,14 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permissions;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -58,7 +61,7 @@ public class JammerItem extends Item {
     }
 
     @Override
-    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+    public InteractionResult use(Level level, Player player, InteractionHand hand) {
         ItemStack stackInHand = player.getItemInHand(hand);
         if (!level.isClientSide()) {
             syncConfiguredMaxDamage(stackInHand);
@@ -70,20 +73,20 @@ public class JammerItem extends Item {
                     tag.remove("active_id");
                 });
             }
-            return InteractionResultHolder.fail(stackInHand);
+            return InteractionResult.FAIL;
         }
         if (!level.isClientSide() && player instanceof ServerPlayer sp) {
-            if (ModServerConfig.OP_ONLY_MODE.get() && !sp.hasPermissions(2)) {
+            if (ModServerConfig.OP_ONLY_MODE.get() && !sp.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
                 sp.sendSystemMessage(Component.translatable("message.bodycam.op_only").withStyle(ChatFormatting.RED));
-                return InteractionResultHolder.fail(stackInHand);
+                return InteractionResult.FAIL;
             }
             if (ModServerConfig.isDimensionBlacklisted(level)) {
                 sp.sendSystemMessage(Component.translatable("message.bodycam.dimension_blacklisted").withStyle(ChatFormatting.RED));
-                return InteractionResultHolder.fail(stackInHand);
+                return InteractionResult.FAIL;
             }
             if (!ModServerConfig.ENABLE_JAMMER.get()) {
                 sp.sendSystemMessage(Component.translatable("message.bodycam.jammer_disabled").withStyle(ChatFormatting.RED));
-                return InteractionResultHolder.fail(stackInHand);
+                return InteractionResult.FAIL;
             }
             int currentMode = getMode(stackInHand);
             int nextMode = (currentMode + 1) % 3;
@@ -92,7 +95,7 @@ public class JammerItem extends Item {
             UUID activeId = null;
             if (nextMode > 0) {
                 activeId = UUID.randomUUID();
-                pData.putUUID("bodycam_active_jammer_id", activeId);
+                PersistentDataAccess.putUUID(pData, "bodycam_active_jammer_id", activeId);
                 pData.putLong("bodycam_jammer_heartbeat", level.getGameTime());
                 pData.putInt("bodycam_jammer_mode", nextMode);
             } else {
@@ -113,7 +116,7 @@ public class JammerItem extends Item {
                         ItemNbtAccess.updateTag(stack, tag -> {
                             tag.putInt("JammerMode", nextMode);
                             if (finalActiveId != null) {
-                                tag.putUUID("active_id", finalActiveId);
+                                PersistentDataAccess.putUUID(tag, "active_id", finalActiveId);
                             } else {
                                 tag.remove("active_id");
                             }
@@ -134,12 +137,13 @@ public class JammerItem extends Item {
             ChatFormatting color = nextMode == 0 ? ChatFormatting.RED : (nextMode == 1 ? ChatFormatting.GREEN : ChatFormatting.BLUE);
             sp.displayClientMessage(Component.translatable(key).withStyle(color), true);
         }
-        return InteractionResultHolder.sidedSuccess(stackInHand, level.isClientSide());
+        return InteractionResult.SUCCESS;
     }
 
     @Override
-    public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
-        if (!level.isClientSide() && entity instanceof ServerPlayer player) {
+    public void inventoryTick(ItemStack stack, ServerLevel level, Entity entity, EquipmentSlot slot) {
+        super.inventoryTick(stack, level, entity, slot);
+        if (entity instanceof ServerPlayer player) {
             syncConfiguredMaxDamage(stack);
             if (ItemDurabilityHelper.isEmpty(stack)) {
                 if (getMode(stack) > 0) {
@@ -155,13 +159,13 @@ public class JammerItem extends Item {
             boolean hasActivePlayerJammer = false;
             UUID playerActiveId = null;
             int playerActiveMode = 0;
-            if (pData.hasUUID("bodycam_active_jammer_id")) {
-                long lastHeartbeat = pData.getLong("bodycam_jammer_heartbeat");
+            if (PersistentDataAccess.hasUUID(pData, "bodycam_active_jammer_id")) {
+                long lastHeartbeat = pData.getLongOr("bodycam_jammer_heartbeat", 0L);
                 boolean isCreative = player.isCreative();
                 if (isCreative || (level.getGameTime() - lastHeartbeat <= 10)) {
                     hasActivePlayerJammer = true;
-                    playerActiveId = pData.getUUID("bodycam_active_jammer_id");
-                    playerActiveMode = pData.getInt("bodycam_jammer_mode");
+                    playerActiveId = PersistentDataAccess.getUUID(pData, "bodycam_active_jammer_id");
+                    playerActiveMode = pData.getIntOr("bodycam_jammer_mode", 0);
                 }
             }
 
@@ -174,7 +178,7 @@ public class JammerItem extends Item {
                 if (!playerActiveId.equals(itemActiveId)) {
                     ItemNbtAccess.updateTag(stack, tag -> {
                         tag.putInt("JammerMode", finalPlayerActiveMode);
-                        tag.putUUID("active_id", finalPlayerActiveId);
+                        PersistentDataAccess.putUUID(tag, "active_id", finalPlayerActiveId);
                     });
                     itemMode = playerActiveMode;
                 } else {
@@ -187,7 +191,7 @@ public class JammerItem extends Item {
                             ? Math.max(1, ModServerConfig.JAMMER_LIMITED_INTERVAL_TICKS.get())
                             : Math.max(1, ModServerConfig.JAMMER_NORMAL_INTERVAL_TICKS.get());
                     long gameTime = level.getGameTime();
-                    if (gameTime % interval == 0 && pData.getLong("bodycam_jammer_last_durability_tick") != gameTime) {
+                    if (gameTime % interval == 0 && pData.getLongOr("bodycam_jammer_last_durability_tick", 0L) != gameTime) {
                         pData.putLong("bodycam_jammer_last_durability_tick", gameTime);
                         ItemDurabilityHelper.damagePerTime(stack, player, 1);
                         if (ItemDurabilityHelper.isEmpty(stack)) {
@@ -239,15 +243,5 @@ public class JammerItem extends Item {
     @Override
     public boolean isBarVisible(ItemStack stack) {
         return stack.isDamaged() && !ItemDurabilityHelper.isEmpty(stack);
-    }
-
-    @Override
-    public boolean isEnchantable(ItemStack stack) {
-        return true;
-    }
-
-    @Override
-    public int getEnchantmentValue() {
-        return 1;
     }
 }

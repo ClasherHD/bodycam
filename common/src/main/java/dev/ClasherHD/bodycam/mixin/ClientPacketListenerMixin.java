@@ -23,8 +23,8 @@ public abstract class ClientPacketListenerMixin {
         if (this.level == null) {
             return;
         }
-        Entity entity = this.level.getEntity(packet.getId());
-        if (entity != null && !entity.isControlledByLocalInstance()) {
+        Entity entity = this.level.getEntity(packet.id());
+        if (entity != null && !entity.isLocalInstanceAuthoritative()) {
             CameraSnapState.handleRemoteVanillaPositionPacket(entity, true);
         }
     }
@@ -35,7 +35,7 @@ public abstract class ClientPacketListenerMixin {
             return;
         }
         Entity entity = packet.getEntity(this.level);
-        if (entity != null && !entity.isControlledByLocalInstance()) {
+        if (entity != null && !entity.isLocalInstanceAuthoritative()) {
             CameraSnapState.handleRemoteVanillaPositionPacket(entity, packet.hasPosition());
         }
     }
@@ -47,7 +47,7 @@ public abstract class ClientPacketListenerMixin {
         }
         Entity entity = packet.getEntity(this.level);
         if (entity != null) {
-            CameraSnapState.handleRemoteVanillaHeadPacket(entity, (float) (packet.getYHeadRot() * 360) / 256.0F);
+            CameraSnapState.handleRemoteVanillaHeadPacket(entity, packet.getYHeadRot());
         }
     }
 }

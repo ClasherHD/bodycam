@@ -1,10 +1,10 @@
 package dev.ClasherHD.bodycam.client.cache;
 
-import net.minecraft.ResourceLocationException;
+import net.minecraft.IdentifierException;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,7 +31,7 @@ class ClientLocatorCacheTest {
         BlockPos targetPos = new BlockPos(128, 70, -256);
         ClientLocatorCache.updateStructure(targetPos, "bodycam:scrambled");
 
-        ResourceKey<Level> expectedKey = ResourceKey.create(Registries.DIMENSION, ResourceLocation.fromNamespaceAndPath("bodycam", "scrambled"));
+        ResourceKey<Level> expectedKey = ResourceKey.create(Registries.DIMENSION, Identifier.fromNamespaceAndPath("bodycam", "scrambled"));
         assertThat(ClientLocatorCache.structureTarget).isEqualTo(targetPos);
         assertThat(ClientLocatorCache.structureTargetDimension).isEqualTo(expectedKey);
 
@@ -45,8 +45,8 @@ class ClientLocatorCacheTest {
     }
 
     @Test
-    void updateStructure_withInvalidDimension_throwsResourceLocationException() {
+    void updateStructure_withInvalidDimension_throwsIdentifierException() {
         assertThatThrownBy(() -> ClientLocatorCache.updateStructure(BlockPos.ZERO, "Invalid Dimension"))
-                .isInstanceOf(ResourceLocationException.class);
+                .isInstanceOf(IdentifierException.class);
     }
 }

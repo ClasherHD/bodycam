@@ -6,10 +6,11 @@ import dev.ClasherHD.bodycam.recipe.LoggerRefillRecipe;
 import dev.architectury.registry.registries.DeferredRegister;
 import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.world.item.crafting.CustomRecipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
-import net.minecraft.world.item.crafting.SimpleCraftingRecipeSerializer;
 
+@SuppressWarnings("null")
 public class ModRecipes {
     public static final DeferredRegister<RecipeSerializer<?>> SERIALIZERS =
             DeferredRegister.create(bodycam.MODID, Registries.RECIPE_SERIALIZER);
@@ -29,7 +30,7 @@ public class ModRecipes {
             SERIALIZERS.register("ancient_table_crafting", () -> AncientTableRecipe.Serializer.INSTANCE);
 
     public static final RegistrySupplier<RecipeSerializer<LoggerRefillRecipe>> LOGGER_REFILL_SERIALIZER =
-            SERIALIZERS.register("logger_refill", () -> new SimpleCraftingRecipeSerializer<>(LoggerRefillRecipe::new));
+            SERIALIZERS.register("logger_refill", () -> new CustomRecipe.Serializer<>(LoggerRefillRecipe::new));
 
     public static void register() {
         SERIALIZERS.register();

@@ -1,0 +1,22 @@
+{
+  "model": {
+    "type": "minecraft:condition",
+    "property": "bodycam:pages_empty",
+    "on_true": {
+      "type": "minecraft:model",
+      "model": "bodycam:item/log_book/log_book_empty"
+    },
+    "on_false": {
+      "type": "minecraft:condition",
+      "property": "bodycam:locked",
+      "on_true": {
+        "type": "minecraft:model",
+        "model": "bodycam:item/log_book/log_book_locked"
+      },
+      "on_false": {
+        "type": "minecraft:model",
+        "model": "bodycam:item/log_book"
+      }
+    }
+  }
+}

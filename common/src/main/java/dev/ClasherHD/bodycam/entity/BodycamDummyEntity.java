@@ -7,10 +7,8 @@ import dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket;
 import dev.ClasherHD.bodycam.platform.BodycamPlatform;
 import dev.ClasherHD.bodycam.util.PersistentDataAccess;
 import net.minecraft.core.NonNullList;
-import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -21,6 +19,7 @@ import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityReference;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.HumanoidArm;
@@ -32,6 +31,8 @@ import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.Vec3;
 
 import org.jetbrains.annotations.Nullable;
@@ -43,8 +44,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @SuppressWarnings("null")
 public class BodycamDummyEntity extends LivingEntity {
-    public static final EntityDataAccessor<Optional<UUID>> OWNER_UUID = SynchedEntityData
-            .defineId(BodycamDummyEntity.class, EntityDataSerializers.OPTIONAL_UUID);
+    public static final EntityDataAccessor<Optional<EntityReference<LivingEntity>>> OWNER_UUID = SynchedEntityData
+            .defineId(BodycamDummyEntity.class, EntityDataSerializers.OPTIONAL_LIVING_ENTITY_REFERENCE);
     public static final EntityDataAccessor<String> OWNER_NAME = SynchedEntityData
             .defineId(BodycamDummyEntity.class, EntityDataSerializers.STRING);
 
@@ -127,10 +128,10 @@ public class BodycamDummyEntity extends LivingEntity {
     public void die(DamageSource source) {
         UUID ownerId = getOwnerUuidOrNull();
         if (!this.level().isClientSide() && this.isLinkedToOwnerHealth() && ownerId != null) {
-            MinecraftServer server = this.getServer();
+            MinecraftServer server = this.level().getServer();
             if (server != null) {
                 ServerPlayer owner = server.getPlayerList().getPlayer(ownerId);
-                if (owner != null && PersistentDataAccess.get(owner).getBoolean("bodycam_active")) {
+                if (owner != null && PersistentDataAccess.get(owner).getBooleanOr("bodycam_active", false)) {
                     BodycamResetCameraPacket.executeReset(owner);
                     PacketHandler.sendToPlayer(owner, new BodycamForceClosePacket());
                 }
@@ -147,16 +148,16 @@ public class BodycamDummyEntity extends LivingEntity {
     }
 
     public Optional<UUID> getOwnerUUID() {
-        return this.entityData.get(OWNER_UUID);
+        return this.entityData.get(OWNER_UUID).map(EntityReference::getUUID);
     }
 
     @Nullable
     public UUID getOwnerUuidOrNull() {
-        return this.entityData.get(OWNER_UUID).orElse(null);
+        return this.entityData.get(OWNER_UUID).map(EntityReference::getUUID).orElse(null);
     }
 
     public void setOwnerUUID(@Nullable UUID uuid) {
-        this.entityData.set(OWNER_UUID, Optional.ofNullable(uuid));
+        this.entityData.set(OWNER_UUID, Optional.ofNullable(uuid).map(EntityReference::of));
     }
 
     public String getOwnerName() {
@@ -167,7 +168,6 @@ public class BodycamDummyEntity extends LivingEntity {
         this.entityData.set(OWNER_NAME, name == null ? "" : name);
     }
 
-    @Override
     public Iterable<ItemStack> getArmorSlots() {
         return this.armorItems;
     }
@@ -186,7 +186,6 @@ public class BodycamDummyEntity extends LivingEntity {
 
     @Override
     public void setItemSlot(EquipmentSlot slot, ItemStack stack) {
-        this.verifyEquippedItem(stack);
         switch (slot.getType()) {
             case HAND:
                 this.onEquipItem(slot, this.handItems.set(slot.getIndex(), stack), stack);
@@ -205,7 +204,7 @@ public class BodycamDummyEntity extends LivingEntity {
     }
 
     @Override
-    protected void hurtArmor(DamageSource source, float damage) {
+    public void hurtArmor(DamageSource source, float damage) {
         if (!this.isLinkedToOwnerHealth()) {
             return;
         }
@@ -220,7 +219,7 @@ public class BodycamDummyEntity extends LivingEntity {
             if (slot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR) {
                 ItemStack stack = this.getItemBySlot(slot);
                 if (!stack.isEmpty()) {
-                    if (source.is(DamageTypeTags.IS_FIRE) && stack.has(DataComponents.FIRE_RESISTANT)) {
+                    if (source.is(DamageTypeTags.IS_FIRE) && !stack.canBeHurtBy(source)) {
                         continue;
                     }
                     if (stack.isDamageableItem()) {
@@ -238,17 +237,17 @@ public class BodycamDummyEntity extends LivingEntity {
     }
 
     @Override
-    public boolean hurt(DamageSource source, float amount) {
+    public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
         if (!this.isLinkedToOwnerHealth()) {
-            return super.hurt(source, amount);
+            return super.hurtServer(level, source, amount);
         }
         UUID ownerId = getOwnerUuidOrNull();
-        if (!this.level().isClientSide() && ownerId != null) {
-            MinecraftServer server = this.getServer();
+        if (ownerId != null) {
+            MinecraftServer server = level.getServer();
             if (server != null) {
                 ServerPlayer player = server.getPlayerList().getPlayer(ownerId);
                 if (player != null) {
-                    boolean result = super.hurt(source, amount);
+                    boolean result = super.hurtServer(level, source, amount);
                     for (EquipmentSlot slot : EquipmentSlot.values()) {
                         if (slot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR) {
                             ItemStack dummyPiece = this.getItemBySlot(slot);
@@ -273,7 +272,7 @@ public class BodycamDummyEntity extends LivingEntity {
                 }
             }
         }
-        return super.hurt(source, amount);
+        return super.hurtServer(level, source, amount);
     }
 
     @Override
@@ -284,7 +283,7 @@ public class BodycamDummyEntity extends LivingEntity {
         }
         UUID ownerId = getOwnerUuidOrNull();
         if (!this.level().isClientSide() && ownerId != null) {
-            MinecraftServer server = this.getServer();
+            MinecraftServer server = this.level().getServer();
             if (server != null) {
                 ServerPlayer player = server.getPlayerList().getPlayer(ownerId);
                 if (player != null) {
@@ -315,9 +314,9 @@ public class BodycamDummyEntity extends LivingEntity {
                 return;
             }
             CompoundTag ownerData = PersistentDataAccess.get(owner);
-            if (!ownerData.getBoolean("bodycam_active")
-                    || !ownerData.hasUUID("bodycam_dummy_uuid")
-                    || !this.getUUID().equals(ownerData.getUUID("bodycam_dummy_uuid"))) {
+            if (!ownerData.getBooleanOr("bodycam_active", false)
+                    || !PersistentDataAccess.hasUUID(ownerData, "bodycam_dummy_uuid")
+                    || !this.getUUID().equals(PersistentDataAccess.getUUID(ownerData, "bodycam_dummy_uuid"))) {
                 this.discard();
                 return;
             }
@@ -325,7 +324,7 @@ public class BodycamDummyEntity extends LivingEntity {
             this.updateChunkForcing();
 
             DUMMY_POS.put(ownerId, this.position());
-            DUMMY_FALL.put(ownerId, this.fallDistance);
+            DUMMY_FALL.put(ownerId, (float) this.fallDistance);
             DUMMY_MOTION.put(ownerId, this.getDeltaMovement());
 
             this.setHealth(owner.getHealth());
@@ -341,7 +340,7 @@ public class BodycamDummyEntity extends LivingEntity {
 
             if (this.tickCount % 20 == 0 && !this.isInvulnerable() && this.isLinkedToOwnerHealth()) {
                 int origGm = BodycamSetCameraPacket.ORIGINAL_GAMEMODE
-                        .getOrDefault(ownerId, ownerData.getInt("bodycam_original_gamemode"));
+                        .getOrDefault(ownerId, ownerData.getIntOr("bodycam_original_gamemode", GameType.SURVIVAL.getId()));
                 if (origGm == GameType.SURVIVAL.getId()
                         || origGm == GameType.ADVENTURE.getId()) {
                     List<Mob> mobs = this.level().getEntitiesOfClass(
@@ -360,51 +359,47 @@ public class BodycamDummyEntity extends LivingEntity {
     }
 
     @Override
-    public void addAdditionalSaveData(CompoundTag tag) {
-        super.addAdditionalSaveData(tag);
+    public void addAdditionalSaveData(ValueOutput output) {
+        super.addAdditionalSaveData(output);
         UUID ownerId = getOwnerUuidOrNull();
         if (ownerId != null) {
-            tag.putUUID("OwnerUUID", ownerId);
+            output.store("OwnerUUID", UUIDUtil.CODEC, ownerId);
         }
-        tag.putString("OwnerName", getOwnerName());
+        output.putString("OwnerName", getOwnerName());
 
-        ListTag armorList = new ListTag();
+        ValueOutput.TypedOutputList<ItemStack> armorList = output.list("ArmorItems", ItemStack.OPTIONAL_CODEC);
         for (ItemStack stack : this.armorItems) {
-            Tag saved = stack.saveOptional(this.registryAccess());
-            armorList.add(saved instanceof CompoundTag compound ? compound : new CompoundTag());
+            armorList.add(stack == null ? ItemStack.EMPTY : stack);
         }
-        tag.put("ArmorItems", armorList);
 
-        ListTag handList = new ListTag();
+        ValueOutput.TypedOutputList<ItemStack> handList = output.list("HandItems", ItemStack.OPTIONAL_CODEC);
         for (ItemStack stack : this.handItems) {
-            Tag saved = stack.saveOptional(this.registryAccess());
-            handList.add(saved instanceof CompoundTag compound ? compound : new CompoundTag());
+            handList.add(stack == null ? ItemStack.EMPTY : stack);
         }
-        tag.put("HandItems", handList);
     }
 
     @Override
-    public void readAdditionalSaveData(CompoundTag tag) {
-        super.readAdditionalSaveData(tag);
-        if (tag.hasUUID("OwnerUUID")) {
-            setOwnerUUID(tag.getUUID("OwnerUUID"));
-        }
-        if (tag.contains("OwnerName")) {
-            setOwnerName(tag.getString("OwnerName"));
+    public void readAdditionalSaveData(ValueInput input) {
+        super.readAdditionalSaveData(input);
+        input.read("OwnerUUID", UUIDUtil.CODEC).ifPresent(this::setOwnerUUID);
+        input.getString("OwnerName").ifPresent(this::setOwnerName);
+
+        ValueInput.TypedInputList<ItemStack> armorList = input.listOrEmpty("ArmorItems", ItemStack.OPTIONAL_CODEC);
+        int armorIndex = 0;
+        for (ItemStack stack : armorList) {
+            if (armorIndex >= this.armorItems.size()) {
+                break;
+            }
+            this.armorItems.set(armorIndex++, stack);
         }
 
-        if (tag.contains("ArmorItems", Tag.TAG_LIST)) {
-            ListTag armorList = tag.getList("ArmorItems", Tag.TAG_COMPOUND);
-            for (int i = 0; i < this.armorItems.size() && i < armorList.size(); i++) {
-                this.armorItems.set(i, ItemStack.parseOptional(this.registryAccess(), armorList.getCompound(i)));
+        ValueInput.TypedInputList<ItemStack> handList = input.listOrEmpty("HandItems", ItemStack.OPTIONAL_CODEC);
+        int handIndex = 0;
+        for (ItemStack stack : handList) {
+            if (handIndex >= this.handItems.size()) {
+                break;
             }
-        }
-
-        if (tag.contains("HandItems", Tag.TAG_LIST)) {
-            ListTag handList = tag.getList("HandItems", Tag.TAG_COMPOUND);
-            for (int i = 0; i < this.handItems.size() && i < handList.size(); i++) {
-                this.handItems.set(i, ItemStack.parseOptional(this.registryAccess(), handList.getCompound(i)));
-            }
+            this.handItems.set(handIndex++, stack);
         }
     }
 

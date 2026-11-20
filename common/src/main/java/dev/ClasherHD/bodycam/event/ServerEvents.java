@@ -48,16 +48,16 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.npc.Villager;
-import net.minecraft.world.entity.npc.VillagerProfession;
+import net.minecraft.world.entity.npc.villager.Villager;
+import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.EnchantedBookItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ShearsItem;
@@ -115,7 +115,7 @@ public class ServerEvents {
             if (!serverLevel.isClientSide() && serverLevel.getGameTime() % 40L == 0L) {
                 for (Entity entity : serverLevel.getAllEntities()) {
                     if (entity instanceof Villager villager
-                            && villager.getVillagerData().getProfession() == VillagerProfession.LIBRARIAN) {
+                            && villager.getVillagerData().profession().is(VillagerProfession.LIBRARIAN)) {
                         clampLibrarianEnchantmentOffers(villager);
                     }
                 }
@@ -136,8 +136,8 @@ public class ServerEvents {
         EntityEvent.LIVING_DEATH.register((entity, source) -> {
             if (!entity.level().isClientSide() && entity instanceof ServerPlayer deadPlayer) {
                 UUID assassinId = CreepingDeathEntity.ACTIVE_HUNTS_BY_TARGET.remove(deadPlayer.getUUID());
-                if (assassinId != null && deadPlayer.server != null) {
-                    for (ServerLevel lvl : deadPlayer.server.getAllLevels()) {
+                if (assassinId != null && deadPlayer.level().getServer() != null) {
+                    for (ServerLevel lvl : deadPlayer.level().getServer().getAllLevels()) {
                         Entity e = lvl.getEntity(assassinId);
                         if (e instanceof CreepingDeathEntity assassin) {
                             assassin.onTargetKilled();
@@ -146,23 +146,23 @@ public class ServerEvents {
                     }
                 }
                 CompoundTag deadData = PersistentDataAccess.get(deadPlayer);
-                if (deadData.getBoolean("bodycam_active")) {
+                if (deadData.getBooleanOr("bodycam_active", false)) {
                     BodycamResetCameraPacket.executeReset(deadPlayer);
                     PacketHandler.sendToPlayer(deadPlayer, new BodycamForceClosePacket());
                 }
-                if (deadPlayer.server != null) {
+                if (deadPlayer.level().getServer() != null) {
                     UUID deadId = deadPlayer.getUUID();
-                    for (ServerPlayer online : deadPlayer.server.getPlayerList().getPlayers()) {
+                    for (ServerPlayer online : deadPlayer.level().getServer().getPlayerList().getPlayers()) {
                         CompoundTag obsData = PersistentDataAccess.get(online);
-                        if (obsData.getBoolean("bodycam_active")
-                                && !obsData.getBoolean("bodycam_watching_watchpoint")
-                                && obsData.hasUUID("bodycam_target_uuid")
-                                && deadId.equals(obsData.getUUID("bodycam_target_uuid"))) {
+                        if (obsData.getBooleanOr("bodycam_active", false)
+                                && !obsData.getBooleanOr("bodycam_watching_watchpoint", false)
+                                && PersistentDataAccess.hasUUID(obsData, "bodycam_target_uuid")
+                                && deadId.equals(PersistentDataAccess.getUUID(obsData, "bodycam_target_uuid"))) {
                             BodycamResetCameraPacket.executeReset(online);
                             PacketHandler.sendToPlayer(online, new BodycamForceClosePacket());
                         }
                     }
-                    PlatformCommonHelper.clearEntityChunks(deadPlayer.server, deadId);
+                    PlatformCommonHelper.clearEntityChunks(deadPlayer.level().getServer(), deadId);
                 }
             }
             return EventResult.pass();
@@ -170,34 +170,34 @@ public class ServerEvents {
         PlayerEvent.CHANGE_DIMENSION.register((targetPlayer, oldLevel, newLevel) -> {
             if (!targetPlayer.level().isClientSide()) {
                 UUID assassinId = CreepingDeathEntity.ACTIVE_HUNTS_BY_TARGET.get(targetPlayer.getUUID());
-                if (assassinId != null && targetPlayer.server != null) {
-                    for (ServerLevel lvl : targetPlayer.server.getAllLevels()) {
+                if (assassinId != null && targetPlayer.level().getServer() != null) {
+                    for (ServerLevel lvl : targetPlayer.level().getServer().getAllLevels()) {
                         Entity e = lvl.getEntity(assassinId);
                         if (e instanceof CreepingDeathEntity assassin && assassin.isAlive() && !assassin.isDeadOrDying()) {
-                            assassin.teleportToTargetDimension(targetPlayer.serverLevel(), targetPlayer);
+                            assassin.teleportToTargetDimension(targetPlayer.level(), targetPlayer);
                             break;
                         }
                     }
                 }
-                if (targetPlayer.server != null) {
+                if (targetPlayer.level().getServer() != null) {
                     UUID targetId = targetPlayer.getUUID();
-                    for (ServerPlayer online : targetPlayer.server.getPlayerList().getPlayers()) {
+                    for (ServerPlayer online : targetPlayer.level().getServer().getPlayerList().getPlayers()) {
                         if (online == targetPlayer) {
                             continue;
                         }
                         CompoundTag obsData = PersistentDataAccess.get(online);
-                        if (obsData.getBoolean("bodycam_active")
-                                && !obsData.getBoolean("bodycam_watching_watchpoint")
-                                && obsData.hasUUID("bodycam_target_uuid")
-                                && targetId.equals(obsData.getUUID("bodycam_target_uuid"))) {
-                            boolean isAllSeeing = obsData.getBoolean("bodycam_all_seeing_active");
+                        if (obsData.getBooleanOr("bodycam_active", false)
+                                && !obsData.getBooleanOr("bodycam_watching_watchpoint", false)
+                                && PersistentDataAccess.hasUUID(obsData, "bodycam_target_uuid")
+                                && targetId.equals(PersistentDataAccess.getUUID(obsData, "bodycam_target_uuid"))) {
+                            boolean isAllSeeing = obsData.getBooleanOr("bodycam_all_seeing_active", false);
                             int reachLevel = isAllSeeing ? 2 : (ModServerConfig.ENABLE_REACH_ENCHANTMENT.get()
-                                    ? obsData.getInt("bodycam_reach_level") : 0);
+                                    ? obsData.getIntOr("bodycam_reach_level", 0) : 0);
                             if (reachLevel < 2) {
                                 String origDimStr = BodycamSetCameraPacket.ORIGINAL_DIM.get(online.getUUID());
-                                ResourceKey<Level> dummyDim = online.serverLevel().dimension();
+                                ResourceKey<Level> dummyDim = online.level().dimension();
                                 if (origDimStr != null && !origDimStr.isEmpty()) {
-                                    ResourceLocation rl = ResourceLocation.tryParse(origDimStr);
+                                    Identifier rl = Identifier.tryParse(origDimStr);
                                     if (rl != null) {
                                         dummyDim = ResourceKey.create(Registries.DIMENSION, rl);
                                     }
@@ -214,15 +214,15 @@ public class ServerEvents {
             }
         });
         LootEvent.MODIFY_LOOT_TABLE.register((id, context, builtin) -> {
-            if (id.location().equals(ResourceLocation.withDefaultNamespace("chests/village/village_cartographer"))) {
+            if (id.identifier().equals(Identifier.withDefaultNamespace("chests/village/village_cartographer"))) {
                 context.addPool(LootPool.lootPool()
                         .setRolls(ConstantValue.exactly(1.0F))
                         .add(LootItem.lootTableItem(ModItems.CHERRY_HOUSE_EXPLORER_MAP.get()).setWeight(1))
                         .add(EmptyLootItem.emptyItem().setWeight(6)));
             }
         });
-        TradeRegistry.registerVillagerTrade(VillagerProfession.CARTOGRAPHER, 3, (trader, random) -> {
-            if (!(trader.level() instanceof ServerLevel sLevel)) {
+        TradeRegistry.registerVillagerTrade(VillagerProfession.CARTOGRAPHER, 3, (sLevel, trader, random) -> {
+            if (sLevel == null) {
                 return null;
             }
             ItemStack map = CherryHouseExplorerMapItem.createExplorerMap(sLevel, trader.blockPosition());
@@ -236,8 +236,8 @@ public class ServerEvents {
                     0, 12, 10, 0.2F
             );
         });
-        TradeRegistry.registerTradeForWanderingTrader(true, (trader, random) -> {
-            if (!(trader.level() instanceof ServerLevel sLevel)) {
+        TradeRegistry.registerTradeForWanderingTrader(TradeRegistry.WandererTradeType.RARE_TRADES, (sLevel, trader, random) -> {
+            if (sLevel == null) {
                 return null;
             }
             ItemStack map = CherryHouseExplorerMapItem.createExplorerMap(sLevel, trader.blockPosition());
@@ -253,9 +253,9 @@ public class ServerEvents {
         });
     }
 
-    private static EventResult onRightClickBlock(Player player, InteractionHand hand, BlockPos pos, Direction face) {
+    private static InteractionResult onRightClickBlock(Player player, InteractionHand hand, BlockPos pos, Direction face) {
         if (hand != InteractionHand.MAIN_HAND) {
-            return EventResult.pass();
+            return InteractionResult.PASS;
         }
         Level level = player.level();
         if (level.getBlockState(pos).is(Blocks.CARTOGRAPHY_TABLE)) {
@@ -277,26 +277,26 @@ public class ServerEvents {
                 if (!level.isClientSide() && player instanceof ServerPlayer sp) {
                     LogBookItem.handleCartographyInteraction(sp, book, other);
                 }
-                return EventResult.interruptTrue();
+                return InteractionResult.SUCCESS;
             }
         }
         if (!level.isClientSide() && player instanceof ServerPlayer sp && !sp.isSpectator()) {
             BlockEntity be = level.getBlockEntity(pos);
             if (be != null) {
                 CompoundTag beData = PersistentDataAccess.get(be);
-                if (beData.getBoolean("BodycamEmptyCherryChest")) {
+                if (beData.getBooleanOr("BodycamEmptyCherryChest", false)) {
                     beData.remove("BodycamEmptyCherryChest");
                     be.setChanged();
                     ModAdvancements.award(sp, ModAdvancements.EMPTY_CHERRY_CHEST);
                 }
-                if (beData.getBoolean("BodycamUltraRareCherryChest")) {
+                if (beData.getBooleanOr("BodycamUltraRareCherryChest", false)) {
                     beData.remove("BodycamUltraRareCherryChest");
                     be.setChanged();
                     ModAdvancements.award(sp, ModAdvancements.ULTRA_RARE_CHEST);
                 }
             }
         }
-        return EventResult.pass();
+        return InteractionResult.PASS;
     }
 
     private static void clampLibrarianEnchantmentOffers(Villager villager) {
@@ -304,19 +304,19 @@ public class ServerEvents {
         if (offers == null || offers.isEmpty()) {
             return;
         }
-        Registry<Enchantment> registry = villager.level().registryAccess().registryOrThrow(Registries.ENCHANTMENT);
-        Holder<Enchantment> nightspy = registry.getHolderOrThrow(ModEnchantments.NIGHTSPY);
-        Holder<Enchantment> anonymity = registry.getHolderOrThrow(ModEnchantments.ANONYMITY);
+        Registry<Enchantment> registry = villager.level().registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+        Holder<Enchantment> nightspy = registry.getOrThrow(ModEnchantments.NIGHTSPY);
+        Holder<Enchantment> anonymity = registry.getOrThrow(ModEnchantments.ANONYMITY);
         for (int i = 0; i < offers.size(); i++) {
             MerchantOffer offer = offers.get(i);
             ItemStack result = offer.getResult();
-            if (!(result.getItem() instanceof EnchantedBookItem)) {
+            if (!result.is(Items.ENCHANTED_BOOK)) {
                 continue;
             }
             ItemEnchantments enchants = EnchantmentHelper.getEnchantmentsForCrafting(result);
             boolean needsReplace = enchants.getLevel(nightspy) > 1 || enchants.getLevel(anonymity) > 0;
             if (needsReplace) {
-                ItemStack clampedBook = EnchantedBookItem.createForEnchantment(new EnchantmentInstance(nightspy, 1));
+                ItemStack clampedBook = EnchantmentHelper.createBook(new EnchantmentInstance(nightspy, 1));
                 ItemCost costA = offer.getItemCostA();
                 if (costA.count() > 19) {
                     costA = new ItemCost(costA.item(), 14, costA.components());
@@ -357,39 +357,39 @@ public class ServerEvents {
     }
 
     public static void onPlayerLogin(ServerPlayer player) {
-        if (player == null || player.level().isClientSide() || player.server == null) {
+        if (player == null || player.level().isClientSide() || player.level().getServer() == null) {
             return;
         }
         CompoundTag data = PersistentDataAccess.get(player);
-        if (data.getBoolean("bodycam_active")
-                || data.contains("bodycam_target_uuid")
-                || data.contains("bodycam_dummy_uuid")) {
+        if (data.getBooleanOr("bodycam_active", false)
+                || PersistentDataAccess.hasUUID(data, "bodycam_target_uuid")
+                || PersistentDataAccess.hasUUID(data, "bodycam_dummy_uuid")) {
 
             if (data.contains("bodycam_orig_dim")) {
-                String dimStr = data.getString("bodycam_orig_dim");
-                ResourceLocation rl = ResourceLocation.tryParse(dimStr);
+                String dimStr = data.getStringOr("bodycam_orig_dim", "");
+                Identifier rl = Identifier.tryParse(dimStr);
                 if (rl != null) {
                     ResourceKey<Level> dimKey = ResourceKey.create(Registries.DIMENSION, rl);
-                    ServerLevel origLvl = player.server.getLevel(dimKey);
+                    ServerLevel origLvl = player.level().getServer().getLevel(dimKey);
                     if (origLvl != null) {
-                        double ox = data.getDouble("bodycam_orig_x");
-                        double oy = data.getDouble("bodycam_orig_y");
-                        double oz = data.getDouble("bodycam_orig_z");
-                        float oyrot = data.getFloat("bodycam_orig_yrot");
-                        float oxrot = data.getFloat("bodycam_orig_xrot");
-                        player.teleportTo(origLvl, ox, oy, oz, Set.of(), oyrot, oxrot);
+                        double ox = data.getDoubleOr("bodycam_orig_x", 0.0D);
+                        double oy = data.getDoubleOr("bodycam_orig_y", 0.0D);
+                        double oz = data.getDoubleOr("bodycam_orig_z", 0.0D);
+                        float oyrot = data.getFloatOr("bodycam_orig_yrot", 0.0F);
+                        float oxrot = data.getFloatOr("bodycam_orig_xrot", 0.0F);
+                        player.teleportTo(origLvl, ox, oy, oz, Set.of(), oyrot, oxrot, true);
                         player.setOldPosAndRot();
                     }
                 }
             }
 
-            if (data.contains("bodycam_dummy_uuid")) {
-                UUID dummyId = data.getUUID("bodycam_dummy_uuid");
-                for (ServerLevel lvl : player.server.getAllLevels()) {
+            if (PersistentDataAccess.hasUUID(data, "bodycam_dummy_uuid")) {
+                UUID dummyId = PersistentDataAccess.getUUID(data, "bodycam_dummy_uuid");
+                for (ServerLevel lvl : player.level().getServer().getAllLevels()) {
                     Entity e = lvl.getEntity(dummyId);
                     if (e != null) {
                         if (!data.contains("bodycam_orig_dim")) {
-                            player.teleportTo(lvl, e.getX(), e.getY(), e.getZ(), Set.of(), e.getYRot(), e.getXRot());
+                            player.teleportTo(lvl, e.getX(), e.getY(), e.getZ(), Set.of(), e.getYRot(), e.getXRot(), true);
                             player.setOldPosAndRot();
                         }
                         e.discard();
@@ -398,10 +398,10 @@ public class ServerEvents {
                 }
             }
 
-            if (data.contains("bodycam_target_uuid")) {
-                UUID oldTargetId = data.getUUID("bodycam_target_uuid");
+            if (PersistentDataAccess.hasUUID(data, "bodycam_target_uuid")) {
+                UUID oldTargetId = PersistentDataAccess.getUUID(data, "bodycam_target_uuid");
                 if (oldTargetId != null) {
-                    ServerPlayer oldTarget = player.server.getPlayerList().getPlayer(oldTargetId);
+                    ServerPlayer oldTarget = player.level().getServer().getPlayerList().getPlayer(oldTargetId);
                     if (oldTarget != null) {
                         PacketHandler.sendToPlayer(oldTarget, new CrossObservationSyncPacket(player.getUUID(), false));
                     }
@@ -409,20 +409,20 @@ public class ServerEvents {
             }
 
             if (data.contains("bodycam_original_gamemode")) {
-                int gameModeId = data.getInt("bodycam_original_gamemode");
+                int gameModeId = data.getIntOr("bodycam_original_gamemode", 0);
                 player.setGameMode(GameType.byId(gameModeId));
             }
             player.setInvisible(false);
             BodycamResetCameraPacket.cleanupPlayerNbtAndMaps(player);
-            PlatformCommonHelper.clearEntityChunks(player.server, player.getUUID());
-        } else if (data.getBoolean("bodycam_all_seeing_active") || data.getBoolean("bodycam_all_seeing_pending")) {
+            PlatformCommonHelper.clearEntityChunks(player.level().getServer(), player.getUUID());
+        } else if (data.getBooleanOr("bodycam_all_seeing_active", false) || data.getBooleanOr("bodycam_all_seeing_pending", false)) {
             data.remove("bodycam_all_seeing_active");
             data.remove("bodycam_all_seeing_pending");
         }
     }
 
     public static void onPlayerLogout(ServerPlayer player) {
-        if (player == null || player.level().isClientSide() || player.server == null) {
+        if (player == null || player.level().isClientSide() || player.level().getServer() == null) {
             return;
         }
         UUID id = player.getUUID();
@@ -432,7 +432,7 @@ public class ServerEvents {
         POSITION_LOCKS.remove(id);
 
         CompoundTag data = PersistentDataAccess.get(player);
-        if (data.getBoolean("bodycam_active") || data.contains("bodycam_target_uuid") || data.contains("bodycam_dummy_uuid")) {
+        if (data.getBooleanOr("bodycam_active", false) || PersistentDataAccess.hasUUID(data, "bodycam_target_uuid") || PersistentDataAccess.hasUUID(data, "bodycam_dummy_uuid")) {
             BodycamResetCameraPacket.executeReset(player);
         }
 
@@ -443,22 +443,22 @@ public class ServerEvents {
         BodycamDummyEntity.DUMMY_POS.remove(id);
         BodycamDummyEntity.DUMMY_FALL.remove(id);
         BodycamDummyEntity.DUMMY_MOTION.remove(id);
-        PlatformCommonHelper.clearEntityChunks(player.server, id);
+        PlatformCommonHelper.clearEntityChunks(player.level().getServer(), id);
         data.remove("bodycam_all_seeing_active");
         data.remove("bodycam_all_seeing_pending");
     }
 
     private static ServerLevel resolveFogLevel(ServerPlayer observer, String dimStr) {
-        if (dimStr != null && !dimStr.isEmpty() && observer.server != null) {
-            ResourceLocation rl = ResourceLocation.tryParse(dimStr);
+        if (dimStr != null && !dimStr.isEmpty() && observer.level().getServer() != null) {
+            Identifier rl = Identifier.tryParse(dimStr);
             if (rl != null) {
-                ServerLevel found = observer.server.getLevel(ResourceKey.create(Registries.DIMENSION, rl));
+                ServerLevel found = observer.level().getServer().getLevel(ResourceKey.create(Registries.DIMENSION, rl));
                 if (found != null) {
                     return found;
                 }
             }
         }
-        return observer.serverLevel();
+        return observer.level();
     }
 
     public static void onServerPlayerTick(ServerPlayer observer) {
@@ -469,29 +469,29 @@ public class ServerEvents {
         ItemStack carried = observer.containerMenu.getCarried();
         CompoundTag data = PersistentDataAccess.get(observer);
 
-        int allSeeingFogTicks = data.getInt("bodycam_all_seeing_fog_ticks");
+        int allSeeingFogTicks = data.getIntOr("bodycam_all_seeing_fog_ticks", 0);
         if (allSeeingFogTicks > 0) {
             data.putInt("bodycam_all_seeing_fog_ticks", allSeeingFogTicks - 1);
-            ServerLevel fogLevel = resolveFogLevel(observer, data.getString("bodycam_fog_dim"));
-            double fx = data.getDouble("bodycam_fog_x");
-            double fy = data.getDouble("bodycam_fog_y");
-            double fz = data.getDouble("bodycam_fog_z");
+            ServerLevel fogLevel = resolveFogLevel(observer, data.getStringOr("bodycam_fog_dim", ""));
+            double fx = data.getDoubleOr("bodycam_fog_x", 0.0D);
+            double fy = data.getDoubleOr("bodycam_fog_y", 0.0D);
+            double fz = data.getDoubleOr("bodycam_fog_z", 0.0D);
             fogLevel.sendParticles(ParticleTypes.END_ROD, fx, fy + 1.0D, fz, 25, 0.85D, 0.85D, 0.85D, 0.03D);
         }
 
-        int cdFogTicks = data.getInt("bodycam_creeping_death_fog_ticks");
+        int cdFogTicks = data.getIntOr("bodycam_creeping_death_fog_ticks", 0);
         if (cdFogTicks > 0) {
             data.putInt("bodycam_creeping_death_fog_ticks", cdFogTicks - 1);
-            ServerLevel fogLevel = resolveFogLevel(observer, data.getString("bodycam_cd_fog_dim"));
-            double fx = data.getDouble("bodycam_cd_fog_x");
-            double fy = data.getDouble("bodycam_cd_fog_y");
-            double fz = data.getDouble("bodycam_cd_fog_z");
+            ServerLevel fogLevel = resolveFogLevel(observer, data.getStringOr("bodycam_cd_fog_dim", ""));
+            double fx = data.getDoubleOr("bodycam_cd_fog_x", 0.0D);
+            double fy = data.getDoubleOr("bodycam_cd_fog_y", 0.0D);
+            double fz = data.getDoubleOr("bodycam_cd_fog_z", 0.0D);
             fogLevel.sendParticles(ParticleTypes.LARGE_SMOKE, fx, fy + 1.0D, fz, 18, 0.75D, 0.85D, 0.75D, 0.02D);
             fogLevel.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, fx, fy + 1.0D, fz, 8, 0.65D, 0.75D, 0.65D, 0.01D);
             fogLevel.sendParticles(ParticleTypes.SCULK_SOUL, fx, fy + 1.0D, fz, 12, 0.75D, 0.85D, 0.75D, 0.03D);
         }
 
-        if (data.hasUUID("bodycam_active_jammer_id")) {
+        if (PersistentDataAccess.hasUUID(data, "bodycam_active_jammer_id")) {
             boolean hasJammer = (carried.getItem() instanceof JammerItem && !ItemDurabilityHelper.isEmpty(carried));
             if (!hasJammer) {
                 for (ItemStack accStack : BodycamPlatform.getEquippedAccessoryItems(observer, ModItems.JAMMER.get())) {
@@ -519,7 +519,7 @@ public class ServerEvents {
             }
         }
 
-        if (data.hasUUID("bodycam_active_anonymizer_id")) {
+        if (PersistentDataAccess.hasUUID(data, "bodycam_active_anonymizer_id")) {
             boolean hasAnonymizer = (carried.getItem() instanceof AnonymizerItem && !ItemDurabilityHelper.isEmpty(carried));
             if (!hasAnonymizer) {
                 for (ItemStack accStack : BodycamPlatform.getEquippedAccessoryItems(observer, ModItems.ANONYMIZER.get())) {
@@ -547,19 +547,19 @@ public class ServerEvents {
         }
 
         if (!carried.isEmpty() && (carried.getItem() instanceof JammerItem || carried.getItem() instanceof AnonymizerItem)) {
-            carried.getItem().inventoryTick(carried, observer.level(), observer, -1, false);
+            carried.getItem().inventoryTick(carried, observer.level(), observer, null);
         }
         for (ItemStack accStack : BodycamPlatform.getEquippedAccessoryItems(observer, ModItems.JAMMER.get())) {
-            accStack.getItem().inventoryTick(accStack, observer.level(), observer, -1, false);
+            accStack.getItem().inventoryTick(accStack, observer.level(), observer, null);
         }
         for (ItemStack accStack : BodycamPlatform.getEquippedAccessoryItems(observer, ModItems.ANONYMIZER.get())) {
-            accStack.getItem().inventoryTick(accStack, observer.level(), observer, -1, false);
+            accStack.getItem().inventoryTick(accStack, observer.level(), observer, null);
         }
 
         LockData lockData = POSITION_LOCKS.get(observer.getUUID());
         if (lockData != null) {
             if (observer.level().dimension() == lockData.originalDim) {
-                observer.teleportTo(observer.serverLevel(), lockData.x, lockData.y, lockData.z, Set.of(), lockData.yaw, lockData.pitch);
+                observer.teleportTo(observer.level(), lockData.x, lockData.y, lockData.z, Set.of(), lockData.yaw, lockData.pitch, true);
                 observer.hurtMarked = true;
                 lockData.lockTicks--;
                 if (lockData.lockTicks <= 0) {
@@ -570,13 +570,13 @@ public class ServerEvents {
             }
         }
 
-        if (data.getBoolean("bodycam_active") && data.contains("bodycam_target_uuid") && observer.server != null) {
-            UUID targetId = data.getUUID("bodycam_target_uuid");
+        if (data.getBooleanOr("bodycam_active", false) && PersistentDataAccess.hasUUID(data, "bodycam_target_uuid") && observer.level().getServer() != null) {
+            UUID targetId = PersistentDataAccess.getUUID(data, "bodycam_target_uuid");
 
             BodycamDummyEntity dummy = null;
-            if (data.contains("bodycam_dummy_uuid")) {
-                UUID dummyId = data.getUUID("bodycam_dummy_uuid");
-                for (ServerLevel lvl : observer.server.getAllLevels()) {
+            if (PersistentDataAccess.hasUUID(data, "bodycam_dummy_uuid")) {
+                UUID dummyId = PersistentDataAccess.getUUID(data, "bodycam_dummy_uuid");
+                for (ServerLevel lvl : observer.level().getServer().getAllLevels()) {
                     Entity e = lvl.getEntity(dummyId);
                     if (e instanceof BodycamDummyEntity d) {
                         dummy = d;
@@ -594,7 +594,7 @@ public class ServerEvents {
                 dummyPosVal = BodycamDummyEntity.DUMMY_POS.get(observer.getUUID());
                 String dimStr = BodycamSetCameraPacket.ORIGINAL_DIM.get(observer.getUUID());
                 if (dimStr != null && !dimStr.isEmpty()) {
-                    ResourceLocation rl = ResourceLocation.tryParse(dimStr);
+                    Identifier rl = Identifier.tryParse(dimStr);
                     if (rl != null) {
                         dummyDim = ResourceKey.create(Registries.DIMENSION, rl);
                     }
@@ -604,19 +604,19 @@ public class ServerEvents {
                 dummyPosVal = BodycamSetCameraPacket.ORIGINAL_POS.get(observer.getUUID());
             }
             if (dummyDim == null) {
-                dummyDim = observer.serverLevel().dimension();
+                dummyDim = observer.level().dimension();
             }
 
-            boolean isAllSeeing = data.getBoolean("bodycam_all_seeing_active");
+            boolean isAllSeeing = data.getBooleanOr("bodycam_all_seeing_active", false);
 
-            if (data.getBoolean("bodycam_watching_watchpoint")) {
-                WatchPointDummyEntity wp = WatchPointDummyEntity.findByUUID(observer.server, targetId);
+            if (data.getBooleanOr("bodycam_watching_watchpoint", false)) {
+                WatchPointDummyEntity wp = WatchPointDummyEntity.findByUUID(observer.level().getServer(), targetId);
                 if (wp == null || !wp.isAlive() || wp.isRemoved() || !(wp.level() instanceof ServerLevel wpLevel)) {
                     BodycamResetCameraPacket.executeReset(observer);
                     return;
                 }
                 int reachLevel = isAllSeeing ? 2 : (ModServerConfig.ENABLE_REACH_ENCHANTMENT.get()
-                        ? data.getInt("bodycam_reach_level") : 0);
+                        ? data.getIntOr("bodycam_reach_level", 0) : 0);
                 if (reachLevel < 2) {
                     boolean outOfRange = dummyDim != wp.level().dimension();
                     if (!outOfRange && reachLevel < 1 && dummyPosVal != null) {
@@ -634,14 +634,14 @@ public class ServerEvents {
                 if (observer.level().dimension() == wp.level().dimension()) {
                     observer.setPos(wp.getX(), wp.getY(), wp.getZ());
                 } else {
-                    observer.teleportTo(wpLevel, wp.getX(), wp.getY(), wp.getZ(), Set.of(), observer.getYRot(), observer.getXRot());
+                    observer.teleportTo(wpLevel, wp.getX(), wp.getY(), wp.getZ(), Set.of(), observer.getYRot(), observer.getXRot(), true);
                     observer.setOldPosAndRot();
                 }
                 observer.setCamera(observer);
                 return;
             }
 
-            ServerPlayer target = observer.server.getPlayerList().getPlayer(targetId);
+            ServerPlayer target = observer.level().getServer().getPlayerList().getPlayer(targetId);
             if (target != null && target.isAlive() && !target.isRemoved()) {
                 data.putInt("bodycam_disconnect_ticks", 0);
 
@@ -653,8 +653,8 @@ public class ServerEvents {
 
                 if (!isAllSeeing) {
                     CompoundTag targetData = PersistentDataAccess.get(target);
-                    long lastJammer = targetData.getLong("bodycam_jammer_heartbeat");
-                    int currentJammerMode = targetData.getInt("bodycam_jammer_mode");
+                    long lastJammer = targetData.getLongOr("bodycam_jammer_heartbeat", 0L);
+                    int currentJammerMode = targetData.getIntOr("bodycam_jammer_mode", 0);
                     boolean isJammerActive = (target.level().getGameTime() - lastJammer) <= 10;
                     if (!isJammerActive) {
                         currentJammerMode = 0;
@@ -680,7 +680,7 @@ public class ServerEvents {
                         return;
                     }
 
-                    int reachLevel = ModServerConfig.ENABLE_REACH_ENCHANTMENT.get() ? data.getInt("bodycam_reach_level") : 0;
+                    int reachLevel = ModServerConfig.ENABLE_REACH_ENCHANTMENT.get() ? data.getIntOr("bodycam_reach_level", 0) : 0;
                     if (reachLevel < 2) {
                         boolean outOfRange2 = dummyDim != target.level().dimension();
                         if (!outOfRange2 && reachLevel < 1 && dummyPosVal != null) {
@@ -700,12 +700,12 @@ public class ServerEvents {
                 if (observer.level().dimension() == target.level().dimension()) {
                     observer.setPos(target.getX(), target.getY(), target.getZ());
                 } else {
-                    observer.teleportTo(target.serverLevel(), target.getX(), target.getY(), target.getZ(), Set.of(), target.getYRot(), target.getXRot());
+                    observer.teleportTo(target.level(), target.getX(), target.getY(), target.getZ(), Set.of(), target.getYRot(), target.getXRot(), true);
                     observer.setOldPosAndRot();
                 }
                 observer.setCamera(target);
             } else {
-                int ticks = data.getInt("bodycam_disconnect_ticks") + 1;
+                int ticks = data.getIntOr("bodycam_disconnect_ticks", 0) + 1;
                 data.putInt("bodycam_disconnect_ticks", ticks);
                 if (ticks >= 40) {
                     BodycamResetCameraPacket.executeReset(observer);

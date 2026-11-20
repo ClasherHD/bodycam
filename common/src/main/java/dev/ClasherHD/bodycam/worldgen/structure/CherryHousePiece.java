@@ -10,9 +10,9 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.StructureManager;
@@ -37,7 +37,7 @@ import net.minecraft.world.level.storage.loot.LootTable;
 @SuppressWarnings("null")
 public class CherryHousePiece extends TemplateStructurePiece {
 
-    public static final ResourceLocation TEMPLATE_ID = bodycam.id("cherry_house");
+    public static final Identifier TEMPLATE_ID = bodycam.id("cherry_house");
     public static final BlockPos ROTATION_PIVOT = new BlockPos(13, 0, 11);
     public static final BlockPos SCHOLAR_LOCAL_POS = new BlockPos(13, 3, 7);
 
@@ -59,8 +59,8 @@ public class CherryHousePiece extends TemplateStructurePiece {
 
     public CherryHousePiece(StructurePieceSerializationContext context, CompoundTag tag) {
         super(ModStructures.CHERRY_HOUSE_PIECE.get(), tag, context.structureTemplateManager(),
-                id -> makeSettings(Rotation.valueOf(tag.getString("Rot"))));
-        this.scholarSpawned = tag.getBoolean("ScholarSpawned");
+                id -> makeSettings(Rotation.valueOf(tag.getStringOr("Rot", Rotation.NONE.name()))));
+        this.scholarSpawned = tag.getBooleanOr("ScholarSpawned", false);
     }
 
     private static StructurePlaceSettings makeSettings(Rotation rotation) {
@@ -92,9 +92,9 @@ public class CherryHousePiece extends TemplateStructurePiece {
 
             if (box.isInside(worldSpawnPos)) {
                 this.scholarSpawned = true;
-                ScholarEntity scholar = ModEntityTypes.SCHOLAR.get().create(level.getLevel());
+                ScholarEntity scholar = ModEntityTypes.SCHOLAR.get().create(level.getLevel(), EntitySpawnReason.STRUCTURE);
                 if (scholar != null) {
-                    scholar.moveTo(
+                    scholar.snapTo(
                             worldSpawnPos.getX() + 0.5D,
                             worldSpawnPos.getY(),
                             worldSpawnPos.getZ() + 0.5D,
@@ -104,10 +104,10 @@ public class CherryHousePiece extends TemplateStructurePiece {
                     scholar.finalizeSpawn(
                             level,
                             level.getCurrentDifficultyAt(worldSpawnPos),
-                            MobSpawnType.STRUCTURE,
+                            EntitySpawnReason.STRUCTURE,
                             null
                     );
-                    scholar.restrictTo(worldSpawnPos, 24);
+                    scholar.setHomeTo(worldSpawnPos, 24);
                     scholar.setPersistenceRequired();
                     level.addFreshEntityWithPassengers(scholar);
                 }

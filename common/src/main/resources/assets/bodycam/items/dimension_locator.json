@@ -1,0 +1,14 @@
+{
+  "model": {
+    "type": "minecraft:condition",
+    "property": "bodycam:empty",
+    "on_true": {
+      "type": "minecraft:model",
+      "model": "bodycam:item/dimension_locator_empty"
+    },
+    "on_false": {
+      "type": "minecraft:model",
+      "model": "bodycam:item/dimension_locator"
+    }
+  }
+}

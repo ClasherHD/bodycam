@@ -12,6 +12,7 @@ import net.minecraft.world.item.crafting.CustomRecipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.Level;
 
+@SuppressWarnings("null")
 public class LoggerRefillRecipe extends CustomRecipe {
     public LoggerRefillRecipe(CraftingBookCategory category) {
         super(category);
@@ -59,13 +60,12 @@ public class LoggerRefillRecipe extends CustomRecipe {
         return logger;
     }
 
-    @Override
     public boolean canCraftInDimensions(int width, int height) {
         return width * height >= 2;
     }
 
     @Override
-    public RecipeSerializer<?> getSerializer() {
+    public RecipeSerializer<LoggerRefillRecipe> getSerializer() {
         return ModRecipes.LOGGER_REFILL_SERIALIZER.get();
     }
 }

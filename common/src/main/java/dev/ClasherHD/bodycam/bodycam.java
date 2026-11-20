@@ -16,16 +16,17 @@ import dev.ClasherHD.bodycam.registry.ModMenus;
 import dev.ClasherHD.bodycam.registry.ModRecipes;
 import dev.ClasherHD.bodycam.registry.ModSounds;
 import dev.ClasherHD.bodycam.registry.ModStructures;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
 
+@SuppressWarnings("null")
 public class bodycam {
     public static final String MODID = "bodycam";
     public static final String MOD_ID = MODID;
     public static final Logger LOGGER = LogUtils.getLogger();
 
-    public static ResourceLocation id(String path) {
-        return ResourceLocation.fromNamespaceAndPath(MODID, path);
+    public static Identifier id(String path) {
+        return Identifier.fromNamespaceAndPath(MODID, path);
     }
 
     public static void init() {
@@ -33,9 +34,9 @@ public class bodycam {
         ModClientConfig.load();
         ModSounds.register();
         ModBlocks.register();
-        ModItems.register();
-        ModBlockEntities.register();
         ModEntityTypes.register();
+        ModBlockEntities.register();
+        ModItems.register();
         ModEnchantments.register();
         ModMenus.register();
         ModRecipes.register();

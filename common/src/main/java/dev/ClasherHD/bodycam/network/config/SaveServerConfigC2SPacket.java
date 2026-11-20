@@ -9,6 +9,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permissions;
 
 public class SaveServerConfigC2SPacket implements CustomPacketPayload {
     public static final Type<SaveServerConfigC2SPacket> TYPE = new Type<>(bodycam.id("save_server_config"));
@@ -36,7 +37,7 @@ public class SaveServerConfigC2SPacket implements CustomPacketPayload {
 
     public static void handle(SaveServerConfigC2SPacket msg, NetworkManager.PacketContext context) {
         context.queue(() -> {
-            if (context.getPlayer() instanceof ServerPlayer player && player.hasPermissions(2)) {
+            if (context.getPlayer() instanceof ServerPlayer player && player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
                 msg.snapshot.applyToConfigAndSave();
                 player.sendSystemMessage(Component.translatable("message.bodycam.config_saved").withStyle(ChatFormatting.GREEN));
             }

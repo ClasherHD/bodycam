@@ -9,10 +9,12 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.ObjectSelectionList;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.multiplayer.PlayerInfo;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import java.util.Map;
 import java.util.UUID;
@@ -20,7 +22,7 @@ import java.util.UUID;
 @SuppressWarnings("null")
 public class PlayerLocatorScreen extends Screen {
 
-    private static final ResourceLocation WINDOW_TEXTURE = bodycam.id("textures/gui/gui_window.png");
+    private static final Identifier WINDOW_TEXTURE = bodycam.id("textures/gui/gui_window.png");
     private final Map<UUID, Integer> jammers;
     private final Map<UUID, String> dimensions;
     private final Map<UUID, BlockPos> positions;
@@ -60,17 +62,17 @@ public class PlayerLocatorScreen extends Screen {
         if (this.minecraft != null && this.minecraft.getConnection() != null) {
             if (this.currentTarget != null && this.jammers.containsKey(this.currentTarget)) {
                 for (PlayerInfo info : this.minecraft.getConnection().getOnlinePlayers()) {
-                    if (info.getProfile().getId().equals(this.currentTarget)) {
-                        this.listWidget.addPlayerEntry(new PlayerEntry(info, info.getProfile().getName(), true));
+                    if (info.getProfile().id().equals(this.currentTarget)) {
+                        this.listWidget.addPlayerEntry(new PlayerEntry(info, info.getProfile().name(), true));
                         break;
                     }
                 }
             }
 
             for (PlayerInfo info : this.minecraft.getConnection().getOnlinePlayers()) {
-                if (this.minecraft.player != null && !info.getProfile().getId().equals(this.minecraft.player.getUUID()) && this.jammers.containsKey(info.getProfile().getId())) {
-                    if (this.currentTarget == null || !info.getProfile().getId().equals(this.currentTarget)) {
-                        this.listWidget.addPlayerEntry(new PlayerEntry(info, info.getProfile().getName(), false));
+                if (this.minecraft.player != null && !info.getProfile().id().equals(this.minecraft.player.getUUID()) && this.jammers.containsKey(info.getProfile().id())) {
+                    if (this.currentTarget == null || !info.getProfile().id().equals(this.currentTarget)) {
+                        this.listWidget.addPlayerEntry(new PlayerEntry(info, info.getProfile().name(), false));
                     }
                 }
             }
@@ -118,7 +120,7 @@ public class PlayerLocatorScreen extends Screen {
         }
 
         @Override
-        protected int getScrollbarPosition() {
+        protected int scrollBarX() {
             return this.listX + this.width - 6;
         }
 
@@ -149,7 +151,7 @@ public class PlayerLocatorScreen extends Screen {
                         if (isCurrentTarget) {
                             PacketHandler.sendToServer(new PlayerLocatorSelectC2SPacket(null, true));
                         } else {
-                            PacketHandler.sendToServer(new PlayerLocatorSelectC2SPacket(this.playerInfo.getProfile().getId(), false));
+                            PacketHandler.sendToServer(new PlayerLocatorSelectC2SPacket(this.playerInfo.getProfile().id(), false));
                         }
                         if (PlayerLocatorScreen.this.minecraft != null) {
                             PlayerLocatorScreen.this.minecraft.setScreen(null);
@@ -159,12 +161,17 @@ public class PlayerLocatorScreen extends Screen {
         }
 
         @Override
-        public void render(GuiGraphics graphics, int index, int top, int left, int width, int height, int mouseX, int mouseY, boolean isMouseOver, float partialTick) {
-            UUID uuid = this.playerInfo.getProfile().getId();
+        public void renderContent(GuiGraphics graphics, int mouseX, int mouseY, boolean isMouseOver, float partialTick) {
+            int left = this.getContentX();
+            int top = this.getContentY();
+            int width = this.getContentWidth();
+            int height = this.getContentHeight();
+
+            UUID uuid = this.playerInfo.getProfile().id();
             int jammerMode = PlayerLocatorScreen.this.jammers.getOrDefault(uuid, 0);
             String targetDim = PlayerLocatorScreen.this.dimensions.get(uuid);
             BlockPos targetPos = PlayerLocatorScreen.this.positions.get(uuid);
-            String myDim = Minecraft.getInstance().player != null ? Minecraft.getInstance().player.level().dimension().location().toString() : "";
+            String myDim = Minecraft.getInstance().player != null ? Minecraft.getInstance().player.level().dimension().identifier().toString() : "";
             BlockPos myPos = Minecraft.getInstance().player != null ? Minecraft.getInstance().player.blockPosition() : BlockPos.ZERO;
 
             boolean sameDim = myDim.equals(targetDim);
@@ -202,9 +209,9 @@ public class PlayerLocatorScreen extends Screen {
                 graphics.fill(left - 2, top + 1, left + width - 87, top + height - 1, highlightColor);
             }
 
-            ResourceLocation skin = this.playerInfo.getSkin().texture();
-            graphics.blit(skin, left + 4, top + 2, 32, 32, 8.0F, 8.0F, 8, 8, 64, 64);
-            graphics.blit(skin, left + 4, top + 2, 32, 32, 40.0F, 8.0F, 8, 8, 64, 64);
+            Identifier skin = this.playerInfo.getSkin().body().texturePath();
+            graphics.blit(RenderPipelines.GUI_TEXTURED, skin, left + 4, top + 2, 8.0F, 8.0F, 32, 32, 8, 8, 64, 64);
+            graphics.blit(RenderPipelines.GUI_TEXTURED, skin, left + 4, top + 2, 40.0F, 8.0F, 32, 32, 8, 8, 64, 64);
 
             graphics.drawString(PlayerLocatorScreen.this.font, this.displayName, left + 44, top + 14, nameColor);
 
@@ -214,8 +221,8 @@ public class PlayerLocatorScreen extends Screen {
         }
 
         @Override
-        public boolean mouseClicked(double mouseX, double mouseY, int button) {
-            return this.selectButton.mouseClicked(mouseX, mouseY, button);
+        public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+            return this.selectButton.mouseClicked(event, doubleClick);
         }
 
         @Override

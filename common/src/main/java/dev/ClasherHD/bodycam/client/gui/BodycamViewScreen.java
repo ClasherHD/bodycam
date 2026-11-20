@@ -1,13 +1,10 @@
 package dev.ClasherHD.bodycam.client.gui;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import dev.ClasherHD.bodycam.config.ModClientConfig;
 import dev.ClasherHD.bodycam.entity.WatchPointDummyEntity;
+import dev.ClasherHD.bodycam.mixin.GuiGraphicsAccessor;
 import dev.ClasherHD.bodycam.network.PacketHandler;
 import dev.ClasherHD.bodycam.network.bodycam.BodycamResetCameraPacket;
 import dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket;
@@ -15,27 +12,32 @@ import dev.ClasherHD.bodycam.network.watchpoint.WatchPointLookC2SPacket;
 import dev.ClasherHD.bodycam.registry.ModSounds;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.navigation.ScreenRectangle;
+import net.minecraft.client.gui.render.TextureSetup;
+import net.minecraft.client.gui.render.state.GuiElementRenderState;
 import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Matrix4f;
+import org.joml.Matrix3x2f;
+import org.joml.Matrix3x2fc;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.UUID;
 
 @SuppressWarnings("null")
 public class BodycamViewScreen extends Screen {
-    private static final ResourceLocation HEART_CONTAINER_SPRITE = ResourceLocation.withDefaultNamespace("hud/heart/container");
-    private static final ResourceLocation HEART_FULL_SPRITE = ResourceLocation.withDefaultNamespace("hud/heart/full");
-    private static final ResourceLocation HEART_HALF_SPRITE = ResourceLocation.withDefaultNamespace("hud/heart/half");
-    private static final ResourceLocation HEART_ABSORBING_FULL_SPRITE = ResourceLocation.withDefaultNamespace("hud/heart/absorbing_full");
-    private static final ResourceLocation HEART_ABSORBING_HALF_SPRITE = ResourceLocation.withDefaultNamespace("hud/heart/absorbing_half");
+    private static final Identifier HEART_CONTAINER_SPRITE = Identifier.withDefaultNamespace("hud/heart/container");
+    private static final Identifier HEART_FULL_SPRITE = Identifier.withDefaultNamespace("hud/heart/full");
+    private static final Identifier HEART_HALF_SPRITE = Identifier.withDefaultNamespace("hud/heart/half");
+    private static final Identifier HEART_ABSORBING_FULL_SPRITE = Identifier.withDefaultNamespace("hud/heart/absorbing_full");
+    private static final Identifier HEART_ABSORBING_HALF_SPRITE = Identifier.withDefaultNamespace("hud/heart/absorbing_half");
 
     private final UUID targetId;
     private final String targetName;
@@ -123,7 +125,7 @@ public class BodycamViewScreen extends Screen {
         }
         if (this.minecraft != null) {
             int cursorMode = this.isWatchPoint ? GLFW.GLFW_CURSOR_DISABLED : GLFW.GLFW_CURSOR_HIDDEN;
-            GLFW.glfwSetInputMode(this.minecraft.getWindow().getWindow(), GLFW.GLFW_CURSOR, cursorMode);
+            GLFW.glfwSetInputMode(this.minecraft.getWindow().handle(), GLFW.GLFW_CURSOR, cursorMode);
         }
     }
 
@@ -131,7 +133,7 @@ public class BodycamViewScreen extends Screen {
     public void removed() {
         super.removed();
         if (this.minecraft != null) {
-            GLFW.glfwSetInputMode(this.minecraft.getWindow().getWindow(), GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_NORMAL);
+            GLFW.glfwSetInputMode(this.minecraft.getWindow().handle(), GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_NORMAL);
         }
     }
 
@@ -156,7 +158,7 @@ public class BodycamViewScreen extends Screen {
         if (mc.player != null) {
             double sens = mc.options.sensitivity().get() * 0.6D + 0.2D;
             double factor = sens * sens * sens * 8.0D;
-            double invert = mc.options.invertYMouse().get() ? -1.0D : 1.0D;
+            double invert = mc.options.invertMouseY().get() ? -1.0D : 1.0D;
             mc.player.turn(dx * factor, dy * factor * invert);
             long now = System.currentTimeMillis();
             if (now - this.lastLookPacketTime >= 50) {
@@ -170,14 +172,14 @@ public class BodycamViewScreen extends Screen {
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (keyCode == GLFW.GLFW_KEY_F3 || keyCode == GLFW.GLFW_KEY_F5) {
+    public boolean keyPressed(KeyEvent event) {
+        if (event.key() == GLFW.GLFW_KEY_F3 || event.key() == GLFW.GLFW_KEY_F5) {
             return true;
         }
-        if (this.minecraft != null && this.minecraft.options.keyTogglePerspective.matches(keyCode, scanCode)) {
+        if (this.minecraft != null && this.minecraft.options.keyTogglePerspective.matches(event)) {
             return true;
         }
-        if (this.minecraft != null && this.minecraft.options.keyShift.matches(keyCode, scanCode)) {
+        if (this.minecraft != null && this.minecraft.options.keyShift.matches(event)) {
             if (BodycamViewScreen.isMonitoring && !this.exitRequested) {
                 this.exitRequested = true;
                 this.exitPendingTicks = 0;
@@ -185,13 +187,13 @@ public class BodycamViewScreen extends Screen {
             }
             return true;
         }
-        if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+        if (event.key() == GLFW.GLFW_KEY_ESCAPE) {
             if (this.minecraft != null) {
                 this.minecraft.setScreen(new PauseScreen(true));
             }
             return true;
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(event);
     }
 
     @Override
@@ -220,9 +222,6 @@ public class BodycamViewScreen extends Screen {
             int frameThickX = (int) (this.width * 0.1);
             int frameThickY = (int) (this.height * 0.1);
 
-            RenderSystem.enableBlend();
-            RenderSystem.defaultBlendFunc();
-
             int damageTier = updateAndRenderDamageVignette(graphics, mc, frameThickX, frameThickY);
 
             int barColor = this.isAllSeeingEye ? 0xAA221800 : 0x99000000;
@@ -237,8 +236,6 @@ public class BodycamViewScreen extends Screen {
                 graphics.fill(frameThickX - 2, frameThickY, frameThickX, this.height - frameThickY, borderCol);
                 graphics.fill(this.width - frameThickX, frameThickY, this.width - frameThickX + 2, this.height - frameThickY, borderCol);
             }
-
-            RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 
             if (damageTier >= 3 && (System.currentTimeMillis() % 900L) < 600L) {
                 Component alert = Component.translatable(damageTier >= 4 ? "gui.bodycam.signal_critical" : "gui.bodycam.signal_weak");
@@ -277,12 +274,12 @@ public class BodycamViewScreen extends Screen {
                     int heartX = xBase + i * 8;
                     int heartY = yBase;
 
-                    graphics.blitSprite(HEART_CONTAINER_SPRITE, heartX, heartY, 9, 9);
+                    graphics.blitSprite(RenderPipelines.GUI_TEXTURED, HEART_CONTAINER_SPRITE, heartX, heartY, 9, 9);
 
                     if (i * 2 + 1 < health) {
-                        graphics.blitSprite(HEART_FULL_SPRITE, heartX, heartY, 9, 9);
+                        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, HEART_FULL_SPRITE, heartX, heartY, 9, 9);
                     } else if (i * 2 + 1 == health) {
-                        graphics.blitSprite(HEART_HALF_SPRITE, heartX, heartY, 9, 9);
+                        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, HEART_HALF_SPRITE, heartX, heartY, 9, 9);
                     }
                 }
 
@@ -292,12 +289,12 @@ public class BodycamViewScreen extends Screen {
                         int heartX = xBase + i * 8;
                         int heartY = absorbYBase;
 
-                        graphics.blitSprite(HEART_CONTAINER_SPRITE, heartX, heartY, 9, 9);
+                        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, HEART_CONTAINER_SPRITE, heartX, heartY, 9, 9);
 
                         if (i * 2 + 1 < absorption) {
-                            graphics.blitSprite(HEART_ABSORBING_FULL_SPRITE, heartX, heartY, 9, 9);
+                            graphics.blitSprite(RenderPipelines.GUI_TEXTURED, HEART_ABSORBING_FULL_SPRITE, heartX, heartY, 9, 9);
                         } else if (i * 2 + 1 == absorption) {
-                            graphics.blitSprite(HEART_ABSORBING_HALF_SPRITE, heartX, heartY, 9, 9);
+                            graphics.blitSprite(RenderPipelines.GUI_TEXTURED, HEART_ABSORBING_HALF_SPRITE, heartX, heartY, 9, 9);
                         }
                     }
                 }
@@ -384,62 +381,13 @@ public class BodycamViewScreen extends Screen {
         float midRy = viewHalfH * 0.88F;
         float outerRx = this.width * 0.75F;
         float outerRy = this.height * 0.75F;
-        int segments = 40;
 
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.disableCull();
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-
-        BufferBuilder buffer = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-        Matrix4f pose = graphics.pose().last().pose();
-
-        int r = 175;
-        int g = 8;
-        int b = 12;
-
-        for (int i = 0; i < segments; i++) {
-            double a0 = (Math.PI * 2.0D * i) / segments;
-            double a1 = (Math.PI * 2.0D * (i + 1)) / segments;
-            float cos0 = (float) Math.cos(a0);
-            float sin0 = (float) Math.sin(a0);
-            float cos1 = (float) Math.cos(a1);
-            float sin1 = (float) Math.sin(a1);
-
-            float ix0 = cx + cos0 * innerRx;
-            float iy0 = cy + sin0 * innerRy;
-            float ix1 = cx + cos1 * innerRx;
-            float iy1 = cy + sin1 * innerRy;
-
-            float mx0 = cx + cos0 * midRx;
-            float my0 = cy + sin0 * midRy;
-            float mx1 = cx + cos1 * midRx;
-            float my1 = cy + sin1 * midRy;
-
-            float ox0 = cx + cos0 * outerRx;
-            float oy0 = cy + sin0 * outerRy;
-            float ox1 = cx + cos1 * outerRx;
-            float oy1 = cy + sin1 * outerRy;
-
-            buffer.addVertex(pose, ix0, iy0, 0.0F).setColor(r, g, b, 0);
-            buffer.addVertex(pose, mx0, my0, 0.0F).setColor(r, g, b, midAlpha);
-            buffer.addVertex(pose, mx1, my1, 0.0F).setColor(r, g, b, midAlpha);
-
-            buffer.addVertex(pose, ix0, iy0, 0.0F).setColor(r, g, b, 0);
-            buffer.addVertex(pose, mx1, my1, 0.0F).setColor(r, g, b, midAlpha);
-            buffer.addVertex(pose, ix1, iy1, 0.0F).setColor(r, g, b, 0);
-
-            buffer.addVertex(pose, mx0, my0, 0.0F).setColor(r, g, b, midAlpha);
-            buffer.addVertex(pose, ox0, oy0, 0.0F).setColor(r, g, b, outerAlpha);
-            buffer.addVertex(pose, ox1, oy1, 0.0F).setColor(r, g, b, outerAlpha);
-
-            buffer.addVertex(pose, mx0, my0, 0.0F).setColor(r, g, b, midAlpha);
-            buffer.addVertex(pose, ox1, oy1, 0.0F).setColor(r, g, b, outerAlpha);
-            buffer.addVertex(pose, mx1, my1, 0.0F).setColor(r, g, b, midAlpha);
-        }
-        BufferUploader.drawWithShader(buffer.buildOrThrow());
-        RenderSystem.enableCull();
+        Matrix3x2f pose = new Matrix3x2f(graphics.pose());
+        ScreenRectangle scissorArea = null;
+        ScreenRectangle bounds = new ScreenRectangle(0, 0, this.width, this.height).transformMaxBounds(pose);
+        ((GuiGraphicsAccessor) graphics).bodycam$getGuiRenderState().submitGuiElement(new RadialVignetteElement(
+                pose, scissorArea, bounds, cx, cy, innerRx, innerRy, midRx, midRy, outerRx, outerRy, midAlpha, outerAlpha
+        ));
     }
 
     @Override
@@ -463,8 +411,8 @@ public class BodycamViewScreen extends Screen {
             }
         }
         if (mc != null) {
-            if (mc.getDebugOverlay().showDebugScreen()) {
-                mc.getDebugOverlay().toggleOverlay();
+            if (mc.debugEntries.isOverlayVisible()) {
+                mc.debugEntries.setOverlayVisible(false);
             }
             while (mc.options.keyTogglePerspective.consumeClick()) {
             }
@@ -513,6 +461,74 @@ public class BodycamViewScreen extends Screen {
                     mc.player.yHeadRot = targetPlayer.yHeadRot;
                     mc.player.yHeadRotO = targetPlayer.yHeadRotO;
                 }
+            }
+        }
+    }
+
+    private record RadialVignetteElement(
+            Matrix3x2fc pose,
+            ScreenRectangle scissorArea,
+            ScreenRectangle bounds,
+            float cx,
+            float cy,
+            float innerRx,
+            float innerRy,
+            float midRx,
+            float midRy,
+            float outerRx,
+            float outerRy,
+            int midAlpha,
+            int outerAlpha
+    ) implements GuiElementRenderState {
+        private static final int SEGMENTS = 40;
+        private static final int RED = 175;
+        private static final int GREEN = 8;
+        private static final int BLUE = 12;
+
+        @Override
+        public RenderPipeline pipeline() {
+            return RenderPipelines.GUI;
+        }
+
+        @Override
+        public TextureSetup textureSetup() {
+            return TextureSetup.noTexture();
+        }
+
+        @Override
+        public void buildVertices(VertexConsumer buffer) {
+            for (int i = 0; i < SEGMENTS; i++) {
+                double a0 = (Math.PI * 2.0D * i) / SEGMENTS;
+                double a1 = (Math.PI * 2.0D * (i + 1)) / SEGMENTS;
+                float cos0 = (float) Math.cos(a0);
+                float sin0 = (float) Math.sin(a0);
+                float cos1 = (float) Math.cos(a1);
+                float sin1 = (float) Math.sin(a1);
+
+                float ix0 = this.cx + cos0 * this.innerRx;
+                float iy0 = this.cy + sin0 * this.innerRy;
+                float ix1 = this.cx + cos1 * this.innerRx;
+                float iy1 = this.cy + sin1 * this.innerRy;
+
+                float mx0 = this.cx + cos0 * this.midRx;
+                float my0 = this.cy + sin0 * this.midRy;
+                float mx1 = this.cx + cos1 * this.midRx;
+                float my1 = this.cy + sin1 * this.midRy;
+
+                float ox0 = this.cx + cos0 * this.outerRx;
+                float oy0 = this.cy + sin0 * this.outerRy;
+                float ox1 = this.cx + cos1 * this.outerRx;
+                float oy1 = this.cy + sin1 * this.outerRy;
+
+                buffer.addVertexWith2DPose(this.pose, ix0, iy0).setColor(RED, GREEN, BLUE, 0);
+                buffer.addVertexWith2DPose(this.pose, ix1, iy1).setColor(RED, GREEN, BLUE, 0);
+                buffer.addVertexWith2DPose(this.pose, mx1, my1).setColor(RED, GREEN, BLUE, this.midAlpha);
+                buffer.addVertexWith2DPose(this.pose, mx0, my0).setColor(RED, GREEN, BLUE, this.midAlpha);
+
+                buffer.addVertexWith2DPose(this.pose, mx0, my0).setColor(RED, GREEN, BLUE, this.midAlpha);
+                buffer.addVertexWith2DPose(this.pose, mx1, my1).setColor(RED, GREEN, BLUE, this.midAlpha);
+                buffer.addVertexWith2DPose(this.pose, ox1, oy1).setColor(RED, GREEN, BLUE, this.outerAlpha);
+                buffer.addVertexWith2DPose(this.pose, ox0, oy0).setColor(RED, GREEN, BLUE, this.outerAlpha);
             }
         }
     }

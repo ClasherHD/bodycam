@@ -41,16 +41,17 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permissions;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.portal.DimensionTransition;
+import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
@@ -58,7 +59,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+@SuppressWarnings("null")
 public class BodycamCommands {
+    private static boolean hasGamemasterPermission(CommandSourceStack source) {
+        return source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER);
+    }
+
     private static final SuggestionProvider<CommandSourceStack> WATCH_POINT_SUGGESTIONS = (context, builder) -> {
         List<WatchPointDummyEntity> active = WatchPointDummyEntity.getAllActive(context.getSource().getServer());
         for (int i = 0; i < active.size(); i++) {
@@ -77,9 +83,9 @@ public class BodycamCommands {
         dispatcher.register(
             Commands.literal("bodycam")
                 .then(Commands.literal("config")
-                    .requires(source -> source.hasPermission(2) || source.getEntity() instanceof ServerPlayer)
+                    .requires(source -> hasGamemasterPermission(source) || source.getEntity() instanceof ServerPlayer)
                     .executes(context -> {
-                        if (!context.getSource().hasPermission(2)) {
+                        if (!hasGamemasterPermission(context.getSource())) {
                             context.getSource().sendFailure(Component.literal("You do not have permission to configure server settings."));
                             return 0;
                         }
@@ -92,7 +98,7 @@ public class BodycamCommands {
                         }
                     })
                     .then(Commands.literal("server")
-                        .requires(source -> source.hasPermission(2))
+                        .requires(BodycamCommands::hasGamemasterPermission)
                         .executes(context -> {
                             if (context.getSource().getEntity() instanceof ServerPlayer player) {
                                 PacketHandler.sendToPlayer(player, new OpenServerConfigS2CPacket(ServerConfigSnapshot.fromConfig()));
@@ -113,25 +119,25 @@ public class BodycamCommands {
                     )
                 )
                 .then(Commands.literal("reload")
-                    .requires(source -> source.hasPermission(2))
+                    .requires(BodycamCommands::hasGamemasterPermission)
                     .executes(context -> executeReload(context.getSource()))
                 )
                 .then(Commands.literal("reset")
-                    .requires(source -> source.hasPermission(2))
+                    .requires(BodycamCommands::hasGamemasterPermission)
                     .executes(context -> executeEmergencyReset(context.getSource(), context.getSource().getPlayerOrException()))
                     .then(Commands.argument("player", EntityArgument.player())
                         .executes(context -> executeEmergencyReset(context.getSource(), EntityArgument.getPlayer(context, "player")))
                     )
                 )
                 .then(Commands.literal("status")
-                    .requires(source -> source.hasPermission(2))
+                    .requires(BodycamCommands::hasGamemasterPermission)
                     .executes(context -> executeStatus(context.getSource(), context.getSource().getPlayerOrException()))
                     .then(Commands.argument("player", EntityArgument.player())
                         .executes(context -> executeStatus(context.getSource(), EntityArgument.getPlayer(context, "player")))
                     )
                 )
                 .then(Commands.literal("admin")
-                    .requires(source -> source.hasPermission(2))
+                    .requires(BodycamCommands::hasGamemasterPermission)
                     .then(Commands.literal("watchpoint")
                         .then(Commands.literal("list")
                             .executes(context -> executeWatchPointList(context.getSource(), null))
@@ -224,19 +230,19 @@ public class BodycamCommands {
                                             return 0;
                                         }
                                         ServerPlayer destPlayer = EntityArgument.getPlayer(context, "destinationPlayer");
-                                        ServerLevel destLevel = destPlayer.serverLevel();
+                                        ServerLevel destLevel = destPlayer.level();
                                         if (dummy.level() != destLevel) {
-                                            Entity newDummy = dummy.changeDimension(new DimensionTransition(
+                                            Entity newDummy = dummy.teleport(new TeleportTransition(
                                                     destLevel,
                                                     destPlayer.position(),
                                                     Vec3.ZERO,
                                                     destPlayer.getYRot(),
                                                     destPlayer.getXRot(),
-                                                    DimensionTransition.DO_NOTHING
+                                                    TeleportTransition.DO_NOTHING
                                             ));
                                             if (newDummy instanceof BodycamDummyEntity actualDummy) {
                                                 actualDummy.teleportTo(destPlayer.getX(), destPlayer.getY(), destPlayer.getZ());
-                                                PersistentDataAccess.get(dummyOwner).putUUID("bodycam_dummy_uuid", actualDummy.getUUID());
+                                                PersistentDataAccess.putUUID(PersistentDataAccess.get(dummyOwner), "bodycam_dummy_uuid", actualDummy.getUUID());
                                                 BodycamDummyEntity.DUMMY_POS.put(dummyOwner.getUUID(), destPlayer.position());
                                             }
                                         } else {
@@ -261,7 +267,7 @@ public class BodycamCommands {
                                 .executes(context -> {
                                     ServerPlayer p = EntityArgument.getPlayer(context, "dummyPlayer");
                                     CompoundTag pData = PersistentDataAccess.get(p);
-                                    if (!pData.getBoolean("bodycam_active") || !pData.contains("bodycam_dummy_uuid")) {
+                                    if (!pData.getBooleanOr("bodycam_active", false) || !PersistentDataAccess.hasUUID(pData, "bodycam_dummy_uuid")) {
                                         context.getSource().sendFailure(Component.translatable("message.bodycam.no_dummy_found"));
                                         return 0;
                                     }
@@ -276,7 +282,7 @@ public class BodycamCommands {
                                 .executes(context -> {
                                     int count = 0;
                                     for (ServerPlayer p : context.getSource().getServer().getPlayerList().getPlayers()) {
-                                        if (PersistentDataAccess.get(p).getBoolean("bodycam_active")) {
+                                        if (PersistentDataAccess.get(p).getBooleanOr("bodycam_active", false)) {
                                             BodycamResetCameraPacket.executeReset(p);
                                             count++;
                                         }
@@ -300,19 +306,19 @@ public class BodycamCommands {
         ServerPlayer sourcePlayer = source.getPlayerOrException();
         CompoundTag targetData = PersistentDataAccess.get(targetPlayer);
         String dimStr = targetData.contains("bodycam_orig_dim")
-                ? targetData.getString("bodycam_orig_dim")
-                : (targetData.contains("bodycam_original_dimension") ? targetData.getString("bodycam_original_dimension") : null);
+                ? targetData.getStringOr("bodycam_orig_dim", "")
+                : targetData.getStringOr("bodycam_original_dimension", "");
 
-        if (targetData.contains("bodycam_dummy_uuid") && dimStr != null) {
-            UUID dummyId = targetData.getUUID("bodycam_dummy_uuid");
-            ResourceLocation rl = ResourceLocation.tryParse(dimStr);
+        UUID dummyId = PersistentDataAccess.getUUID(targetData, "bodycam_dummy_uuid");
+        if (dummyId != null && !dimStr.isEmpty()) {
+            Identifier rl = Identifier.tryParse(dimStr);
             if (rl != null) {
                 ResourceKey<Level> dimKey = ResourceKey.create(Registries.DIMENSION, rl);
                 ServerLevel targetLevel = source.getServer().getLevel(dimKey);
                 if (targetLevel != null) {
                     Entity dummy = targetLevel.getEntity(dummyId);
                     if (dummy != null) {
-                        sourcePlayer.teleportTo(targetLevel, dummy.getX(), dummy.getY(), dummy.getZ(), Set.of(), dummy.getYRot(), dummy.getXRot());
+                        sourcePlayer.teleportTo(targetLevel, dummy.getX(), dummy.getY(), dummy.getZ(), Set.of(), dummy.getYRot(), dummy.getXRot(), true);
                         sourcePlayer.setOldPosAndRot();
                         return 1;
                     }
@@ -320,19 +326,20 @@ public class BodycamCommands {
             }
         }
 
-        if (dimStr != null && targetData.contains("bodycam_orig_x")) {
-            ResourceLocation rl = ResourceLocation.tryParse(dimStr);
+        if (!dimStr.isEmpty() && targetData.contains("bodycam_orig_x")) {
+            Identifier rl = Identifier.tryParse(dimStr);
             if (rl != null) {
                 ServerLevel targetLevel = source.getServer().getLevel(ResourceKey.create(Registries.DIMENSION, rl));
                 if (targetLevel != null) {
                     sourcePlayer.teleportTo(
                             targetLevel,
-                            targetData.getDouble("bodycam_orig_x"),
-                            targetData.getDouble("bodycam_orig_y"),
-                            targetData.getDouble("bodycam_orig_z"),
+                            targetData.getDoubleOr("bodycam_orig_x", 0.0D),
+                            targetData.getDoubleOr("bodycam_orig_y", 0.0D),
+                            targetData.getDoubleOr("bodycam_orig_z", 0.0D),
                             Set.of(),
-                            targetData.getFloat("bodycam_orig_yrot"),
-                            targetData.getFloat("bodycam_orig_xrot")
+                            targetData.getFloatOr("bodycam_orig_yrot", 0.0F),
+                            targetData.getFloatOr("bodycam_orig_xrot", 0.0F),
+                            true
                     );
                     sourcePlayer.setOldPosAndRot();
                     return 1;
@@ -340,7 +347,7 @@ public class BodycamCommands {
             }
         }
 
-        sourcePlayer.teleportTo(targetPlayer.serverLevel(), targetPlayer.getX(), targetPlayer.getY(), targetPlayer.getZ(), Set.of(), targetPlayer.getYRot(), targetPlayer.getXRot());
+        sourcePlayer.teleportTo(targetPlayer.level(), targetPlayer.getX(), targetPlayer.getY(), targetPlayer.getZ(), Set.of(), targetPlayer.getYRot(), targetPlayer.getXRot(), true);
         sourcePlayer.setOldPosAndRot();
         return 1;
     }
@@ -361,29 +368,32 @@ public class BodycamCommands {
 
     private static int executeEmergencyReset(CommandSourceStack source, ServerPlayer target) {
         CompoundTag data = PersistentDataAccess.get(target);
-        boolean wasActive = data.getBoolean("bodycam_active")
-                || data.contains("bodycam_dummy_uuid")
-                || data.contains("bodycam_target_uuid");
+        boolean wasActive = data.getBooleanOr("bodycam_active", false)
+                || PersistentDataAccess.hasUUID(data, "bodycam_dummy_uuid")
+                || PersistentDataAccess.hasUUID(data, "bodycam_target_uuid");
 
         BodycamResetCameraPacket.executeReset(target);
 
-        for (ServerLevel lvl : target.server.getAllLevels()) {
-            List<BodycamDummyEntity> toDiscard = new ArrayList<>();
-            for (Entity entity : lvl.getAllEntities()) {
-                if (entity instanceof BodycamDummyEntity dummy
-                        && !(dummy instanceof WatchPointDummyEntity)
-                        && target.getUUID().equals(dummy.getOwnerUUID().orElse(null))) {
-                    toDiscard.add(dummy);
+        MinecraftServer server = target.level().getServer();
+        if (server != null) {
+            for (ServerLevel lvl : server.getAllLevels()) {
+                List<BodycamDummyEntity> toDiscard = new ArrayList<>();
+                for (Entity entity : lvl.getAllEntities()) {
+                    if (entity instanceof BodycamDummyEntity dummy
+                            && !(dummy instanceof WatchPointDummyEntity)
+                            && target.getUUID().equals(dummy.getOwnerUUID().orElse(null))) {
+                        toDiscard.add(dummy);
+                    }
                 }
-            }
-            for (BodycamDummyEntity dummy : toDiscard) {
-                dummy.discard();
+                for (BodycamDummyEntity dummy : toDiscard) {
+                    dummy.discard();
+                }
             }
         }
 
         if (!wasActive && target.isSpectator()) {
             int savedGm = data.contains("bodycam_original_gamemode")
-                    ? data.getInt("bodycam_original_gamemode")
+                    ? data.getIntOr("bodycam_original_gamemode", GameType.SURVIVAL.getId())
                     : GameType.SURVIVAL.getId();
             GameType restored = GameType.byId(savedGm);
             target.setGameMode(restored != null && restored != GameType.SPECTATOR ? restored : GameType.SURVIVAL);
@@ -394,7 +404,9 @@ public class BodycamCommands {
         NightspyEffectHandler.clear(target);
         BodycamResetCameraPacket.cleanupPlayerNbtAndMaps(target);
         ServerEvents.POSITION_LOCKS.remove(target.getUUID());
-        PlatformCommonHelper.clearEntityChunks(target.server, target.getUUID());
+        if (server != null) {
+            PlatformCommonHelper.clearEntityChunks(server, target.getUUID());
+        }
 
         PacketHandler.sendToPlayer(target, new BodycamForceClosePacket());
 
@@ -408,9 +420,9 @@ public class BodycamCommands {
         CompoundTag targetData = PersistentDataAccess.get(target);
 
         String observingDesc = Component.translatable("command.bodycam.status.none").getString();
-        if (targetData.getBoolean("bodycam_active") && targetData.contains("bodycam_target_uuid")) {
-            UUID observedId = targetData.getUUID("bodycam_target_uuid");
-            if (targetData.getBoolean("bodycam_watching_watchpoint")) {
+        UUID observedId = PersistentDataAccess.getUUID(targetData, "bodycam_target_uuid");
+        if (targetData.getBooleanOr("bodycam_active", false) && observedId != null) {
+            if (targetData.getBooleanOr("bodycam_watching_watchpoint", false)) {
                 WatchPointDummyEntity wp = WatchPointDummyEntity.findByUUID(server, observedId);
                 observingDesc = wp != null ? "Watch Point: " + wp.getSelectionDisplayName() : "Watch Point (" + observedId.toString().substring(0, 8) + ")";
             } else {
@@ -422,9 +434,10 @@ public class BodycamCommands {
         List<String> observers = new ArrayList<>();
         for (ServerPlayer online : server.getPlayerList().getPlayers()) {
             CompoundTag onlineData = PersistentDataAccess.get(online);
-            if (onlineData.getBoolean("bodycam_active")
-                    && onlineData.contains("bodycam_target_uuid")
-                    && target.getUUID().equals(onlineData.getUUID("bodycam_target_uuid"))) {
+            UUID onlineTargetId = PersistentDataAccess.getUUID(onlineData, "bodycam_target_uuid");
+            if (onlineData.getBooleanOr("bodycam_active", false)
+                    && onlineTargetId != null
+                    && target.getUUID().equals(onlineTargetId)) {
                 observers.add(online.getName().getString());
             }
         }
@@ -505,7 +518,7 @@ public class BodycamCommands {
             int globalIndex = allActive.indexOf(wp) + 1;
             String shortId = wp.getUUID().toString().substring(0, 8);
             BlockPos pos = wp.getWatchPointPos() != null ? wp.getWatchPointPos() : wp.blockPosition();
-            String dim = wp.level().dimension().location().toString();
+            String dim = wp.level().dimension().identifier().toString();
             String ownerName = wp.getOwnerName() != null && !wp.getOwnerName().isEmpty() ? wp.getOwnerName() : "Unknown";
             String name = wp.getSelectionDisplayName();
 
@@ -516,8 +529,8 @@ public class BodycamCommands {
                     .append(Component.literal(pos.getX() + ", " + pos.getY() + ", " + pos.getZ() + " [" + dim + "]")
                             .withStyle(style -> style
                                     .withColor(ChatFormatting.GREEN)
-                                    .withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/bodycam admin watchpoint tp " + shortId))
-                                    .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.literal("/bodycam admin watchpoint tp " + shortId)))));
+                                    .withClickEvent(new ClickEvent.SuggestCommand("/bodycam admin watchpoint tp " + shortId))
+                                    .withHoverEvent(new HoverEvent.ShowText(Component.literal("/bodycam admin watchpoint tp " + shortId)))));
             source.sendSuccess(() -> entry, false);
         }
         return list.size();
@@ -618,7 +631,7 @@ public class BodycamCommands {
             return 0;
         }
         String name = wp.getSelectionDisplayName();
-        player.teleportTo(targetLevel, wp.getX(), wp.getY(), wp.getZ(), Set.of(), wp.getYRot(), wp.getXRot());
+        player.teleportTo(targetLevel, wp.getX(), wp.getY(), wp.getZ(), Set.of(), wp.getYRot(), wp.getXRot(), true);
         player.setOldPosAndRot();
         source.sendSuccess(() -> Component.translatable("command.bodycam.watchpoint.teleported", name)
                 .withStyle(ChatFormatting.GREEN), true);
@@ -675,11 +688,15 @@ public class BodycamCommands {
             return null;
         }
         CompoundTag data = PersistentDataAccess.get(player);
-        if (!data.getBoolean("bodycam_active") || !data.contains("bodycam_dummy_uuid")) {
+        UUID dummyId = PersistentDataAccess.getUUID(data, "bodycam_dummy_uuid");
+        if (!data.getBooleanOr("bodycam_active", false) || dummyId == null) {
             return null;
         }
-        UUID dummyId = data.getUUID("bodycam_dummy_uuid");
-        for (ServerLevel lvl : player.server.getAllLevels()) {
+        MinecraftServer server = player.level().getServer();
+        if (server == null) {
+            return null;
+        }
+        for (ServerLevel lvl : server.getAllLevels()) {
             Entity e = lvl.getEntity(dummyId);
             if (e instanceof BodycamDummyEntity dummy) {
                 return dummy;

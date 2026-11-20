@@ -58,15 +58,6 @@ public class WatchPointBlock extends BaseEntityBlock {
                 && level.getBlockEntity(pos) instanceof WatchPointBlockEntity wp) {
             wp.onPlayerInteract(serverPlayer);
         }
-        return InteractionResult.sidedSuccess(level.isClientSide());
-    }
-
-    @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
-        if (!state.is(newState.getBlock()) && !level.isClientSide()
-                && level.getBlockEntity(pos) instanceof WatchPointBlockEntity wp) {
-            wp.despawnDummy(level);
-        }
-        super.onRemove(state, level, pos, newState, movedByPiston);
+        return InteractionResult.SUCCESS;
     }
 }

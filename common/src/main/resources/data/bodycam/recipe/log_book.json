@@ -1,11 +1,11 @@
 {
   "type": "minecraft:crafting_shapeless",
   "ingredients": [
-    { "item": "minecraft:paper" },
-    { "item": "minecraft:paper" },
-    { "item": "minecraft:paper" },
-    { "item": "minecraft:leather" },
-    { "item": "minecraft:blue_dye" }
+    "minecraft:paper",
+    "minecraft:paper",
+    "minecraft:paper",
+    "minecraft:leather",
+    "minecraft:blue_dye"
   ],
   "result": {
     "id": "bodycam:log_book",

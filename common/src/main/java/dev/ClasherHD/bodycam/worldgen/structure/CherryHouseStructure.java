@@ -67,7 +67,7 @@ public class CherryHouseStructure extends Structure {
             RandomSource random, BoundingBox box, ChunkPos chunkPos, PiecesContainer pieces) {
         BoundingBox structBox = pieces.calculateBoundingBox();
         int baseFloorY = structBox.minY();
-        int minBuildY = level.getMinBuildHeight();
+        int minBuildY = level.getMinY();
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
 
         int minX = Math.max(box.minX(), structBox.minX());

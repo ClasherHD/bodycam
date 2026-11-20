@@ -8,6 +8,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permissions;
 
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -58,10 +59,10 @@ public class PlayerLocatorSelectC2SPacket implements CustomPacketPayload {
 
     public static void handle(PlayerLocatorSelectC2SPacket msg, NetworkManager.PacketContext context) {
         context.queue(() -> {
-            if (!(context.getPlayer() instanceof ServerPlayer sender) || sender.server == null) {
+            if (!(context.getPlayer() instanceof ServerPlayer sender) || sender.level().getServer() == null) {
                 return;
             }
-            if ((ModServerConfig.OP_ONLY_MODE.get() && !sender.hasPermissions(2))
+            if ((ModServerConfig.OP_ONLY_MODE.get() && !sender.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
                     || !ModServerConfig.ENABLE_PLAYER_LOCATOR.get()
                     || ModServerConfig.isDimensionBlacklisted(sender.level())) {
                 return;

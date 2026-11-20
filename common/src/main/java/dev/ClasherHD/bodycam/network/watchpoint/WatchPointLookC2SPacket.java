@@ -8,6 +8,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 
@@ -43,25 +44,29 @@ public class WatchPointLookC2SPacket implements CustomPacketPayload {
 
     public static void handle(WatchPointLookC2SPacket msg, NetworkManager.PacketContext context) {
         context.queue(() -> {
-            if (!(context.getPlayer() instanceof ServerPlayer sender) || sender.server == null) {
+            if (!(context.getPlayer() instanceof ServerPlayer sender)) {
+                return;
+            }
+            MinecraftServer server = sender.level().getServer();
+            if (server == null) {
                 return;
             }
             if (!Float.isFinite(msg.yRot) || !Float.isFinite(msg.xRot)) {
                 return;
             }
             CompoundTag data = PersistentDataAccess.get(sender);
-            if (!data.getBoolean("bodycam_active")
-                    || !data.getBoolean("bodycam_watching_watchpoint")
-                    || !data.contains("bodycam_target_uuid")) {
+            if (!data.getBooleanOr("bodycam_active", false)
+                    || !data.getBooleanOr("bodycam_watching_watchpoint", false)
+                    || !PersistentDataAccess.hasUUID(data, "bodycam_target_uuid")) {
                 return;
             }
-            UUID targetId = data.getUUID("bodycam_target_uuid");
-            WatchPointDummyEntity dummy = WatchPointDummyEntity.findByUUID(sender.server, targetId);
+            UUID targetId = PersistentDataAccess.getUUID(data, "bodycam_target_uuid");
+            WatchPointDummyEntity dummy = WatchPointDummyEntity.findByUUID(server, targetId);
             if (dummy == null || !dummy.isAlive() || dummy.isRemoved()) {
                 return;
             }
             if (!sender.getUUID().equals(dummy.getOwnerUuidOrNull())
-                    && !data.getBoolean("bodycam_all_seeing_active")) {
+                    && !data.getBooleanOr("bodycam_all_seeing_active", false)) {
                 return;
             }
             float clampedPitch = Mth.clamp(msg.xRot, -90.0F, 90.0F);

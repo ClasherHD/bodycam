@@ -8,6 +8,7 @@ import net.minecraft.world.item.component.CustomData;
 import java.util.UUID;
 import java.util.function.Consumer;
 
+@SuppressWarnings("null")
 public final class ItemNbtAccess {
     private ItemNbtAccess() {
     }
@@ -27,13 +28,12 @@ public final class ItemNbtAccess {
         return stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
     }
 
-    @SuppressWarnings("deprecation")
     public static CompoundTag getReadOnlyTag(ItemStack stack) {
         if (stack == null || stack.isEmpty()) {
             return null;
         }
         CustomData data = stack.get(DataComponents.CUSTOM_DATA);
-        return data != null && !data.isEmpty() ? data.getUnsafe() : null;
+        return data != null && !data.isEmpty() ? data.copyTag() : null;
     }
 
     public static CompoundTag getOrCreateTag(ItemStack stack) {
@@ -70,38 +70,36 @@ public final class ItemNbtAccess {
     }
 
     public static boolean hasUUID(ItemStack stack, String key) {
-        CompoundTag tag = getReadOnlyTag(stack);
-        return tag != null && tag.hasUUID(key);
+        return PersistentDataAccess.hasUUID(getReadOnlyTag(stack), key);
     }
 
     public static boolean getBoolean(ItemStack stack, String key) {
         CompoundTag tag = getReadOnlyTag(stack);
-        return tag != null && tag.getBoolean(key);
+        return tag != null && tag.getBooleanOr(key, false);
     }
 
     public static int getInt(ItemStack stack, String key) {
         CompoundTag tag = getReadOnlyTag(stack);
-        return tag != null ? tag.getInt(key) : 0;
+        return tag != null ? tag.getIntOr(key, 0) : 0;
     }
 
     public static long getLong(ItemStack stack, String key) {
         CompoundTag tag = getReadOnlyTag(stack);
-        return tag != null ? tag.getLong(key) : 0L;
+        return tag != null ? tag.getLongOr(key, 0L) : 0L;
     }
 
     public static double getDouble(ItemStack stack, String key) {
         CompoundTag tag = getReadOnlyTag(stack);
-        return tag != null ? tag.getDouble(key) : 0.0D;
+        return tag != null ? tag.getDoubleOr(key, 0.0D) : 0.0D;
     }
 
     public static String getString(ItemStack stack, String key) {
         CompoundTag tag = getReadOnlyTag(stack);
-        return tag != null ? tag.getString(key) : "";
+        return tag != null ? tag.getStringOr(key, "") : "";
     }
 
     public static UUID getUUID(ItemStack stack, String key) {
-        CompoundTag tag = getReadOnlyTag(stack);
-        return tag != null && tag.hasUUID(key) ? tag.getUUID(key) : null;
+        return PersistentDataAccess.getUUID(getReadOnlyTag(stack), key);
     }
 
     public static void putBoolean(ItemStack stack, String key, boolean value) {
@@ -129,7 +127,7 @@ public final class ItemNbtAccess {
             remove(stack, key);
             return;
         }
-        updateTag(stack, tag -> tag.putUUID(key, value));
+        updateTag(stack, tag -> PersistentDataAccess.putUUID(tag, key, value));
     }
 
     public static void remove(ItemStack stack, String key) {

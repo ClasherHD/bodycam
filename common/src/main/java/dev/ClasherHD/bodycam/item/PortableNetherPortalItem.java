@@ -4,27 +4,29 @@ import dev.ClasherHD.bodycam.config.ModServerConfig;
 import dev.ClasherHD.bodycam.util.ItemNbtAccess;
 import dev.ClasherHD.bodycam.util.ModAdvancements;
 import dev.ClasherHD.bodycam.util.PersistentDataAccess;
-import net.minecraft.BlockUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permissions;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.BlockUtil;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemUseAnimation;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.UseAnim;
+import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
@@ -39,8 +41,9 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
-import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Consumer;
 
 @SuppressWarnings("null")
 public class PortableNetherPortalItem extends Item {
@@ -81,28 +84,28 @@ public class PortableNetherPortalItem extends Item {
     }
 
     @Override
-    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+    public InteractionResult use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
 
-        if (ModServerConfig.OP_ONLY_MODE.get() && !player.hasPermissions(2)) {
+        if (ModServerConfig.OP_ONLY_MODE.get() && !player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
             if (!level.isClientSide()) {
-                player.sendSystemMessage(Component.translatable("message.bodycam.op_only").withStyle(ChatFormatting.RED));
+                player.displayClientMessage(Component.translatable("message.bodycam.op_only").withStyle(ChatFormatting.RED), false);
             }
-            return InteractionResultHolder.fail(stack);
+            return InteractionResult.FAIL;
         }
 
         if (!ModServerConfig.ENABLE_PORTABLE_NETHER_PORTAL.get()) {
             if (!level.isClientSide()) {
                 player.displayClientMessage(Component.translatable("message.bodycam.portable_portal_disabled").withStyle(ChatFormatting.RED), true);
             }
-            return InteractionResultHolder.fail(stack);
+            return InteractionResult.FAIL;
         }
 
         BlockHitResult hitResult = getPlayerPOVHitResult(level, player, ClipContext.Fluid.NONE);
         if (hitResult.getType() == HitResult.Type.BLOCK && isNearActiveNetherPortal(level, hitResult.getBlockPos())) {
             InteractionResult bindResult = tryBindPortal(level, player, stack, hitResult.getBlockPos());
             if (bindResult.consumesAction()) {
-                return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
+                return InteractionResult.SUCCESS;
             }
         }
 
@@ -111,7 +114,7 @@ public class PortableNetherPortalItem extends Item {
             if (!level.isClientSide()) {
                 player.displayClientMessage(Component.translatable("message.bodycam.portable_portal.not_charged").withStyle(ChatFormatting.RED), true);
             }
-            return InteractionResultHolder.fail(stack);
+            return InteractionResult.FAIL;
         }
 
         ResourceKey<Level> currentDim = level.dimension();
@@ -119,21 +122,21 @@ public class PortableNetherPortalItem extends Item {
             if (!level.isClientSide()) {
                 player.displayClientMessage(Component.translatable("message.bodycam.portable_portal.invalid_dimension").withStyle(ChatFormatting.RED), true);
             }
-            return InteractionResultHolder.fail(stack);
+            return InteractionResult.FAIL;
         }
 
-        if (PersistentDataAccess.get(player).getBoolean("bodycam_active")) {
-            return InteractionResultHolder.fail(stack);
+        if (PersistentDataAccess.get(player).getBooleanOr("bodycam_active", false)) {
+            return InteractionResult.FAIL;
         }
 
         player.startUsingItem(hand);
-        return InteractionResultHolder.consume(stack);
+        return InteractionResult.CONSUME;
     }
 
     private InteractionResult tryBindPortal(Level level, Player player, ItemStack stack, BlockPos pos) {
-        if (player != null && ModServerConfig.OP_ONLY_MODE.get() && !player.hasPermissions(2)) {
+        if (player != null && ModServerConfig.OP_ONLY_MODE.get() && !player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
             if (!level.isClientSide()) {
-                player.sendSystemMessage(Component.translatable("message.bodycam.op_only").withStyle(ChatFormatting.RED));
+                player.displayClientMessage(Component.translatable("message.bodycam.op_only").withStyle(ChatFormatting.RED), false);
             }
             return InteractionResult.FAIL;
         }
@@ -149,7 +152,7 @@ public class PortableNetherPortalItem extends Item {
                 player.displayClientMessage(Component.translatable("message.bodycam.portable_portal.charged").withStyle(ChatFormatting.LIGHT_PURPLE), true);
             }
         }
-        return InteractionResult.sidedSuccess(level.isClientSide());
+        return InteractionResult.SUCCESS;
     }
 
     private boolean isNearActiveNetherPortal(Level level, BlockPos pos) {
@@ -191,7 +194,7 @@ public class PortableNetherPortalItem extends Item {
     }
 
     public static void executeTeleport(ServerPlayer player) {
-        if (ModServerConfig.OP_ONLY_MODE.get() && !player.hasPermissions(2)) {
+        if (ModServerConfig.OP_ONLY_MODE.get() && !player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
             player.sendSystemMessage(Component.translatable("message.bodycam.op_only").withStyle(ChatFormatting.RED));
             return;
         }
@@ -199,7 +202,7 @@ public class PortableNetherPortalItem extends Item {
             player.displayClientMessage(Component.translatable("message.bodycam.portable_portal_disabled").withStyle(ChatFormatting.RED), true);
             return;
         }
-        if (PersistentDataAccess.get(player).getBoolean("bodycam_active")) {
+        if (PersistentDataAccess.get(player).getBooleanOr("bodycam_active", false)) {
             return;
         }
         ItemStack stack = player.getMainHandItem();
@@ -236,11 +239,12 @@ public class PortableNetherPortalItem extends Item {
     }
 
     private boolean performDimensionTeleport(ServerPlayer player) {
-        ServerLevel sourceLevel = player.serverLevel();
+        ServerLevel sourceLevel = player.level();
+        MinecraftServer server = sourceLevel.getServer();
         boolean destIsNether = sourceLevel.dimension() != Level.NETHER;
         ResourceKey<Level> targetDimKey = destIsNether ? Level.NETHER : Level.OVERWORLD;
-        ServerLevel targetLevel = player.server.getLevel(targetDimKey);
-        if (targetLevel == null || !player.server.isLevelEnabled(targetLevel) || player.isPassenger()) {
+        ServerLevel targetLevel = server != null ? server.getLevel(targetDimKey) : null;
+        if (targetLevel == null || player.isPassenger()) {
             return false;
         }
 
@@ -262,9 +266,9 @@ public class PortableNetherPortalItem extends Item {
                 BlockPos landingBlockPos = BlockPos.containing(landingVec);
 
                 player.setDeltaMovement(Vec3.ZERO);
-                player.fallDistance = 0.0F;
+                player.fallDistance = 0.0D;
                 player.setPortalCooldown(100);
-                player.teleportTo(targetLevel, landingVec.x, landingVec.y, landingVec.z, rotation[0], rotation[1]);
+                player.teleportTo(targetLevel, landingVec.x, landingVec.y, landingVec.z, Set.of(), rotation[0], rotation[1], true);
                 player.setPortalCooldown(100);
 
                 targetLevel.playSound(null, landingBlockPos, SoundEvents.PORTAL_TRAVEL, SoundSource.PLAYERS, 0.5F, 1.0F);
@@ -286,9 +290,9 @@ public class PortableNetherPortalItem extends Item {
                 BlockPos exitBlockPos = BlockPos.containing(exitPos);
 
                 player.setDeltaMovement(Vec3.ZERO);
-                player.fallDistance = 0.0F;
+                player.fallDistance = 0.0D;
                 player.setPortalCooldown();
-                player.teleportTo(targetLevel, exitPos.x, exitPos.y, exitPos.z, player.getYRot(), player.getXRot());
+                player.teleportTo(targetLevel, exitPos.x, exitPos.y, exitPos.z, Set.of(), player.getYRot(), player.getXRot(), true);
 
                 targetLevel.playSound(null, exitBlockPos, SoundEvents.PORTAL_TRAVEL, SoundSource.PLAYERS, 0.5F, 1.0F);
                 return true;
@@ -304,15 +308,17 @@ public class PortableNetherPortalItem extends Item {
         ensureSafeLanding(targetLevel, landingPos);
 
         player.setDeltaMovement(Vec3.ZERO);
-        player.fallDistance = 0.0F;
+        player.fallDistance = 0.0D;
         player.setPortalCooldown(100);
         player.teleportTo(
                 targetLevel,
                 landingPos.getX() + 0.5D,
                 landingPos.getY(),
                 landingPos.getZ() + 0.5D,
+                Set.of(),
                 player.getYRot(),
-                player.getXRot()
+                player.getXRot(),
+                true
         );
         player.setPortalCooldown(100);
 
@@ -382,7 +388,7 @@ public class PortableNetherPortalItem extends Item {
         double bestPartialDist = -1.0D;
         BlockPos bestPartialPos = null;
         WorldBorder border = level.getWorldBorder();
-        int maxHeight = Math.min(level.getMaxBuildHeight(), level.getMinBuildHeight() + level.getLogicalHeight()) - 1;
+        int maxHeight = Math.min(level.getMaxY() + 1, level.getMinY() + level.getLogicalHeight()) - 1;
         BlockPos.MutableBlockPos tempPos = targetPos.mutable();
 
         for (BlockPos.MutableBlockPos spiralPos : BlockPos.spiralAround(targetPos, 16, Direction.EAST, Direction.SOUTH)) {
@@ -390,11 +396,11 @@ public class PortableNetherPortalItem extends Item {
             if (border.isWithinBounds(spiralPos) && border.isWithinBounds(spiralPos.move(dir, 1))) {
                 spiralPos.move(dir.getOpposite(), 1);
 
-                for (int y = startY; y >= level.getMinBuildHeight(); y--) {
+                for (int y = startY; y >= level.getMinY(); y--) {
                     spiralPos.setY(y);
                     if (canPortalReplaceBlock(level, spiralPos)) {
                         int topReplaceableY = y;
-                        while (y > level.getMinBuildHeight() && canPortalReplaceBlock(level, spiralPos.move(Direction.DOWN))) {
+                        while (y > level.getMinY() && canPortalReplaceBlock(level, spiralPos.move(Direction.DOWN))) {
                             y--;
                         }
 
@@ -428,7 +434,7 @@ public class PortableNetherPortalItem extends Item {
         }
 
         if (bestFullDist == -1.0D) {
-            int minClampY = Math.max(level.getMinBuildHeight() + 1, 70);
+            int minClampY = Math.max(level.getMinY() + 1, 70);
             int maxClampY = maxHeight - 9;
             if (maxClampY < minClampY) {
                 return null;
@@ -497,8 +503,8 @@ public class PortableNetherPortalItem extends Item {
     }
 
     @Override
-    public UseAnim getUseAnimation(ItemStack stack) {
-        return UseAnim.BOW;
+    public ItemUseAnimation getUseAnimation(ItemStack stack) {
+        return ItemUseAnimation.BOW;
     }
 
     @Override
@@ -522,14 +528,15 @@ public class PortableNetherPortalItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, context, tooltip, flag);
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay tooltipDisplay,
+            Consumer<Component> tooltipAdder, TooltipFlag flag) {
+        super.appendHoverText(stack, context, tooltipDisplay, tooltipAdder, flag);
         int charges = getCharges(stack);
         if (charges > 0) {
-            tooltip.add(Component.translatable("tooltip.bodycam.portable_portal.charges", charges, MAX_CHARGES)
+            tooltipAdder.accept(Component.translatable("tooltip.bodycam.portable_portal.charges", charges, MAX_CHARGES)
                     .withStyle(ChatFormatting.LIGHT_PURPLE));
         } else {
-            tooltip.add(Component.translatable("tooltip.bodycam.portable_portal.uncharged")
+            tooltipAdder.accept(Component.translatable("tooltip.bodycam.portable_portal.uncharged")
                     .withStyle(ChatFormatting.GRAY));
         }
     }

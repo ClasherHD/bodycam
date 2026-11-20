@@ -10,11 +10,11 @@ import dev.ClasherHD.bodycam.registry.ModEntityTypes;
 import dev.ClasherHD.bodycam.registry.ModSounds;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permissions;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -23,6 +23,8 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.AABB;
 
 import java.util.List;
@@ -80,7 +82,7 @@ public class WatchPointBlockEntity extends BlockEntity {
     }
 
     public void onPlayerInteract(ServerPlayer player) {
-        if (ModServerConfig.OP_ONLY_MODE.get() && !player.hasPermissions(2)) {
+        if (ModServerConfig.OP_ONLY_MODE.get() && !player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
             player.sendSystemMessage(Component.translatable("message.bodycam.op_only").withStyle(ChatFormatting.RED));
             return;
         }
@@ -130,7 +132,7 @@ public class WatchPointBlockEntity extends BlockEntity {
             return;
         }
 
-        List<WatchPointDummyEntity> playerDummies = WatchPointDummyEntity.getActiveForOwner(player.server, player.getUUID());
+        List<WatchPointDummyEntity> playerDummies = WatchPointDummyEntity.getActiveForOwner(((ServerLevel) player.level()).getServer(), player.getUUID());
         int maxPlayer = ModServerConfig.MAX_WATCH_POINTS_PER_PLAYER.get();
         if (playerDummies.size() >= maxPlayer) {
             player.displayClientMessage(Component.translatable("message.bodycam.watch_point.player_limit", maxPlayer).withStyle(ChatFormatting.RED), true);
@@ -216,28 +218,32 @@ public class WatchPointBlockEntity extends BlockEntity {
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        if (this.ownerUUID != null) {
-            tag.putUUID("OwnerUUID", this.ownerUUID);
-        }
-        tag.putString("OwnerName", this.ownerName);
-        tag.putString("CustomName", this.customName);
-        if (this.activeDummyUUID != null) {
-            tag.putUUID("ActiveDummyUUID", this.activeDummyUUID);
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        super.preRemoveSideEffects(pos, state);
+        if (this.level != null && !this.level.isClientSide()) {
+            despawnDummy(this.level);
         }
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        if (tag.hasUUID("OwnerUUID")) {
-            this.ownerUUID = tag.getUUID("OwnerUUID");
+    protected void saveAdditional(ValueOutput output) {
+        super.saveAdditional(output);
+        if (this.ownerUUID != null) {
+            output.store("OwnerUUID", UUIDUtil.CODEC, this.ownerUUID);
         }
-        this.ownerName = tag.getString("OwnerName");
-        this.customName = tag.getString("CustomName");
-        if (tag.hasUUID("ActiveDummyUUID")) {
-            this.activeDummyUUID = tag.getUUID("ActiveDummyUUID");
+        output.putString("OwnerName", this.ownerName);
+        output.putString("CustomName", this.customName);
+        if (this.activeDummyUUID != null) {
+            output.store("ActiveDummyUUID", UUIDUtil.CODEC, this.activeDummyUUID);
         }
+    }
+
+    @Override
+    protected void loadAdditional(ValueInput input) {
+        super.loadAdditional(input);
+        this.ownerUUID = input.read("OwnerUUID", UUIDUtil.CODEC).orElse(null);
+        this.ownerName = input.getStringOr("OwnerName", "");
+        this.customName = input.getStringOr("CustomName", "");
+        this.activeDummyUUID = input.read("ActiveDummyUUID", UUIDUtil.CODEC).orElse(null);
     }
 }

@@ -1,25 +1,31 @@
 package dev.ClasherHD.bodycam.client.gui;
 
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.resources.Identifier;
 
 public final class GuiRenderUtils {
     private GuiRenderUtils() {
     }
 
-    public static void drawNineSlice(GuiGraphics graphics, ResourceLocation texture, int x, int y, int width, int height,
+    public static void drawNineSlice(GuiGraphics graphics, Identifier texture, int x, int y, int width, int height,
                                      int rCW, int rCH, int uvCW, int uvCH, int texW, int texH) {
+        drawNineSlice(graphics, texture, x, y, width, height, rCW, rCH, uvCW, uvCH, texW, texH, 0xFFFFFFFF);
+    }
+
+    public static void drawNineSlice(GuiGraphics graphics, Identifier texture, int x, int y, int width, int height,
+                                     int rCW, int rCH, int uvCW, int uvCH, int texW, int texH, int color) {
         int cW = Math.min(rCW, width / 2);
         int cH = Math.min(rCH, height / 2);
-        graphics.blit(texture, x, y, cW, cH, 0, 0, uvCW, uvCH, texW, texH);
-        graphics.blit(texture, x + width - cW, y, cW, cH, texW - uvCW, 0, uvCW, uvCH, texW, texH);
-        graphics.blit(texture, x, y + height - cH, cW, cH, 0, texH - uvCH, uvCW, uvCH, texW, texH);
-        graphics.blit(texture, x + width - cW, y + height - cH, cW, cH, texW - uvCW, texH - uvCH, uvCW, uvCH, texW, texH);
-        graphics.blit(texture, x + cW, y, width - 2 * cW, cH, uvCW, 0, texW - 2 * uvCW, uvCH, texW, texH);
-        graphics.blit(texture, x + cW, y + height - cH, width - 2 * cW, cH, uvCW, texH - uvCH, texW - 2 * uvCW, uvCH, texW, texH);
-        graphics.blit(texture, x, y + cH, cW, height - 2 * cH, 0, uvCH, uvCW, texH - 2 * uvCH, texW, texH);
-        graphics.blit(texture, x + width - cW, y + cH, cW, height - 2 * cH, texW - uvCW, uvCH, uvCW, texH - 2 * uvCH, texW, texH);
-        graphics.blit(texture, x + cW, y + cH, width - 2 * cW, height - 2 * cH, uvCW, uvCH, texW - 2 * uvCW, texH - 2 * uvCH, texW, texH);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, texture, x, y, 0.0F, 0.0F, cW, cH, uvCW, uvCH, texW, texH, color);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, texture, x + width - cW, y, (float) (texW - uvCW), 0.0F, cW, cH, uvCW, uvCH, texW, texH, color);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, texture, x, y + height - cH, 0.0F, (float) (texH - uvCH), cW, cH, uvCW, uvCH, texW, texH, color);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, texture, x + width - cW, y + height - cH, (float) (texW - uvCW), (float) (texH - uvCH), cW, cH, uvCW, uvCH, texW, texH, color);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, texture, x + cW, y, (float) uvCW, 0.0F, width - 2 * cW, cH, texW - 2 * uvCW, uvCH, texW, texH, color);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, texture, x + cW, y + height - cH, (float) uvCW, (float) (texH - uvCH), width - 2 * cW, cH, texW - 2 * uvCW, uvCH, texW, texH, color);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, texture, x, y + cH, 0.0F, (float) uvCH, cW, height - 2 * cH, uvCW, texH - 2 * uvCH, texW, texH, color);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, texture, x + width - cW, y + cH, (float) (texW - uvCW), (float) uvCH, cW, height - 2 * cH, uvCW, texH - 2 * uvCH, texW, texH, color);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, texture, x + cW, y + cH, (float) uvCW, (float) uvCH, width - 2 * cW, height - 2 * cH, texW - 2 * uvCW, texH - 2 * uvCH, texW, texH, color);
     }
 
     public static void drawBorder(GuiGraphics graphics, int x, int y, int width, int height, int color) {

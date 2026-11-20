@@ -1,5 +1,6 @@
 package dev.ClasherHD.bodycam.entity;
 
+import com.mojang.serialization.Codec;
 import dev.ClasherHD.bodycam.config.ModServerConfig;
 import dev.ClasherHD.bodycam.item.AllSeeingEyeItem;
 import dev.ClasherHD.bodycam.item.ItemDurabilityHelper;
@@ -17,10 +18,6 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.StringTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -39,11 +36,11 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.AgeableMob;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -56,14 +53,14 @@ import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.TradeWithPlayerGoal;
 import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
-import net.minecraft.world.entity.npc.AbstractVillager;
-import net.minecraft.world.entity.npc.VillagerData;
+import net.minecraft.world.entity.npc.villager.AbstractVillager;
+import net.minecraft.world.entity.npc.villager.VillagerData;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.MerchantMenu;
-import net.minecraft.world.item.EnchantedBookItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.trading.ItemCost;
@@ -71,6 +68,8 @@ import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -112,7 +111,6 @@ public class ScholarEntity extends AbstractVillager {
         this.setPersistenceRequired();
         if (this.getNavigation() instanceof GroundPathNavigation groundNav) {
             groundNav.setCanOpenDoors(true);
-            groundNav.setCanPassDoors(true);
             groundNav.setCanFloat(true);
         }
     }
@@ -270,7 +268,7 @@ public class ScholarEntity extends AbstractVillager {
     }
 
     @Override
-    public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType reason,
+    public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, EntitySpawnReason reason,
             SpawnGroupData spawnData) {
         SpawnGroupData result = super.finalizeSpawn(level, difficulty, reason, spawnData);
         if (!this.variantInitialized) {
@@ -278,13 +276,13 @@ public class ScholarEntity extends AbstractVillager {
             this.variantInitialized = true;
         }
         this.setPersistenceRequired();
-        if (!this.hasRestriction()) {
-            this.restrictTo(this.blockPosition(), 24);
+        if (!this.hasHome()) {
+            this.setHomeTo(this.blockPosition(), 24);
         }
         this.applyVariantArmor();
         if (this.offers == null || this.offers.isEmpty()) {
             this.offers = new MerchantOffers();
-            this.updateTrades();
+            this.updateTrades(level.getLevel());
         }
         return result;
     }
@@ -292,16 +290,16 @@ public class ScholarEntity extends AbstractVillager {
     @Override
     public void tick() {
         super.tick();
-        if (!this.level().isClientSide() && !this.variantInitialized) {
+        if (!this.level().isClientSide() && this.level() instanceof ServerLevel sLevel && !this.variantInitialized) {
             setVariant(rollRandomVariant());
             this.variantInitialized = true;
             this.applyVariantArmor();
-            if (!this.hasRestriction()) {
-                this.restrictTo(this.blockPosition(), 24);
+            if (!this.hasHome()) {
+                this.setHomeTo(this.blockPosition(), 24);
             }
             if (this.offers == null || this.offers.isEmpty()) {
                 this.offers = new MerchantOffers();
-                this.updateTrades();
+                this.updateTrades(sLevel);
             }
         }
     }
@@ -368,19 +366,19 @@ public class ScholarEntity extends AbstractVillager {
             return super.mobInteract(player, hand);
         }
         if (this.isAlive() && !this.isTrading() && !this.isBaby()) {
-            if (!this.level().isClientSide()) {
+            if (this.level() instanceof ServerLevel sLevel) {
                 if (player instanceof ServerPlayer sp && VARIANT_ULTRA_RARE.equals(getVariant())) {
                     ModAdvancements.award(sp, ModAdvancements.ULTRA_RARE_SCHOLAR);
                 }
                 if (this.getOffers().isEmpty()) {
-                    this.updateTrades();
+                    this.updateTrades(sLevel);
                 }
                 if (!this.getOffers().isEmpty()) {
                     this.setTradingPlayer(player);
                     this.openTradingScreen(player, this.getDisplayName(), this.getScholarLevel());
                 }
             }
-            return InteractionResult.sidedSuccess(this.level().isClientSide());
+            return InteractionResult.SUCCESS;
         }
         return super.mobInteract(player, hand);
     }
@@ -475,9 +473,9 @@ public class ScholarEntity extends AbstractVillager {
     }
 
     @Override
-    public boolean hurt(DamageSource source, float amount) {
-        boolean hurt = super.hurt(source, amount);
-        if (hurt && !this.level().isClientSide()) {
+    public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
+        boolean hurt = super.hurtServer(level, source, amount);
+        if (hurt) {
             if (source.getEntity() instanceof ServerPlayer sp) {
                 this.lastDirectPlayerAttacker = sp.getUUID();
                 this.lastDirectPlayerHitTick = this.level().getGameTime();
@@ -525,7 +523,7 @@ public class ScholarEntity extends AbstractVillager {
         sLevel.playSound(null, this.getX(), this.getY(), this.getZ(), ModSounds.SCHOLAR_CURSE.get(), SoundSource.HOSTILE, 2.0F, 0.65F);
 
         killer.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 220, 0, false, false, true));
-        killer.serverLevel().playSound(
+        killer.level().playSound(
                 null,
                 killer.getX(), killer.getY(), killer.getZ(),
                 ModSounds.CREEPING_DEATH_HEARTBEAT.get(),
@@ -534,18 +532,18 @@ public class ScholarEntity extends AbstractVillager {
         );
 
         if (!CreepingDeathEntity.isTargetAlreadyHunted(sLevel.getServer(), killer.getUUID())) {
-            if (PersistentDataAccess.get(killer).getBoolean("bodycam_active")) {
+            if (PersistentDataAccess.get(killer).getBooleanOr("bodycam_active", false)) {
                 BodycamResetCameraPacket.executeReset(killer);
                 CreepingDeathEntity.sendHuntNoEscapeTitle(killer);
             }
             CreepingDeathEntity.scheduleScholarCurseSpawn(killer.getUUID(), this.getVariant(), ultraRare);
         } else if (ultraRare) {
-            CreepingDeathEntity.scheduleOscNuke(killer.serverLevel().dimension(), killer.position());
+            CreepingDeathEntity.scheduleOscNuke(killer.level().dimension(), killer.position());
         }
     }
 
     @Override
-    protected void updateTrades() {
+    protected void updateTrades(ServerLevel level) {
         if (this.offers == null) {
             this.offers = new MerchantOffers();
         }
@@ -1091,78 +1089,70 @@ public class ScholarEntity extends AbstractVillager {
     }
 
     @Override
-    public void addAdditionalSaveData(CompoundTag tag) {
-        super.addAdditionalSaveData(tag);
-        tag.putString("Variant", this.getVariant());
-        tag.putBoolean("VariantInitialized", this.variantInitialized);
-        tag.putString("TradesVariant", this.tradesGeneratedForVariant);
-        tag.putInt("ScholarLevel", this.getScholarLevel());
+    public void addAdditionalSaveData(ValueOutput output) {
+        super.addAdditionalSaveData(output);
+        output.putString("Variant", this.getVariant());
+        output.putBoolean("VariantInitialized", this.variantInitialized);
+        output.putString("TradesVariant", this.tradesGeneratedForVariant);
+        output.putInt("ScholarLevel", this.getScholarLevel());
 
-        ListTag itemKeysTag = new ListTag();
+        ValueOutput.TypedOutputList<String> itemKeysTag = output.list("UsedItemKeys", Codec.STRING);
         for (String key : this.usedItemKeys) {
-            itemKeysTag.add(StringTag.valueOf(key));
+            itemKeysTag.add(key);
         }
-        tag.put("UsedItemKeys", itemKeysTag);
 
-        ListTag familiesTag = new ListTag();
+        ValueOutput.TypedOutputList<String> familiesTag = output.list("UsedEnchantFamilies", Codec.STRING);
         for (String fam : this.usedEnchantFamilies) {
-            familiesTag.add(StringTag.valueOf(fam));
+            familiesTag.add(fam);
         }
-        tag.put("UsedEnchantFamilies", familiesTag);
 
-        if (this.hasRestriction()) {
-            BlockPos center = this.getRestrictCenter();
-            tag.putInt("HomeX", center.getX());
-            tag.putInt("HomeY", center.getY());
-            tag.putInt("HomeZ", center.getZ());
-            tag.putFloat("HomeRadius", this.getRestrictRadius());
+        if (this.hasHome()) {
+            BlockPos center = this.getHomePosition();
+            output.putInt("HomeX", center.getX());
+            output.putInt("HomeY", center.getY());
+            output.putInt("HomeZ", center.getZ());
+            output.putFloat("HomeRadius", this.getHomeRadius());
         }
     }
 
     @Override
-    public void readAdditionalSaveData(CompoundTag tag) {
-        super.readAdditionalSaveData(tag);
-        boolean hadExplicitVariant = tag.contains("Variant", Tag.TAG_STRING);
+    public void readAdditionalSaveData(ValueInput input) {
+        super.readAdditionalSaveData(input);
+        Optional<String> explicitVariant = input.getString("Variant");
+        boolean hadExplicitVariant = explicitVariant.isPresent();
         if (hadExplicitVariant) {
-            this.setVariant(tag.getString("Variant"));
+            this.setVariant(explicitVariant.get());
             this.variantInitialized = true;
-        } else if (tag.contains("VariantInitialized")) {
-            this.variantInitialized = tag.getBoolean("VariantInitialized");
+        } else {
+            this.variantInitialized = input.getBooleanOr("VariantInitialized", this.variantInitialized);
         }
 
-        if (tag.contains("ScholarLevel")) {
-            this.setScholarLevel(tag.getInt("ScholarLevel"));
-        }
+        input.getInt("ScholarLevel").ifPresent(this::setScholarLevel);
 
         this.usedItemKeys.clear();
-        if (tag.contains("UsedItemKeys", Tag.TAG_LIST)) {
-            ListTag list = tag.getList("UsedItemKeys", Tag.TAG_STRING);
-            for (int i = 0; i < list.size(); i++) {
-                this.usedItemKeys.add(list.getString(i));
-            }
+        for (String key : input.listOrEmpty("UsedItemKeys", Codec.STRING)) {
+            this.usedItemKeys.add(key);
         }
 
         this.usedEnchantFamilies.clear();
-        if (tag.contains("UsedEnchantFamilies", Tag.TAG_LIST)) {
-            ListTag list = tag.getList("UsedEnchantFamilies", Tag.TAG_STRING);
-            for (int i = 0; i < list.size(); i++) {
-                this.usedEnchantFamilies.add(list.getString(i));
-            }
+        for (String fam : input.listOrEmpty("UsedEnchantFamilies", Codec.STRING)) {
+            this.usedEnchantFamilies.add(fam);
         }
 
-        if (tag.contains("HomeX") && tag.contains("HomeY") && tag.contains("HomeZ")) {
-            BlockPos home = new BlockPos(tag.getInt("HomeX"), tag.getInt("HomeY"), tag.getInt("HomeZ"));
-            int radius = Math.max(16, Math.round(tag.getFloat("HomeRadius")));
-            this.restrictTo(home, radius);
+        Optional<Integer> homeX = input.getInt("HomeX");
+        Optional<Integer> homeY = input.getInt("HomeY");
+        Optional<Integer> homeZ = input.getInt("HomeZ");
+        if (homeX.isPresent() && homeY.isPresent() && homeZ.isPresent()) {
+            BlockPos home = new BlockPos(homeX.get(), homeY.get(), homeZ.get());
+            int radius = Math.max(16, Math.round(input.getFloatOr("HomeRadius", 24.0F)));
+            this.setHomeTo(home, radius);
         }
 
-        if (tag.contains("TradesVariant", Tag.TAG_STRING)) {
-            this.tradesGeneratedForVariant = normalizeVariant(tag.getString("TradesVariant"));
-        }
+        input.getString("TradesVariant").ifPresent(tv -> this.tradesGeneratedForVariant = normalizeVariant(tv));
 
         this.applyVariantArmor();
 
-        if (hadExplicitVariant && (!tag.contains("Offers", Tag.TAG_COMPOUND) || !this.getVariant().equals(this.tradesGeneratedForVariant))) {
+        if (hadExplicitVariant && (input.read("Offers", MerchantOffers.CODEC).isEmpty() || !this.getVariant().equals(this.tradesGeneratedForVariant))) {
             this.offers = new MerchantOffers();
             this.usedItemKeys.clear();
             this.usedEnchantFamilies.clear();
@@ -1220,7 +1210,7 @@ public class ScholarEntity extends AbstractVillager {
                     "book_" + family + "_" + level,
                     family,
                     weight,
-                    registries -> EnchantedBookItem.createForEnchantment(
+                    registries -> EnchantmentHelper.createBook(
                             new EnchantmentInstance(getEnchantHolder(registries, enchantmentKey), level)),
                     () -> new ItemStack(Items.BOOK, 1),
                     1, 1, minCost, maxCost, maxUses, false, false

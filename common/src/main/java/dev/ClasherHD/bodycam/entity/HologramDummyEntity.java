@@ -1,5 +1,6 @@
 package dev.ClasherHD.bodycam.entity;
 
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -17,7 +18,8 @@ public class HologramDummyEntity extends BodycamDummyEntity {
     }
 
     @Override
-    public boolean hurt(DamageSource source, float amount) {
+    public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
+        super.hurtServer(level, source, amount);
         return false;
     }
 
@@ -27,7 +29,8 @@ public class HologramDummyEntity extends BodycamDummyEntity {
     }
 
     @Override
-    public boolean isInvulnerableTo(DamageSource source) {
+    public boolean isInvulnerableTo(ServerLevel level, DamageSource source) {
+        super.isInvulnerableTo(level, source);
         return true;
     }
 

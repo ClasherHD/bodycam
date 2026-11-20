@@ -15,19 +15,20 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.Level;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 
 @SuppressWarnings("null")
 public class LogBookItem extends Item {
@@ -46,12 +47,12 @@ public class LogBookItem extends Item {
 
     public static int pageCount(ItemStack stack) {
         CompoundTag tag = ItemNbtAccess.getReadOnlyTag(stack);
-        return tag != null ? tag.getList(TAG_PAGES, 10).size() : 0;
+        return tag != null ? tag.getListOrEmpty(TAG_PAGES).size() : 0;
     }
 
     public static boolean hasPin(ItemStack stack) {
         CompoundTag tag = ItemNbtAccess.getReadOnlyTag(stack);
-        return tag != null && !tag.getString(TAG_PIN).isEmpty();
+        return tag != null && !tag.getStringOr(TAG_PIN, "").isEmpty();
     }
 
     public static boolean isValidPin(String pin) {
@@ -86,7 +87,7 @@ public class LogBookItem extends Item {
             return true;
         }
         CompoundTag tag = ItemNbtAccess.getReadOnlyTag(stack);
-        return tag != null && isValidPin(pin) && tag.getString(TAG_PIN).equals(hashPin(pin));
+        return tag != null && isValidPin(pin) && tag.getStringOr(TAG_PIN, "").equals(hashPin(pin));
     }
 
     public static boolean addPage(ItemStack book, CompoundTag pageData) {
@@ -94,7 +95,7 @@ public class LogBookItem extends Item {
             return false;
         }
         ItemNbtAccess.updateTag(book, tag -> {
-            ListTag pages = tag.getList(TAG_PAGES, 10);
+            ListTag pages = tag.getListOrEmpty(TAG_PAGES);
             pages.add(pageData.copy());
             tag.put(TAG_PAGES, pages);
         });
@@ -109,13 +110,13 @@ public class LogBookItem extends Item {
         if (readTag == null) {
             return null;
         }
-        ListTag readPages = readTag.getList(TAG_PAGES, 10);
+        ListTag readPages = readTag.getListOrEmpty(TAG_PAGES);
         if (readPages.isEmpty()) {
             return null;
         }
-        CompoundTag removed = readPages.getCompound(readPages.size() - 1).copy();
+        CompoundTag removed = readPages.getCompoundOrEmpty(readPages.size() - 1).copy();
         ItemNbtAccess.updateTag(book, tag -> {
-            ListTag pages = tag.getList(TAG_PAGES, 10);
+            ListTag pages = tag.getListOrEmpty(TAG_PAGES);
             if (!pages.isEmpty()) {
                 pages.remove(pages.size() - 1);
                 tag.put(TAG_PAGES, pages);
@@ -127,7 +128,7 @@ public class LogBookItem extends Item {
     public static CompoundTag buildViewData(ItemStack book) {
         CompoundTag data = new CompoundTag();
         CompoundTag tag = ItemNbtAccess.getReadOnlyTag(book);
-        ListTag pages = tag != null ? tag.getList(TAG_PAGES, 10).copy() : new ListTag();
+        ListTag pages = tag != null ? tag.getListOrEmpty(TAG_PAGES).copy() : new ListTag();
         data.put(TAG_PAGES, pages);
         return data;
     }
@@ -240,17 +241,17 @@ public class LogBookItem extends Item {
     }
 
     @Override
-    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+    public InteractionResult use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
         if (level.isClientSide()) {
-            return InteractionResultHolder.sidedSuccess(stack, true);
+            return InteractionResult.SUCCESS;
         }
         if (player instanceof ServerPlayer sPlayer) {
             boolean offHand = hand == InteractionHand.OFF_HAND;
             if (sPlayer.isShiftKeyDown()) {
                 if (!hasPin(stack) && pageCount(stack) == 0) {
                     sPlayer.displayClientMessage(Component.translatable("message.bodycam.logbook.empty_no_pin").withStyle(ChatFormatting.RED), true);
-                    return InteractionResultHolder.sidedSuccess(stack, false);
+                    return InteractionResult.SUCCESS;
                 }
                 PacketHandler.sendToPlayer(sPlayer,
                         new OpenLogBookPinScreenS2CPacket(hasPin(stack) ? OpenLogBookPinScreenS2CPacket.MODE_CHANGE : OpenLogBookPinScreenS2CPacket.MODE_SET, offHand));
@@ -261,15 +262,16 @@ public class LogBookItem extends Item {
                 sendBook(sPlayer, stack);
             }
         }
-        return InteractionResultHolder.sidedSuccess(stack, false);
+        return InteractionResult.SUCCESS;
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, context, tooltip, flag);
-        tooltip.add(Component.translatable("tooltip.bodycam.log_book.pages", pageCount(stack), MAX_PAGES).withStyle(ChatFormatting.GRAY));
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay tooltipDisplay,
+            Consumer<Component> tooltipAdder, TooltipFlag flag) {
+        super.appendHoverText(stack, context, tooltipDisplay, tooltipAdder, flag);
+        tooltipAdder.accept(Component.translatable("tooltip.bodycam.log_book.pages", pageCount(stack), MAX_PAGES).withStyle(ChatFormatting.GRAY));
         if (hasPin(stack)) {
-            tooltip.add(Component.translatable("tooltip.bodycam.log_book.locked").withStyle(ChatFormatting.RED));
+            tooltipAdder.accept(Component.translatable("tooltip.bodycam.log_book.locked").withStyle(ChatFormatting.RED));
         }
     }
 }

@@ -1,13 +1,16 @@
 package dev.ClasherHD.bodycam.client.camera;
 
+import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+@SuppressWarnings("null")
 public final class CameraSnapState {
     private static volatile boolean pendingSnap = false;
     private static volatile int lastRemovedDummyId = -1;
@@ -37,21 +40,21 @@ public final class CameraSnapState {
     public static void snapEntityWithoutInterpolation(Entity entity, double x, double y, double z,
                                                       float yRot, float xRot,
                                                       double vx, double vy, double vz,
-                                                      float fallDistance) {
+                                                      double fallDistance) {
         snapEntityState(entity, x, y, z, yRot, xRot, vx, vy, vz, fallDistance, false, true);
     }
 
     public static void snapRemoteEntityWithoutInterpolation(Entity entity, double x, double y, double z,
                                                             float yRot, float xRot,
                                                             double vx, double vy, double vz,
-                                                            float fallDistance, boolean invisible) {
+                                                            double fallDistance, boolean invisible) {
         snapEntityState(entity, x, y, z, yRot, xRot, vx, vy, vz, fallDistance, invisible, false);
     }
 
     public static void snapRemoteObserverOnExit(Entity observer, int entityId, double x, double y, double z,
                                                 float yRot, float xRot,
                                                 double vx, double vy, double vz,
-                                                float fallDistance, boolean invisible) {
+                                                double fallDistance, boolean invisible) {
         armRemoteExitSnap(entityId, x, y, z);
         if (observer != null) {
             snapRemoteEntityWithoutInterpolation(observer, x, y, z, yRot, xRot, vx, vy, vz, fallDistance, invisible);
@@ -88,11 +91,12 @@ public final class CameraSnapState {
             REMOTE_EXIT_GUARDS.remove(entity.getId(), guard);
             return;
         }
-        double tx = entity instanceof LivingEntity living ? living.lerpTargetX() : entity.getX();
-        double ty = entity instanceof LivingEntity living ? living.lerpTargetY() : entity.getY();
-        double tz = entity instanceof LivingEntity living ? living.lerpTargetZ() : entity.getZ();
-        float tyRot = entity instanceof LivingEntity living ? living.lerpTargetYRot() : entity.getYRot();
-        float txRot = entity instanceof LivingEntity living ? living.lerpTargetXRot() : entity.getXRot();
+        Vec3 interpPos = entity instanceof LivingEntity living ? living.getInterpolation().position() : entity.position();
+        double tx = interpPos.x;
+        double ty = interpPos.y;
+        double tz = interpPos.z;
+        float tyRot = entity instanceof LivingEntity living ? living.getInterpolation().yRot() : entity.getYRot();
+        float txRot = entity instanceof LivingEntity living ? living.getInterpolation().xRot() : entity.getXRot();
         snapRemoteEntityWithoutInterpolation(
                 entity, tx, ty, tz, tyRot, txRot,
                 entity.getDeltaMovement().x, entity.getDeltaMovement().y, entity.getDeltaMovement().z,
@@ -128,7 +132,7 @@ public final class CameraSnapState {
     private static void snapEntityState(Entity entity, double x, double y, double z,
                                         float yRot, float xRot,
                                         double vx, double vy, double vz,
-                                        float fallDistance, boolean invisible, boolean syncCodec) {
+                                        double fallDistance, boolean invisible, boolean syncCodec) {
         if (entity == null) {
             return;
         }
@@ -149,17 +153,17 @@ public final class CameraSnapState {
             living.yBodyRotO = yRot;
             living.yHeadRot = yRot;
             living.yHeadRotO = yRot;
-            living.lerpTo(x, y, z, yRot, xRot, 0);
+            living.getInterpolation().cancel();
             living.lerpHeadTo(yRot, 0);
             if (living.walkAnimation != null) {
                 living.walkAnimation.setSpeed(0.0F);
-                living.walkAnimation.update(0.0F, 1.0F);
+                living.walkAnimation.update(0.0F, 1.0F, 1.0F);
                 living.walkAnimation.setSpeed(0.0F);
             }
         }
-        if (entity instanceof Player player) {
-            player.bob = 0.0F;
-            player.oBob = 0.0F;
+        if (entity instanceof AbstractClientPlayer clientPlayer) {
+            clientPlayer.avatarState().resetBob();
+            clientPlayer.avatarState().resetBob();
         }
         if (syncCodec) {
             entity.syncPacketPositionCodec(x, y, z);
@@ -172,7 +176,7 @@ public final class CameraSnapState {
     public static void recordAtomicExit(Entity player, double x, double y, double z,
                                         float yRot, float xRot,
                                         double vx, double vy, double vz,
-                                        float fallDistance, int removedDummyId) {
+                                        double fallDistance, int removedDummyId) {
         observerInMonitorSession = false;
         snapEntityWithoutInterpolation(player, x, y, z, yRot, xRot, vx, vy, vz, fallDistance);
         lastRemovedDummyId = removedDummyId;
@@ -219,8 +223,9 @@ public final class CameraSnapState {
             living.yBodyRotO = living.yBodyRot;
             living.yHeadRotO = living.yHeadRot;
         }
-        if (entity instanceof Player p) {
-            p.oBob = p.bob;
+        if (entity instanceof AbstractClientPlayer clientPlayer) {
+            clientPlayer.avatarState().resetBob();
+            clientPlayer.avatarState().resetBob();
         }
         pendingSnap = false;
     }
@@ -272,7 +277,7 @@ public final class CameraSnapState {
             PENDING_EXITS.put(playerId, new SnapRecord(x, y, z, yRot, xRot, removedDummyId));
         }
         if (player != null) {
-            recordAtomicExit(player, x, y, z, yRot, xRot, 0.0D, 0.0D, 0.0D, 0.0F, removedDummyId);
+            recordAtomicExit(player, x, y, z, yRot, xRot, 0.0D, 0.0D, 0.0D, 0.0D, removedDummyId);
         }
     }
 

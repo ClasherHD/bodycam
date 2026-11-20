@@ -1,9 +1,9 @@
 {
   "type": "minecraft:crafting_shapeless",
   "ingredients": [
-    { "item": "minecraft:quartz" },
-    { "item": "minecraft:amethyst_shard" },
-    { "item": "minecraft:diamond" }
+    "minecraft:quartz",
+    "minecraft:amethyst_shard",
+    "minecraft:diamond"
   ],
   "result": {
     "id": "bodycam:observation_crystal",

@@ -10,11 +10,12 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.Unit;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.armortrim.ArmorTrim;
-import net.minecraft.world.item.component.Unbreakable;
+import net.minecraft.world.item.equipment.trim.ArmorTrim;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
@@ -30,6 +31,10 @@ public final class ItemDurabilityHelper {
 
     public static final String CRYSTAL_TRIM_MATERIAL = bodycam.MODID + ":observation_crystal";
     public static final float SAVE_CHANCE_PER_TRIM_PIECE = 0.125F;
+
+    private static final EquipmentSlot[] ARMOR_SLOTS = {
+            EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET
+    };
 
     private ItemDurabilityHelper() {
     }
@@ -60,7 +65,7 @@ public final class ItemDurabilityHelper {
 
     public static ItemStack createUnbreakableStack(Item item) {
         ItemStack stack = new ItemStack(item);
-        stack.set(DataComponents.UNBREAKABLE, new Unbreakable(true));
+        stack.set(DataComponents.UNBREAKABLE, Unit.INSTANCE);
         return stack;
     }
 
@@ -128,10 +133,10 @@ public final class ItemDurabilityHelper {
         if (trim == null) {
             return false;
         }
-        if ("observation_crystal".equals(trim.material().value().assetName())) {
+        if ("observation_crystal".equals(trim.material().value().assets().base().suffix())) {
             return true;
         }
-        return trim.material().unwrapKey().map(ResourceKey::location).map(loc -> loc.equals(bodycam.id("observation_crystal"))).orElse(false);
+        return trim.material().unwrapKey().map(ResourceKey::identifier).map(loc -> loc.equals(bodycam.id("observation_crystal"))).orElse(false);
     }
 
     public static int getObservationCrystalTrimCount(Player player) {
@@ -139,8 +144,8 @@ public final class ItemDurabilityHelper {
             return 0;
         }
         int count = 0;
-        for (ItemStack armorStack : player.getArmorSlots()) {
-            if (hasObservationCrystalTrim(armorStack)) {
+        for (EquipmentSlot slot : ARMOR_SLOTS) {
+            if (hasObservationCrystalTrim(player.getItemBySlot(slot))) {
                 count++;
             }
         }

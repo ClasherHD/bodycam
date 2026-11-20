@@ -9,7 +9,6 @@ import dev.ClasherHD.bodycam.util.PersistentDataAccess;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -22,6 +21,8 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.Vec3;
 
 import org.jetbrains.annotations.Nullable;
@@ -186,16 +187,16 @@ public class WatchPointDummyEntity extends BodycamDummyEntity {
             return;
         }
         this.kickedObservingOwner = true;
-        MinecraftServer server = this.getServer();
+        MinecraftServer server = this.level().getServer();
         if (server == null) {
             return;
         }
         ServerPlayer owner = server.getPlayerList().getPlayer(ownerId);
         if (owner != null) {
             CompoundTag data = PersistentDataAccess.get(owner);
-            if (data.getBoolean("bodycam_active")
-                    && data.hasUUID("bodycam_target_uuid")
-                    && this.getUUID().equals(data.getUUID("bodycam_target_uuid"))) {
+            if (data.getBooleanOr("bodycam_active", false)
+                    && PersistentDataAccess.hasUUID(data, "bodycam_target_uuid")
+                    && this.getUUID().equals(PersistentDataAccess.getUUID(data, "bodycam_target_uuid"))) {
                 BodycamResetCameraPacket.executeReset(owner);
                 PacketHandler.sendToPlayer(owner, new BodycamForceClosePacket());
             }
@@ -243,26 +244,24 @@ public class WatchPointDummyEntity extends BodycamDummyEntity {
     }
 
     @Override
-    protected boolean shouldDropLoot() {
+    protected boolean shouldDropLoot(ServerLevel level) {
         return false;
     }
 
     @Override
-    public void addAdditionalSaveData(CompoundTag tag) {
-        super.addAdditionalSaveData(tag);
-        tag.putString("WatchPointName", getWatchPointName());
+    public void addAdditionalSaveData(ValueOutput output) {
+        super.addAdditionalSaveData(output);
+        output.putString("WatchPointName", getWatchPointName());
         BlockPos wpPos = getWatchPointPos();
         if (wpPos != null) {
-            tag.put("WatchPointPos", NbtUtils.writeBlockPos(wpPos));
+            output.store("WatchPointPos", BlockPos.CODEC, wpPos);
         }
     }
 
     @Override
-    public void readAdditionalSaveData(CompoundTag tag) {
-        super.readAdditionalSaveData(tag);
-        NbtUtils.readBlockPos(tag, "WatchPointPos").ifPresent(this::setWatchPointPos);
-        if (tag.contains("WatchPointName")) {
-            setWatchPointName(tag.getString("WatchPointName"));
-        }
+    public void readAdditionalSaveData(ValueInput input) {
+        super.readAdditionalSaveData(input);
+        input.read("WatchPointPos", BlockPos.CODEC).ifPresent(this::setWatchPointPos);
+        input.getString("WatchPointName").ifPresent(this::setWatchPointName);
     }
 }

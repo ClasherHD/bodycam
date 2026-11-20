@@ -9,10 +9,11 @@ import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
-import net.minecraft.world.item.EnchantedBookItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
 
+@SuppressWarnings("null")
 public class ModCreativeTabs {
     public static final DeferredRegister<CreativeModeTab> TABS =
             DeferredRegister.create(bodycam.MODID, Registries.CREATIVE_MODE_TAB);
@@ -45,17 +46,17 @@ public class ModCreativeTabs {
                         var enchantments = parameters.holders().lookupOrThrow(Registries.ENCHANTMENT);
                         enchantments.get(ModEnchantments.REACH).ifPresent(holder -> {
                             for (int level = 1; level <= 2; level++) {
-                                output.accept(EnchantedBookItem.createForEnchantment(new EnchantmentInstance(holder, level)));
+                                output.accept(EnchantmentHelper.createBook(new EnchantmentInstance(holder, level)));
                             }
                         });
                         enchantments.get(ModEnchantments.NIGHTSPY).ifPresent(holder -> {
                             for (int level = 1; level <= 4; level++) {
-                                output.accept(EnchantedBookItem.createForEnchantment(new EnchantmentInstance(holder, level)));
+                                output.accept(EnchantmentHelper.createBook(new EnchantmentInstance(holder, level)));
                             }
                         });
                         enchantments.get(ModEnchantments.ANONYMITY).ifPresent(holder -> {
                             for (int level = 1; level <= 2; level++) {
-                                output.accept(EnchantedBookItem.createForEnchantment(new EnchantmentInstance(holder, level)));
+                                output.accept(EnchantmentHelper.createBook(new EnchantmentInstance(holder, level)));
                             }
                         });
                     })));

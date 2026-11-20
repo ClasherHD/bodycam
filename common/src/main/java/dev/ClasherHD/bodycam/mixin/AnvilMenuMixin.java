@@ -2,14 +2,16 @@ package dev.ClasherHD.bodycam.mixin;
 
 import dev.ClasherHD.bodycam.item.ItemDurabilityHelper;
 import dev.ClasherHD.bodycam.item.PortableNetherPortalItem;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AnvilMenu;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.DataSlot;
 import net.minecraft.world.inventory.ItemCombinerMenu;
+import net.minecraft.world.inventory.ItemCombinerMenuSlotDefinition;
 import net.minecraft.world.inventory.MenuType;
-import net.minecraft.world.item.EnchantedBookItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -23,8 +25,8 @@ public abstract class AnvilMenuMixin extends ItemCombinerMenu {
     @Final
     private DataSlot cost;
 
-    protected AnvilMenuMixin(MenuType<?> type, int containerId, Inventory inventory, ContainerLevelAccess access) {
-        super(type, containerId, inventory, access);
+    protected AnvilMenuMixin(MenuType<?> type, int containerId, Inventory inventory, ContainerLevelAccess access, ItemCombinerMenuSlotDefinition slotDefinition) {
+        super(type, containerId, inventory, access, slotDefinition);
     }
 
     @Inject(method = "createResult", at = @At("HEAD"), cancellable = true)
@@ -36,7 +38,7 @@ public abstract class AnvilMenuMixin extends ItemCombinerMenu {
         }
         if (ItemDurabilityHelper.isRepairableModItem(left) || left.getItem() instanceof PortableNetherPortalItem) {
             boolean block = false;
-            if (right.getItem() instanceof EnchantedBookItem || right.isEnchanted()) {
+            if (right.is(Items.ENCHANTED_BOOK) || right.has(DataComponents.STORED_ENCHANTMENTS) || right.isEnchanted()) {
                 if (!ItemDurabilityHelper.isBookEnchantable(left, right)) {
                     block = true;
                 }

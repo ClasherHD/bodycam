@@ -2,8 +2,8 @@ package dev.ClasherHD.bodycam.client.cache;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 
 @SuppressWarnings("null")
@@ -14,7 +14,7 @@ public class ClientLocatorCache {
     public static void updateStructure(BlockPos pos, String dim) {
         structureTarget = pos;
         if (dim != null) {
-            structureTargetDimension = ResourceKey.create(Registries.DIMENSION, ResourceLocation.parse(dim));
+            structureTargetDimension = ResourceKey.create(Registries.DIMENSION, Identifier.parse(dim));
         } else {
             structureTargetDimension = null;
         }

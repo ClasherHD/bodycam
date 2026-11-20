@@ -16,7 +16,9 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.SectionPos;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.particles.ColorParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
@@ -37,12 +39,14 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
+import net.minecraft.util.random.WeightedList;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityReference;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -53,22 +57,30 @@ import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.item.PrimedTnt;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.projectile.ThrownEnderpearl;
-import net.minecraft.world.entity.vehicle.Boat;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownEnderpearl;
+import net.minecraft.world.entity.vehicle.boat.Boat;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.armortrim.ArmorTrim;
-import net.minecraft.world.item.armortrim.TrimMaterial;
-import net.minecraft.world.item.armortrim.TrimPattern;
-import net.minecraft.world.item.armortrim.TrimPatterns;
+import net.minecraft.world.item.MaceItem;
+import net.minecraft.world.item.component.BlocksAttacks;
+import net.minecraft.world.item.component.KineticWeapon;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.item.equipment.trim.ArmorTrim;
+import net.minecraft.world.item.equipment.trim.TrimMaterial;
+import net.minecraft.world.item.equipment.trim.TrimPattern;
+import net.minecraft.world.item.equipment.trim.TrimPatterns;
+import net.minecraft.world.level.ExplosionDamageCalculator;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.SimpleExplosionDamageCalculator;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Portal;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -77,16 +89,17 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 @SuppressWarnings("null")
 public class CreepingDeathEntity extends PathfinderMob {
 
-    public static final EntityDataAccessor<Optional<UUID>> SKIN_UUID = SynchedEntityData.defineId(
-            CreepingDeathEntity.class, EntityDataSerializers.OPTIONAL_UUID);
+    public static final EntityDataAccessor<Optional<EntityReference<LivingEntity>>> SKIN_UUID = SynchedEntityData.defineId(
+            CreepingDeathEntity.class, EntityDataSerializers.OPTIONAL_LIVING_ENTITY_REFERENCE);
     public static final EntityDataAccessor<String> SKIN_NAME = SynchedEntityData.defineId(
             CreepingDeathEntity.class, EntityDataSerializers.STRING);
-    public static final EntityDataAccessor<Optional<UUID>> TARGET_UUID = SynchedEntityData.defineId(
-            CreepingDeathEntity.class, EntityDataSerializers.OPTIONAL_UUID);
+    public static final EntityDataAccessor<Optional<EntityReference<LivingEntity>>> TARGET_UUID = SynchedEntityData.defineId(
+            CreepingDeathEntity.class, EntityDataSerializers.OPTIONAL_LIVING_ENTITY_REFERENCE);
     public static final EntityDataAccessor<String> SCHOLAR_SKIN = SynchedEntityData.defineId(
             CreepingDeathEntity.class, EntityDataSerializers.STRING);
     public static final EntityDataAccessor<Boolean> ULTRA_RARE_CURSE = SynchedEntityData.defineId(
@@ -136,7 +149,16 @@ public class CreepingDeathEntity extends PathfinderMob {
         }
     }
 
+    private enum MaceState {
+        NONE,
+        LAUNCHING,
+        DESCENDING
+    }
+
     private ItemStack godSword = ItemStack.EMPTY;
+    private ItemStack godSpear = ItemStack.EMPTY;
+    private ItemStack godMace = ItemStack.EMPTY;
+    private ItemStack windChargeStack = ItemStack.EMPTY;
     private ItemStack pickaxeStack = ItemStack.EMPTY;
     private ItemStack axeStack = ItemStack.EMPTY;
     private ItemStack shovelStack = ItemStack.EMPTY;
@@ -148,6 +170,21 @@ public class CreepingDeathEntity extends PathfinderMob {
     private int pearlCooldown = 60;
     private int buildCooldown = 0;
     private int pillaringTicks = 0;
+    private int bridgingTicks = 0;
+    private int windChargeCooldown = 0;
+    private int windPillarTicks = 0;
+    private double windPillarX = 0.0D;
+    private double windPillarZ = 0.0D;
+    private MaceState maceState = MaceState.NONE;
+    private int maceTicks = 0;
+    private int maceCooldown = 60;
+    private int maceChainCount = 0;
+    private Vec3 lastTargetPos = null;
+    private Vec3 smoothedTargetVel = Vec3.ZERO;
+    private double targetStartYWindow = 0.0D;
+    private int targetYWindowTicks = 0;
+    private int targetBuildingUpTicks = 0;
+    private int targetRunningAwayTicks = 0;
     private int fireworkTicks = 0;
     private BlockPos miningPos = null;
     private int miningTicks = 0;
@@ -201,8 +238,8 @@ public class CreepingDeathEntity extends PathfinderMob {
     }
 
     public void initializeAssassin(UUID targetUUID, UUID skinUUID, String skinName, String scholarSkin, boolean ultraRareCurse) {
-        this.entityData.set(TARGET_UUID, Optional.ofNullable(targetUUID));
-        this.entityData.set(SKIN_UUID, Optional.ofNullable(skinUUID));
+        this.entityData.set(TARGET_UUID, Optional.ofNullable(targetUUID).map(EntityReference::of));
+        this.entityData.set(SKIN_UUID, Optional.ofNullable(skinUUID).map(EntityReference::of));
         this.entityData.set(SKIN_NAME, skinName != null ? skinName : "");
         this.entityData.set(SCHOLAR_SKIN, scholarSkin != null ? scholarSkin : "");
         this.entityData.set(ULTRA_RARE_CURSE, ultraRareCurse);
@@ -213,8 +250,8 @@ public class CreepingDeathEntity extends PathfinderMob {
         this.setupEquipment(this.level().registryAccess());
         this.setHealth(this.getMaxHealth());
         if (ultraRareCurse) {
-            this.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, MAX_LIFETIME_TICKS + 200, 1, false, false));
-            this.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, MAX_LIFETIME_TICKS + 200, 1, false, false));
+            this.addEffect(new MobEffectInstance(MobEffects.SPEED, MAX_LIFETIME_TICKS + 200, 1, false, false));
+            this.addEffect(new MobEffectInstance(MobEffects.STRENGTH, MAX_LIFETIME_TICKS + 200, 1, false, false));
         }
         if (targetUUID != null) {
             ACTIVE_HUNTS_BY_TARGET.put(targetUUID, this.getUUID());
@@ -226,37 +263,71 @@ public class CreepingDeathEntity extends PathfinderMob {
     }
 
     public void setupEquipment(RegistryAccess registryAccess) {
+        Holder<Enchantment> sharpness = getEnchantHolder(registryAccess, Enchantments.SHARPNESS);
+        Holder<Enchantment> unbreaking = getEnchantHolder(registryAccess, Enchantments.UNBREAKING);
+        Holder<Enchantment> mending = getEnchantHolder(registryAccess, Enchantments.MENDING);
+        Holder<Enchantment> looting = getEnchantHolder(registryAccess, Enchantments.LOOTING);
+        Holder<Enchantment> fireAspect = getEnchantHolder(registryAccess, Enchantments.FIRE_ASPECT);
+        Holder<Enchantment> vanishing = getEnchantHolder(registryAccess, Enchantments.VANISHING_CURSE);
+
         this.godSword = new ItemStack(Items.NETHERITE_SWORD);
-        this.godSword.enchant(getEnchantHolder(registryAccess, Enchantments.SHARPNESS), 5);
-        this.godSword.enchant(getEnchantHolder(registryAccess, Enchantments.UNBREAKING), 3);
-        this.godSword.enchant(getEnchantHolder(registryAccess, Enchantments.MENDING), 1);
+        this.godSword.enchant(sharpness, 5);
+        this.godSword.enchant(unbreaking, 3);
+        this.godSword.enchant(mending, 1);
         this.godSword.enchant(getEnchantHolder(registryAccess, Enchantments.SWEEPING_EDGE), 3);
-        this.godSword.enchant(getEnchantHolder(registryAccess, Enchantments.LOOTING), 3);
-        this.godSword.enchant(getEnchantHolder(registryAccess, Enchantments.FIRE_ASPECT), 2);
+        this.godSword.enchant(looting, 3);
+        this.godSword.enchant(fireAspect, 2);
+        this.godSword.enchant(vanishing, 1);
+
+        this.godSpear = new ItemStack(Items.NETHERITE_SPEAR);
+        this.godSpear.enchant(sharpness, 5);
+        this.godSpear.enchant(getEnchantHolder(registryAccess, Enchantments.LUNGE), 3);
+        this.godSpear.enchant(unbreaking, 3);
+        this.godSpear.enchant(mending, 1);
+        this.godSpear.enchant(looting, 3);
+        this.godSpear.enchant(fireAspect, 2);
+        this.godSpear.enchant(vanishing, 1);
+
+        this.godMace = new ItemStack(Items.MACE);
+        this.godMace.enchant(getEnchantHolder(registryAccess, Enchantments.DENSITY), 5);
+        this.godMace.enchant(getEnchantHolder(registryAccess, Enchantments.WIND_BURST), 1);
+        this.godMace.enchant(unbreaking, 3);
+        this.godMace.enchant(mending, 1);
+        this.godMace.enchant(fireAspect, 2);
+        this.godMace.enchant(vanishing, 1);
+
+        this.windChargeStack = new ItemStack(Items.WIND_CHARGE, 64);
 
         Holder<Enchantment> eff = getEnchantHolder(registryAccess, Enchantments.EFFICIENCY);
-        Holder<Enchantment> unbreaking = getEnchantHolder(registryAccess, Enchantments.UNBREAKING);
 
         this.pickaxeStack = new ItemStack(Items.NETHERITE_PICKAXE);
         this.pickaxeStack.enchant(eff, 10);
         this.pickaxeStack.enchant(unbreaking, 3);
+        this.pickaxeStack.enchant(vanishing, 1);
 
         this.axeStack = new ItemStack(Items.NETHERITE_AXE);
         this.axeStack.enchant(eff, 10);
         this.axeStack.enchant(unbreaking, 3);
+        this.axeStack.enchant(vanishing, 1);
 
         this.shovelStack = new ItemStack(Items.NETHERITE_SHOVEL);
         this.shovelStack.enchant(eff, 10);
         this.shovelStack.enchant(unbreaking, 3);
+        this.shovelStack.enchant(vanishing, 1);
 
         this.cobbleStack = new ItemStack(Items.COBBLESTONE, 64);
         this.elytraStack = new ItemStack(Items.ELYTRA);
+        this.elytraStack.enchant(vanishing, 1);
 
         ItemStack helmet = new ItemStack(Items.NETHERITE_HELMET);
+        helmet.enchant(vanishing, 1);
         ItemStack chest = new ItemStack(Items.NETHERITE_CHESTPLATE);
+        chest.enchant(vanishing, 1);
         ItemStack legs = new ItemStack(Items.NETHERITE_LEGGINGS);
+        legs.enchant(vanishing, 1);
         ItemStack boots = new ItemStack(Items.NETHERITE_BOOTS);
         boots.enchant(getEnchantHolder(registryAccess, Enchantments.DEPTH_STRIDER), 3);
+        boots.enchant(vanishing, 1);
 
         try {
             Optional<? extends HolderLookup.RegistryLookup<TrimMaterial>> matRegOpt = registryAccess.lookup(Registries.TRIM_MATERIAL);
@@ -286,7 +357,7 @@ public class CreepingDeathEntity extends PathfinderMob {
     }
 
     public UUID getSkinUUID() {
-        return this.entityData.get(SKIN_UUID).orElse(null);
+        return this.entityData.get(SKIN_UUID).map(EntityReference::getUUID).orElse(null);
     }
 
     public String getSkinName() {
@@ -294,7 +365,7 @@ public class CreepingDeathEntity extends PathfinderMob {
     }
 
     public UUID getTargetUUID() {
-        return this.entityData.get(TARGET_UUID).orElse(null);
+        return this.entityData.get(TARGET_UUID).map(EntityReference::getUUID).orElse(null);
     }
 
     public String getScholarSkin() {
@@ -351,7 +422,7 @@ public class CreepingDeathEntity extends PathfinderMob {
         }
         long now = player.level().getGameTime();
         CompoundTag pData = PersistentDataAccess.get(player);
-        long last = pData.getLong("bodycam_cd_title_cd");
+        long last = pData.getLongOr("bodycam_cd_title_cd", 0L);
         if (now - last < 40L && now >= last) {
             return;
         }
@@ -368,14 +439,18 @@ public class CreepingDeathEntity extends PathfinderMob {
     }
 
     public static boolean blockObservationIfHunted(ServerPlayer player) {
-        if (player == null || player.getServer() == null) {
+        if (player == null) {
             return false;
         }
-        if (!isTargetAlreadyHunted(player.getServer(), player.getUUID())) {
+        MinecraftServer server = player.level().getServer();
+        if (server == null) {
+            return false;
+        }
+        if (!isTargetAlreadyHunted(server, player.getUUID())) {
             return false;
         }
         CompoundTag pData = PersistentDataAccess.get(player);
-        if (pData.getBoolean("bodycam_active")) {
+        if (pData.getBooleanOr("bodycam_active", false)) {
             BodycamResetCameraPacket.executeReset(player);
         }
         pData.remove("bodycam_all_seeing_pending");
@@ -400,12 +475,12 @@ public class CreepingDeathEntity extends PathfinderMob {
     }
 
     @Override
-    public boolean causeFallDamage(float fallDistance, float multiplier, DamageSource source) {
+    public boolean causeFallDamage(double fallDistance, float multiplier, DamageSource source) {
         return false;
     }
 
     @Override
-    public boolean canChangeDimensions(Level from, Level to) {
+    public boolean canTeleport(Level from, Level to) {
         return false;
     }
 
@@ -419,20 +494,20 @@ public class CreepingDeathEntity extends PathfinderMob {
     }
 
     @Override
-    public boolean hurt(DamageSource source, float amount) {
+    public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
         if (source.is(DamageTypes.FELL_OUT_OF_WORLD) && this.tickCount < MAX_LIFETIME_TICKS) {
             this.voidRecoveryFlight = true;
             return false;
         }
         if (source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
-            return super.hurt(source, amount);
+            return super.hurtServer(level, source, amount);
         }
         Entity attacker = source.getEntity();
         Entity direct = source.getDirectEntity();
         if (!(attacker instanceof Player) && !(direct instanceof Player)) {
             return false;
         }
-        return super.hurt(source, amount);
+        return super.hurtServer(level, source, amount);
     }
 
     private void updateForcedChunk(ServerLevel currentLevel) {
@@ -499,7 +574,7 @@ public class CreepingDeathEntity extends PathfinderMob {
         float yaw = toTarget.lengthSqr() > 0.001D
                 ? (float) (Mth.atan2(toTarget.z, toTarget.x) * (double) (180F / (float) Math.PI)) - 90.0F
                 : target.getYRot();
-        transferred.moveTo(tx, ty, tz, yaw, 0.0F);
+        transferred.snapTo(tx, ty, tz, yaw, 0.0F);
         transferred.setYHeadRot(yaw);
         transferred.setYBodyRot(yaw);
         transferred.initializeAssassin(targetId, skinId, skinName, scholarSkin, ultraRare);
@@ -513,13 +588,13 @@ public class CreepingDeathEntity extends PathfinderMob {
     }
 
     @Override
-    public boolean startRiding(Entity vehicle, boolean force) {
+    public boolean startRiding(Entity vehicle, boolean force, boolean sendEvent) {
         if (!this.level().isClientSide()) {
             if (this.ownBoatUUID == null || !vehicle.getUUID().equals(this.ownBoatUUID)) {
                 return false;
             }
         }
-        return super.startRiding(vehicle, force);
+        return super.startRiding(vehicle, force, sendEvent);
     }
 
     private void discardOwnBoat() {
@@ -626,7 +701,7 @@ public class CreepingDeathEntity extends PathfinderMob {
             return;
         }
 
-        if (this.godSword.isEmpty()) {
+        if (this.godSword.isEmpty() || this.godSpear.isEmpty() || this.godMace.isEmpty() || this.windChargeStack.isEmpty()) {
             this.setupEquipment(this.level().registryAccess());
         }
 
@@ -664,7 +739,7 @@ public class CreepingDeathEntity extends PathfinderMob {
             return;
         }
 
-        if (PersistentDataAccess.get(target).getBoolean("bodycam_active")) {
+        if (PersistentDataAccess.get(target).getBooleanOr("bodycam_active", false)) {
             BodycamResetCameraPacket.executeReset(target);
             sendHuntNoEscapeTitle(target);
         }
@@ -679,7 +754,7 @@ public class CreepingDeathEntity extends PathfinderMob {
         }
 
         if (target.level() != this.level()) {
-            teleportToTargetDimension(target.serverLevel(), target);
+            teleportToTargetDimension(target.level(), target);
             return;
         }
 
@@ -689,9 +764,14 @@ public class CreepingDeathEntity extends PathfinderMob {
         if (this.pearlCooldown > 0) this.pearlCooldown--;
         if (this.buildCooldown > 0) this.buildCooldown--;
         if (this.pillaringTicks > 0) this.pillaringTicks--;
+        if (this.bridgingTicks > 0) this.bridgingTicks--;
+        if (this.windChargeCooldown > 0) this.windChargeCooldown--;
+        if (this.windPillarTicks > 0) this.windPillarTicks--;
+        if (this.maceCooldown > 0) this.maceCooldown--;
 
         if (this.tickCount % 10 == 0) {
-            if (this.pillaringTicks <= 0 && !this.voidRecoveryFlight && this.position().distanceToSqr(this.lastCheckPos) < 0.25D) {
+            if (this.pillaringTicks <= 0 && this.windPillarTicks <= 0 && this.maceState == MaceState.NONE
+                    && !this.voidRecoveryFlight && this.position().distanceToSqr(this.lastCheckPos) < 0.25D) {
                 this.stuckTicks += 10;
             } else {
                 this.stuckTicks = 0;
@@ -705,15 +785,17 @@ public class CreepingDeathEntity extends PathfinderMob {
         double horizDistSq = dx * dx + dz * dz;
         double totalDistSq = horizDistSq + dy * dy;
 
+        updateTargetBehaviorTracking(target, dx, dz);
+
         if (this.isUltraRareCurse()) {
-            if (!this.hasEffect(MobEffects.MOVEMENT_SPEED)) {
-                this.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, MAX_LIFETIME_TICKS, 1, false, false));
+            if (!this.hasEffect(MobEffects.SPEED)) {
+                this.addEffect(new MobEffectInstance(MobEffects.SPEED, MAX_LIFETIME_TICKS, 1, false, false));
             }
-            if (!this.hasEffect(MobEffects.DAMAGE_BOOST)) {
-                this.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, MAX_LIFETIME_TICKS, 1, false, false));
+            if (!this.hasEffect(MobEffects.STRENGTH)) {
+                this.addEffect(new MobEffectInstance(MobEffects.STRENGTH, MAX_LIFETIME_TICKS, 1, false, false));
             }
             if (totalDistSq > 2500.0D) {
-                target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 200, 4, false, false, true));
+                target.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 200, 4, false, false, true));
                 target.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 200, 0, false, false, true));
             }
         }
@@ -721,7 +803,7 @@ public class CreepingDeathEntity extends PathfinderMob {
         this.getLookControl().setLookAt(target, 30.0F, 30.0F);
 
         if (!this.voidRecoveryFlight) {
-            if (this.getY() < sLevel.getMinBuildHeight() + 2
+            if (this.getY() < sLevel.getMinY() + 2
                     || (this.getY() < target.getY() - 18.0D && !hasSolidGroundBelow(sLevel, this.blockPosition()))) {
                 this.voidRecoveryFlight = true;
                 this.voidRecoveryTicks = 0;
@@ -732,15 +814,15 @@ public class CreepingDeathEntity extends PathfinderMob {
         if (this.voidRecoveryFlight) {
             this.voidRecoveryTicks++;
             this.pillaringTicks = 0;
+            this.windPillarTicks = 0;
+            this.bridgingTicks = 0;
+            this.maceState = MaceState.NONE;
+            stopUsingItemIfActive();
             discardOwnBoat();
             setSwimmingPose(false);
             this.getNavigation().stop();
-            if (this.miningPos != null) {
-                sLevel.destroyBlockProgress(this.getId(), this.miningPos, -1);
-                this.miningPos = null;
-                this.miningTicks = 0;
-            }
-            equipWeapon(this.godSword);
+            clearMining(sLevel);
+            equipWeapon(this.godSpear);
 
             if (!this.getSharedFlag(7)) {
                 this.setItemSlot(EquipmentSlot.CHEST, this.elytraStack.copy());
@@ -758,7 +840,7 @@ public class CreepingDeathEntity extends PathfinderMob {
             double horizToGoalSq = (goalX - this.getX()) * (goalX - this.getX()) + (goalZ - this.getZ()) * (goalZ - this.getZ());
 
             boolean reachedGoal = (horizToGoalSq <= 5.0D && Math.abs(this.getY() - goalY) <= 3.0D)
-                    || (this.getY() >= sLevel.getMinBuildHeight() + 6 && this.onGround() && hasSolidGroundBelow(sLevel, this.blockPosition()) && this.getY() >= goalY - 3.0D)
+                    || (this.getY() >= sLevel.getMinY() + 6 && this.onGround() && hasSolidGroundBelow(sLevel, this.blockPosition()) && this.getY() >= goalY - 3.0D)
                     || this.voidRecoveryTicks >= 140;
 
             if (reachedGoal) {
@@ -817,14 +899,14 @@ public class CreepingDeathEntity extends PathfinderMob {
 
         if (shouldFlyElytra) {
             this.pillaringTicks = 0;
+            this.windPillarTicks = 0;
+            this.bridgingTicks = 0;
+            this.maceState = MaceState.NONE;
             discardOwnBoat();
             setSwimmingPose(false);
             this.getNavigation().stop();
-            if (this.miningPos != null) {
-                sLevel.destroyBlockProgress(this.getId(), this.miningPos, -1);
-                this.miningPos = null;
-                this.miningTicks = 0;
-            }
+            clearMining(sLevel);
+            equipWeapon(this.godSpear);
             if (!this.getSharedFlag(7)) {
                 this.setItemSlot(EquipmentSlot.CHEST, this.elytraStack.copy());
                 this.setSharedFlag(7, true);
@@ -845,6 +927,20 @@ public class CreepingDeathEntity extends PathfinderMob {
             this.yBodyRot = yaw;
             this.yHeadRot = yaw;
 
+            // 1.21.11 kinetic spear charge while closing in during Elytra pursuit
+            if (totalDistSq <= 324.0D) {
+                KineticWeapon kw = this.getMainHandItem().get(DataComponents.KINETIC_WEAPON);
+                if (this.isUsingItem()) {
+                    if (kw != null && this.getTicksUsingItem() >= kw.computeDamageUseDuration()) {
+                        this.stopUsingItem();
+                    }
+                } else if (kw != null) {
+                    this.startUsingItem(InteractionHand.MAIN_HAND);
+                }
+            } else {
+                stopUsingItemIfActive();
+            }
+
             this.fireworkTicks++;
             if (this.fireworkTicks >= 25) {
                 this.fireworkTicks = 0;
@@ -854,13 +950,22 @@ public class CreepingDeathEntity extends PathfinderMob {
                         12, 0.15D, 0.15D, 0.15D, 0.05D);
             }
 
-            if (totalDistSq <= 9.0D && this.attackCooldown <= 0) {
-                performMeleeAttack(target);
+            if (!target.isAlive() || target.isDeadOrDying()) {
+                onTargetKilled();
+                return;
+            }
+
+            if (totalDistSq <= 12.25D && this.attackCooldown <= 0) {
+                performWeaponAttack(target, this.godSpear, 14);
             }
             return;
         } else if (this.getSharedFlag(7)) {
+            stopUsingItemIfActive();
             this.setSharedFlag(7, false);
             this.setItemSlot(EquipmentSlot.CHEST, this.trimmedChestStack.copy());
+            equipWeapon(target.isBlocking() ? this.axeStack : this.godSword);
+        } else {
+            stopUsingItemIfActive();
         }
 
         destroyBlockingBoats(sLevel, target);
@@ -891,6 +996,9 @@ public class CreepingDeathEntity extends PathfinderMob {
         }
 
         if (shouldUseBoat) {
+            this.maceState = MaceState.NONE;
+            this.windPillarTicks = 0;
+            this.bridgingTicks = 0;
             setSwimmingPose(false);
             this.getNavigation().stop();
 
@@ -921,7 +1029,23 @@ public class CreepingDeathEntity extends PathfinderMob {
             discardOwnBoat();
         }
 
-        if (totalDistSq <= 25.0D && this.miningPos == null && this.pillaringTicks <= 0) {
+        if (this.maceState != MaceState.NONE) {
+            if (handleActiveMaceAttack(sLevel, target, dx, dy, dz, horizDistSq, totalDistSq)) {
+                return;
+            }
+        }
+
+        if (this.windPillarTicks > 0) {
+            handleActiveWindPillar(sLevel, target);
+            return;
+        }
+
+        if (canStartWindChargeMace(sLevel, target, dx, dy, dz, horizDistSq)) {
+            startWindChargeMace(sLevel, target, dx, dz, horizDistSq);
+            return;
+        }
+
+        if (totalDistSq <= 25.0D && this.miningPos == null && this.pillaringTicks <= 0 && this.bridgingTicks <= 0) {
             equipWeapon(target.isBlocking() ? this.axeStack : this.godSword);
         }
 
@@ -936,6 +1060,7 @@ public class CreepingDeathEntity extends PathfinderMob {
 
         if (this.pearlCooldown <= 0 && (horizDistSq > 196.0D || (dy > 5.0D && horizDistSq > 36.0D) || this.stuckTicks >= 40)) {
             setSwimmingPose(false);
+            this.bridgingTicks = 0;
             throwEnderPearlAt(sLevel, target);
             this.pearlCooldown = 90;
             this.stuckTicks = 0;
@@ -945,15 +1070,16 @@ public class CreepingDeathEntity extends PathfinderMob {
 
         if (this.isInWater()) {
             this.pillaringTicks = 0;
+            this.windPillarTicks = 0;
+            this.bridgingTicks = 0;
+            this.maceState = MaceState.NONE;
             this.getNavigation().stop();
 
             BlockPos waterObstacle = findBlockingBlock(sLevel, target);
             if (waterObstacle != null) {
                 handleMining(sLevel, waterObstacle);
             } else if (this.miningPos != null) {
-                sLevel.destroyBlockProgress(this.getId(), this.miningPos, -1);
-                this.miningPos = null;
-                this.miningTicks = 0;
+                clearMining(sLevel);
                 equipWeapon(target.isBlocking() ? this.axeStack : this.godSword);
             }
 
@@ -998,6 +1124,7 @@ public class CreepingDeathEntity extends PathfinderMob {
 
         boolean shouldPillar = dy >= 2.0D && horizDistSq < 64.0D && (this.onGround() || this.pillaringTicks > 0);
         if (shouldPillar) {
+            this.bridgingTicks = 0;
             this.getNavigation().stop();
             this.setSprinting(false);
             this.xxa = 0.0F;
@@ -1015,26 +1142,30 @@ public class CreepingDeathEntity extends PathfinderMob {
                 handleMining(sLevel, aboveHead);
                 return;
             }
-            if (this.miningPos != null) {
-                sLevel.destroyBlockProgress(this.getId(), this.miningPos, -1);
-                this.miningPos = null;
-                this.miningTicks = 0;
+            clearMining(sLevel);
+
+            if (dy >= 4.0D && this.windChargeCooldown <= 0 && this.onGround()
+                    && hasOpenHeadroom(sLevel, feetPos, 6)) {
+                startWindPillar(sLevel, feetPos, centerX, centerZ);
+                return;
             }
 
             if (this.buildCooldown <= 0 && this.onGround()) {
                 if (sLevel.getBlockState(feetPos).isAir() || sLevel.getBlockState(feetPos).canBeReplaced()) {
-                    equipWeapon(this.cobbleStack);
-                    this.swing(InteractionHand.MAIN_HAND);
-                    sLevel.setBlock(feetPos, Blocks.COBBLESTONE.defaultBlockState(), 3);
-                    sLevel.playSound(null, feetPos, SoundEvents.STONE_PLACE, SoundSource.BLOCKS, 1.0F, 1.0F);
+                    placeCobbleBlock(sLevel, feetPos);
                     this.setPos(centerX, feetPos.getY() + 1.0D, centerZ);
                     this.setDeltaMovement(0.0D, 0.0D, 0.0D);
-                    this.buildCooldown = 7;
-                    this.pillaringTicks = 12;
+                    this.buildCooldown = 5;
+                    this.pillaringTicks = 10;
                 }
             } else {
                 this.setPos(centerX, this.getY(), centerZ);
             }
+            return;
+        }
+
+        if (shouldBridge(sLevel, dx, dy, dz, horizDistSq)) {
+            handleBridging(sLevel, target, dx, dy, dz, horizDistSq);
             return;
         }
 
@@ -1046,24 +1177,8 @@ public class CreepingDeathEntity extends PathfinderMob {
             handleMining(sLevel, obstacle);
             return;
         } else if (this.miningPos != null) {
-            sLevel.destroyBlockProgress(this.getId(), this.miningPos, -1);
-            this.miningPos = null;
-            this.miningTicks = 0;
-            equipWeapon(this.godSword);
-        }
-
-        if (this.buildCooldown <= 0 && horizDistSq > 9.0D && dy >= -1.0D) {
-            Vec3 horizDir = new Vec3(dx, 0, dz).normalize();
-            BlockPos aheadPos = BlockPos.containing(this.getX() + horizDir.x * 1.1D, this.getY(), this.getZ() + horizDir.z * 1.1D);
-            BlockPos belowAhead = aheadPos.below();
-            BlockState belowState = sLevel.getBlockState(belowAhead);
-            if (belowState.isAir() || belowState.canBeReplaced()) {
-                equipWeapon(this.cobbleStack);
-                this.swing(InteractionHand.MAIN_HAND);
-                sLevel.setBlock(belowAhead, Blocks.COBBLESTONE.defaultBlockState(), 3);
-                sLevel.playSound(null, belowAhead, SoundEvents.STONE_PLACE, SoundSource.BLOCKS, 1.0F, 1.0F);
-                this.buildCooldown = 6;
-            }
+            clearMining(sLevel);
+            equipWeapon(target.isBlocking() ? this.axeStack : this.godSword);
         }
     }
 
@@ -1097,7 +1212,7 @@ public class CreepingDeathEntity extends PathfinderMob {
     }
 
     private static boolean hasCeilingAbove(ServerLevel level, BlockPos fromPos, int maxCheckY) {
-        int topY = Math.min(level.getMaxBuildHeight() - 1, maxCheckY);
+        int topY = Math.min(level.getMaxY(), maxCheckY);
         for (int y = fromPos.getY() + 1; y <= topY; y++) {
             BlockPos check = new BlockPos(fromPos.getX(), y, fromPos.getZ());
             BlockState state = level.getBlockState(check);
@@ -1131,7 +1246,7 @@ public class CreepingDeathEntity extends PathfinderMob {
     }
 
     private static boolean hasSolidGroundBelow(ServerLevel level, BlockPos fromPos) {
-        int minY = level.getMinBuildHeight();
+        int minY = level.getMinY();
         for (int y = fromPos.getY(); y >= minY; y--) {
             BlockPos check = new BlockPos(fromPos.getX(), y, fromPos.getZ());
             BlockState state = level.getBlockState(check);
@@ -1185,17 +1300,589 @@ public class CreepingDeathEntity extends PathfinderMob {
     }
 
     private void performMeleeAttack(ServerPlayer target) {
+        ServerLevel level = target.level();
         boolean blocking = target.isBlocking();
         equipWeapon(blocking ? this.axeStack : this.godSword);
         this.swing(InteractionHand.MAIN_HAND);
-        this.doHurtTarget(target);
+        this.doHurtTarget(level, target);
         if (blocking) {
-            target.disableShield();
+            ItemStack blockingStack = target.getItemBlockingWith();
+            if (blockingStack != null && !blockingStack.isEmpty()) {
+                BlocksAttacks blocksAttacks = blockingStack.get(DataComponents.BLOCKS_ATTACKS);
+                if (blocksAttacks != null) {
+                    blocksAttacks.disable(level, target, 5.0F, blockingStack);
+                }
+            }
         }
         this.attackCooldown = 12;
         if (!target.isAlive() || target.isDeadOrDying()) {
             onTargetKilled();
         }
+    }
+
+    private void performWeaponAttack(ServerPlayer target, ItemStack weapon, int cooldownTicks) {
+        ServerLevel level = target.level();
+        equipWeapon(weapon);
+        this.swing(InteractionHand.MAIN_HAND);
+        this.doHurtTarget(level, target);
+        this.attackCooldown = cooldownTicks;
+        if (!target.isAlive() || target.isDeadOrDying()) {
+            onTargetKilled();
+        }
+    }
+
+    private void performMaceSmashAttack(ServerLevel level, ServerPlayer target, double dx, double dy, double dz, double horizDistSq) {
+        equipWeapon(this.godMace);
+        this.swing(InteractionHand.MAIN_HAND);
+        boolean hit = this.doHurtTarget(level, target);
+        this.resetFallDistance();
+        this.hurtMarked = true;
+        this.attackCooldown = 12;
+        if (!target.isAlive() || target.isDeadOrDying()) {
+            this.maceState = MaceState.NONE;
+            onTargetKilled();
+            return;
+        }
+        // Wind Burst I bounces Creeping Death upward on a successful smash; chain up to 2 follow-ups only if still advantageous
+        if (hit && this.maceChainCount < 2 && this.getDeltaMovement().y > 0.20D
+                && horizDistSq <= 30.25D && Math.abs(dy) <= 3.0D
+                && this.targetRunningAwayTicks < 6 && this.targetBuildingUpTicks < 6
+                && !target.isBlocking() && this.hasLineOfSight(target)
+                && hasOpenHeadroom(level, this.blockPosition(), 6)
+                && hasSafeGroundArea(level, target.blockPosition())) {
+            this.maceChainCount++;
+            this.maceState = MaceState.LAUNCHING;
+            this.maceTicks = 4;
+            return;
+        }
+        endMaceSequence(target, 110);
+    }
+
+    private void stopUsingItemIfActive() {
+        if (this.isUsingItem()) {
+            this.stopUsingItem();
+        }
+    }
+
+    private void clearMining(ServerLevel level) {
+        if (this.miningPos != null) {
+            level.destroyBlockProgress(this.getId(), this.miningPos, -1);
+            this.miningPos = null;
+            this.miningTicks = 0;
+        }
+    }
+
+    private void triggerWindChargeBurst(ServerLevel level, double x, double y, double z) {
+        level.playSound(null, this.getX(), this.getY(), this.getZ(),
+                SoundEvents.WIND_CHARGE_THROW, SoundSource.HOSTILE, 0.7F, 0.4F / (this.getRandom().nextFloat() * 0.4F + 0.8F));
+        ExplosionDamageCalculator windCalc = new SimpleExplosionDamageCalculator(
+                true,
+                false,
+                Optional.of(0.0F),
+                level.registryAccess().lookupOrThrow(Registries.BLOCK)
+                        .get(BlockTags.BLOCKS_WIND_CHARGE_EXPLOSIONS)
+                        .map(Function.identity())
+        );
+        level.explode(
+                this,
+                null,
+                windCalc,
+                x,
+                y,
+                z,
+                1.2F,
+                false,
+                Level.ExplosionInteraction.TRIGGER,
+                ParticleTypes.GUST_EMITTER_SMALL,
+                ParticleTypes.GUST_EMITTER_LARGE,
+                WeightedList.of(),
+                SoundEvents.WIND_CHARGE_BURST
+        );
+    }
+
+    private void updateTargetBehaviorTracking(ServerPlayer target, double dx, double dz) {
+        Vec3 curTargetPos = target.position();
+        if (this.lastTargetPos == null) {
+            this.lastTargetPos = curTargetPos;
+            this.smoothedTargetVel = Vec3.ZERO;
+            this.targetStartYWindow = curTargetPos.y;
+            this.targetYWindowTicks = 0;
+            this.targetBuildingUpTicks = 0;
+            this.targetRunningAwayTicks = 0;
+            return;
+        }
+
+        Vec3 delta = curTargetPos.subtract(this.lastTargetPos);
+        if (delta.lengthSqr() > 64.0D) {
+            this.smoothedTargetVel = Vec3.ZERO;
+            this.targetStartYWindow = curTargetPos.y;
+            this.targetYWindowTicks = 0;
+        } else {
+            this.smoothedTargetVel = this.smoothedTargetVel.scale(0.65D).add(delta.scale(0.35D));
+        }
+        this.lastTargetPos = curTargetPos;
+
+        double horizDist = Math.sqrt(dx * dx + dz * dz);
+        if (horizDist > 0.25D) {
+            double awaySpeed = (this.smoothedTargetVel.x * dx + this.smoothedTargetVel.z * dz) / horizDist;
+            if (awaySpeed > 0.14D || (target.isSprinting() && awaySpeed > 0.09D)) {
+                this.targetRunningAwayTicks = Math.min(30, this.targetRunningAwayTicks + 3);
+            } else {
+                this.targetRunningAwayTicks = Math.max(0, this.targetRunningAwayTicks - 1);
+            }
+        } else {
+            this.targetRunningAwayTicks = Math.max(0, this.targetRunningAwayTicks - 1);
+        }
+
+        this.targetYWindowTicks++;
+        if (delta.y > 0.25D) {
+            this.targetBuildingUpTicks = Math.min(40, this.targetBuildingUpTicks + 4);
+        } else {
+            this.targetBuildingUpTicks = Math.max(0, this.targetBuildingUpTicks - 1);
+        }
+        if (this.targetYWindowTicks >= 20) {
+            if (curTargetPos.y - this.targetStartYWindow >= 1.5D) {
+                this.targetBuildingUpTicks = Math.max(this.targetBuildingUpTicks, 25);
+            }
+            this.targetStartYWindow = curTargetPos.y;
+            this.targetYWindowTicks = 0;
+        }
+    }
+
+    private boolean canStartWindChargeMace(ServerLevel level, ServerPlayer target, double dx, double dy, double dz, double horizDistSq) {
+        if (this.maceState != MaceState.NONE || this.maceCooldown > 0 || this.windChargeCooldown > 0) {
+            return false;
+        }
+        if (!this.onGround() || this.isInWater() || this.isInLava() || this.pillaringTicks > 0 || this.bridgingTicks > 0) {
+            return false;
+        }
+        if (target.isInWater() || target.isInLava() || target.isFallFlying() || target.isPassenger() || target.isBlocking()) {
+            return false;
+        }
+        // Close enough to reliably land a wind-charge mace arc, and roughly same elevation
+        if (horizDistSq < 1.2D || horizDistSq > 25.0D || Math.abs(dy) > 1.8D) {
+            return false;
+        }
+        // Do not mace if target is running away, pillaring up, or hiding/covered
+        if (this.targetRunningAwayTicks >= 6 || this.targetBuildingUpTicks >= 6) {
+            return false;
+        }
+        double horizDist = Math.sqrt(horizDistSq);
+        double awaySpeed = (this.smoothedTargetVel.x * dx + this.smoothedTargetVel.z * dz) / horizDist;
+        if (awaySpeed > 0.12D) {
+            return false;
+        }
+        if (!this.hasLineOfSight(target) || isTargetEnclosedOrHiding(level, target)) {
+            return false;
+        }
+        // Only mace where headroom and safe footing exist so it never puts Creeping Death at a disadvantage
+        BlockPos selfPos = this.blockPosition();
+        BlockPos targetPos = target.blockPosition();
+        if (!hasOpenHeadroom(level, selfPos, 7) || !hasOpenHeadroom(level, targetPos, 6)) {
+            return false;
+        }
+        return hasSafeGroundArea(level, selfPos) && hasSafeGroundArea(level, targetPos);
+    }
+
+    private void startWindChargeMace(ServerLevel level, ServerPlayer target, double dx, double dz, double horizDistSq) {
+        this.getNavigation().stop();
+        this.setSprinting(false);
+        clearMining(level);
+        equipWeapon(this.windChargeStack);
+        this.swing(InteractionHand.MAIN_HAND);
+        triggerWindChargeBurst(level, this.getX(), this.getY() - 0.15D, this.getZ());
+
+        double horizDist = Math.sqrt(Math.max(0.0001D, horizDistSq));
+        double launchHoriz = Mth.clamp(horizDist * 0.11D, 0.06D, 0.30D);
+        this.setDeltaMovement((dx / horizDist) * launchHoriz, 1.04D, (dz / horizDist) * launchHoriz);
+        this.hurtMarked = true;
+        this.resetFallDistance();
+
+        this.maceState = MaceState.LAUNCHING;
+        this.maceTicks = 0;
+        this.maceChainCount = 0;
+        this.windChargeCooldown = 40;
+    }
+
+    private boolean handleActiveMaceAttack(ServerLevel level, ServerPlayer target, double dx, double dy, double dz,
+            double horizDistSq, double totalDistSq) {
+        this.getNavigation().stop();
+        clearMining(level);
+
+        if (this.isInWater() || this.isInLava() || target.isInWater() || target.isFallFlying()
+                || horizDistSq > 49.0D || dy > 6.0D || this.maceTicks > 60) {
+            endMaceSequence(target, 90);
+            return false;
+        }
+
+        this.maceTicks++;
+        Vec3 curVel = this.getDeltaMovement();
+        double horizDist = Math.sqrt(horizDistSq);
+        if (horizDist > 0.35D) {
+            double desiredSpeed = Mth.clamp(
+                    horizDist * (this.maceState == MaceState.DESCENDING ? 0.22D : 0.15D),
+                    0.05D,
+                    0.40D
+            );
+            double targetVx = (dx / horizDist) * desiredSpeed;
+            double targetVz = (dz / horizDist) * desiredSpeed;
+            double nextVx = Mth.lerp(0.35D, curVel.x, targetVx);
+            double nextVz = Mth.lerp(0.35D, curVel.z, targetVz);
+            this.setDeltaMovement(nextVx, curVel.y, nextVz);
+            this.hurtMarked = true;
+        }
+
+        if (this.maceState == MaceState.LAUNCHING) {
+            if (this.maceTicks >= 4) {
+                equipWeapon(this.godMace);
+            }
+            if (this.getDeltaMovement().y <= 0.0D && this.maceTicks >= 4) {
+                this.maceState = MaceState.DESCENDING;
+            } else if (this.onGround() && this.maceTicks >= 6) {
+                endMaceSequence(target, 80);
+                return false;
+            }
+            return true;
+        }
+
+        // MaceState.DESCENDING
+        equipWeapon(this.godMace);
+        if (MaceItem.canSmashAttack(this) && totalDistSq <= 13.5D
+                && (this.hasLineOfSight(target) || totalDistSq <= 6.25D)) {
+            performMaceSmashAttack(level, target, dx, dy, dz, horizDistSq);
+            return true;
+        }
+
+        if (this.onGround()) {
+            if (totalDistSq <= 9.0D && this.attackCooldown <= 0) {
+                performMeleeAttack(target);
+            }
+            endMaceSequence(target, 90);
+            return false;
+        }
+        return true;
+    }
+
+    private void endMaceSequence(ServerPlayer target, int cooldown) {
+        this.maceState = MaceState.NONE;
+        this.maceTicks = 0;
+        this.maceChainCount = 0;
+        this.maceCooldown = cooldown;
+        equipWeapon(target.isBlocking() ? this.axeStack : this.godSword);
+    }
+
+    private void startWindPillar(ServerLevel level, BlockPos feetPos, double centerX, double centerZ) {
+        this.setPos(centerX, this.getY(), centerZ);
+        equipWeapon(this.windChargeStack);
+        this.swing(InteractionHand.MAIN_HAND);
+        triggerWindChargeBurst(level, centerX, this.getY() - 0.15D, centerZ);
+
+        if (level.getBlockState(feetPos).isAir() || level.getBlockState(feetPos).canBeReplaced()) {
+            level.setBlock(feetPos, Blocks.COBBLESTONE.defaultBlockState(), 3);
+            level.playSound(null, feetPos, SoundEvents.STONE_PLACE, SoundSource.BLOCKS, 1.0F, 1.0F);
+        }
+
+        this.setPos(centerX, feetPos.getY() + 1.0D, centerZ);
+        this.setDeltaMovement(0.0D, 0.96D, 0.0D);
+        this.hurtMarked = true;
+        this.resetFallDistance();
+
+        this.windPillarX = centerX;
+        this.windPillarZ = centerZ;
+        this.windPillarTicks = 18;
+        this.windChargeCooldown = 36;
+        this.pillaringTicks = 22;
+        this.stuckTicks = 0;
+    }
+
+    private void handleActiveWindPillar(ServerLevel level, ServerPlayer target) {
+        this.getNavigation().stop();
+        this.setSprinting(false);
+        this.xxa = 0.0F;
+        this.zza = 0.0F;
+
+        Vec3 curVel = this.getDeltaMovement();
+        this.setPos(this.windPillarX, this.getY(), this.windPillarZ);
+        this.setDeltaMovement(0.0D, curVel.y, 0.0D);
+        this.hurtMarked = true;
+
+        BlockPos feetPos = this.blockPosition();
+        placePillarColumnBelow(level, feetPos, target.getBlockY());
+
+        boolean hitCeiling = !isPassableForBody(level, feetPos.above(2));
+        if (curVel.y <= 0.06D || this.getY() >= target.getY() || this.onGround() || hitCeiling || this.windPillarTicks <= 1) {
+            BlockPos below = feetPos.below();
+            if (!hasSolidSupport(level, below)) {
+                placeCobbleBlock(level, below);
+            }
+            this.setPos(this.windPillarX, feetPos.getY(), this.windPillarZ);
+            this.setDeltaMovement(0.0D, 0.0D, 0.0D);
+            this.resetFallDistance();
+            this.windPillarTicks = 0;
+            this.pillaringTicks = 6;
+            this.buildCooldown = 3;
+        }
+    }
+
+    private void placePillarColumnBelow(ServerLevel level, BlockPos feetPos, int targetBlockY) {
+        for (int depth = 1; depth <= 3; depth++) {
+            BlockPos pos = feetPos.below(depth);
+            if (pos.getY() >= targetBlockY) {
+                continue;
+            }
+            BlockState state = level.getBlockState(pos);
+            if (state.isAir() || state.canBeReplaced()) {
+                placeCobbleBlock(level, pos);
+            } else {
+                break;
+            }
+        }
+    }
+
+    private void placeCobbleBlock(ServerLevel level, BlockPos pos) {
+        equipWeapon(this.cobbleStack);
+        this.swing(InteractionHand.MAIN_HAND);
+        level.setBlock(pos, Blocks.COBBLESTONE.defaultBlockState(), 3);
+        level.playSound(null, pos, SoundEvents.STONE_PLACE, SoundSource.BLOCKS, 1.0F, 1.0F);
+    }
+
+    private boolean hasOpenHeadroom(ServerLevel level, BlockPos basePos, int height) {
+        for (int y = 2; y <= height; y++) {
+            if (!isPassableForBody(level, basePos.above(y))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean hasSafeGroundArea(ServerLevel level, BlockPos center) {
+        int solidNeighbors = 0;
+        for (int ox = -1; ox <= 1; ox++) {
+            for (int oz = -1; oz <= 1; oz++) {
+                BlockPos check = center.offset(ox, 0, oz);
+                if (isHazardousDrop(level, check)) {
+                    continue;
+                }
+                if (hasSolidSupport(level, check.below()) || hasSolidSupport(level, check.below(2))) {
+                    solidNeighbors++;
+                }
+            }
+        }
+        return solidNeighbors >= 6;
+    }
+
+    private boolean isHazardousDrop(ServerLevel level, BlockPos pos) {
+        for (int d = 1; d <= 5; d++) {
+            BlockPos check = pos.below(d);
+            FluidState fluid = level.getFluidState(check);
+            if (fluid.is(FluidTags.LAVA)) {
+                return true;
+            }
+            if (hasSolidSupport(level, check)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean isTargetEnclosedOrHiding(ServerLevel level, ServerPlayer target) {
+        BlockPos tPos = target.blockPosition();
+        if (!hasOpenHeadroom(level, tPos, 5)) {
+            return true;
+        }
+        int walledSides = 0;
+        if (!isPassableForBody(level, tPos.north()) || !isPassableForBody(level, tPos.north().above())) walledSides++;
+        if (!isPassableForBody(level, tPos.south()) || !isPassableForBody(level, tPos.south().above())) walledSides++;
+        if (!isPassableForBody(level, tPos.east()) || !isPassableForBody(level, tPos.east().above())) walledSides++;
+        if (!isPassableForBody(level, tPos.west()) || !isPassableForBody(level, tPos.west().above())) walledSides++;
+        return walledSides >= 3;
+    }
+
+    private boolean shouldBridge(ServerLevel level, double dx, double dy, double dz, double horizDistSq) {
+        if (horizDistSq <= 1.44D || dy < -3.0D) {
+            return false;
+        }
+        BlockPos feet = this.blockPosition();
+        if (!hasSolidSupport(level, feet.below()) && isDropAt(level, feet)) {
+            return true;
+        }
+        if (isDropAhead(level, feet, dx, dz)) {
+            return true;
+        }
+        return this.bridgingTicks > 0 && isDropAheadWithin(level, feet, dx, dz, 2);
+    }
+
+    private void handleBridging(ServerLevel level, ServerPlayer target, double dx, double dy, double dz, double horizDistSq) {
+        this.getNavigation().stop();
+        this.setSprinting(false);
+        this.xxa = 0.0F;
+        this.zza = 0.0F;
+        this.bridgingTicks = 10;
+
+        BlockPos feet = this.blockPosition();
+        double horizDist = Math.sqrt(Math.max(0.0001D, horizDistSq));
+        double hx = dx / horizDist;
+        double hz = dz / horizDist;
+
+        // 1. Self-catch immediately if feet are over air
+        BlockPos belowFeet = feet.below();
+        if (!hasSolidSupport(level, belowFeet)) {
+            BlockState belowState = level.getBlockState(belowFeet);
+            if (belowState.isAir() || belowState.canBeReplaced()) {
+                placeCobbleBlock(level, belowFeet);
+                this.setDeltaMovement(0.0D, Math.max(0.0D, this.getDeltaMovement().y), 0.0D);
+                this.buildCooldown = 3;
+                this.stuckTicks = 0;
+                return;
+            }
+        }
+
+        // 2. Compute guaranteed adjacent neighbor block in target direction
+        BlockPos nextStep = BlockPos.containing(feet.getX() + 0.5D + hx, feet.getY(), feet.getZ() + 0.5D + hz);
+        if (nextStep.equals(feet)) {
+            nextStep = Math.abs(hx) >= Math.abs(hz)
+                    ? feet.offset(hx >= 0 ? 1 : -1, 0, 0)
+                    : feet.offset(0, 0, hz >= 0 ? 1 : -1);
+        }
+
+        // 3. Clear blocking walls ahead (never mining support blocks!)
+        if (!isPassableForBody(level, nextStep.above()) && isBreakableObstacle(level, nextStep.above())) {
+            this.setDeltaMovement(0.0D, this.getDeltaMovement().y, 0.0D);
+            handleMining(level, nextStep.above());
+            return;
+        }
+        boolean canStepUpNext = isPassableForBody(level, nextStep.above())
+                && isPassableForBody(level, nextStep.above(2))
+                && isPassableForBody(level, feet.above(2));
+        if (!isPassableForBody(level, nextStep) && !canStepUpNext && isBreakableObstacle(level, nextStep)) {
+            this.setDeltaMovement(0.0D, this.getDeltaMovement().y, 0.0D);
+            handleMining(level, nextStep);
+            return;
+        }
+        clearMining(level);
+
+        // 4. Ensure diagonal corner link block so Creeping Death never slips off diagonal corners
+        boolean isDiagonal = nextStep.getX() != feet.getX() && nextStep.getZ() != feet.getZ();
+        boolean cornerReady = true;
+        if (isDiagonal) {
+            BlockPos cornerX = new BlockPos(nextStep.getX(), feet.getY() - 1, feet.getZ());
+            BlockPos cornerZ = new BlockPos(feet.getX(), feet.getY() - 1, nextStep.getZ());
+            if (!hasSolidSupport(level, cornerX) && !hasSolidSupport(level, cornerZ)) {
+                cornerReady = false;
+                BlockPos preferredCorner = Math.abs(hx) >= Math.abs(hz) ? cornerX : cornerZ;
+                if (this.buildCooldown <= 0) {
+                    BlockState cornerState = level.getBlockState(preferredCorner);
+                    if (cornerState.isAir() || cornerState.canBeReplaced()) {
+                        placeCobbleBlock(level, preferredCorner);
+                        this.buildCooldown = 3;
+                        this.stuckTicks = 0;
+                        cornerReady = true;
+                    }
+                }
+            }
+        }
+
+        // 5. Place support block under nextStep before walking onto it
+        BlockPos nextSupport = nextStep.below();
+        boolean nextReady = hasSolidSupport(level, nextSupport) || !isPassableForBody(level, nextStep);
+        if (!nextReady && this.buildCooldown <= 0) {
+            BlockState supState = level.getBlockState(nextSupport);
+            if (supState.isAir() || supState.canBeReplaced()) {
+                placeCobbleBlock(level, nextSupport);
+                this.buildCooldown = 3;
+                this.stuckTicks = 0;
+                nextReady = true;
+            }
+        }
+
+        // 6. Optional gentle staircase-up while bridging if target is slightly higher
+        if (nextReady && cornerReady && dy >= 0.9D && dy < 2.2D && this.buildCooldown <= 0
+                && isPassableForBody(level, nextStep) && isPassableForBody(level, nextStep.above())
+                && isPassableForBody(level, nextStep.above(2)) && isPassableForBody(level, feet.above(2))) {
+            BlockState stepState = level.getBlockState(nextStep);
+            if (stepState.isAir() || stepState.canBeReplaced()) {
+                placeCobbleBlock(level, nextStep);
+                this.buildCooldown = 4;
+                this.stuckTicks = 0;
+            }
+        }
+
+        // 7. Pre-place one block further ahead when ready for smooth uninterrupted bridging
+        if (nextReady && cornerReady && this.buildCooldown <= 0) {
+            BlockPos lookAhead = BlockPos.containing(nextStep.getX() + 0.5D + hx, feet.getY(), nextStep.getZ() + 0.5D + hz);
+            BlockPos lookAheadSupport = lookAhead.below();
+            if (!hasSolidSupport(level, lookAheadSupport) && isDropAt(level, lookAhead)) {
+                BlockState laState = level.getBlockState(lookAheadSupport);
+                if (laState.isAir() || laState.canBeReplaced()) {
+                    placeCobbleBlock(level, lookAheadSupport);
+                    this.buildCooldown = 3;
+                    this.stuckTicks = 0;
+                }
+            }
+        }
+
+        // 8. Only step forward once the next bridge block (and diagonal corner) actually exists!
+        if (!nextReady || !cornerReady) {
+            double centerX = feet.getX() + 0.5D;
+            double centerZ = feet.getZ() + 0.5D;
+            double pullX = Mth.clamp((centerX - this.getX()) * 0.25D, -0.10D, 0.10D);
+            double pullZ = Mth.clamp((centerZ - this.getZ()) * 0.25D, -0.10D, 0.10D);
+            this.setDeltaMovement(pullX, this.getDeltaMovement().y, pullZ);
+            this.hurtMarked = true;
+            return;
+        }
+
+        double goalX = nextStep.getX() + 0.5D;
+        double goalZ = nextStep.getZ() + 0.5D;
+        double toNextX = goalX - this.getX();
+        double toNextZ = goalZ - this.getZ();
+        double toNextDist = Math.sqrt(toNextX * toNextX + toNextZ * toNextZ);
+        if (toNextDist > 0.05D) {
+            double bridgeSpeed = Math.min(0.24D, toNextDist);
+            this.setDeltaMovement((toNextX / toNextDist) * bridgeSpeed, this.getDeltaMovement().y, (toNextZ / toNextDist) * bridgeSpeed);
+            this.hurtMarked = true;
+            float yaw = (float) (Mth.atan2(toNextZ, toNextX) * (double) (180F / (float) Math.PI)) - 90.0F;
+            this.setYRot(yaw);
+            this.yBodyRot = yaw;
+            this.yHeadRot = yaw;
+        }
+    }
+
+    private static boolean hasSolidSupport(ServerLevel level, BlockPos pos) {
+        BlockState state = level.getBlockState(pos);
+        return !state.isAir() && !state.canBeReplaced() && !state.getCollisionShape(level, pos).isEmpty();
+    }
+
+    private static boolean isDropAt(ServerLevel level, BlockPos standPos) {
+        BlockPos b1 = standPos.below();
+        if (hasSolidSupport(level, b1)) {
+            return false;
+        }
+        if (level.getFluidState(b1).is(FluidTags.LAVA)) {
+            return true;
+        }
+        BlockPos b2 = standPos.below(2);
+        return !hasSolidSupport(level, b2) || level.getFluidState(b2).is(FluidTags.LAVA);
+    }
+
+    private static boolean isDropAhead(ServerLevel level, BlockPos feet, double dx, double dz) {
+        return isDropAheadWithin(level, feet, dx, dz, 1);
+    }
+
+    private static boolean isDropAheadWithin(ServerLevel level, BlockPos feet, double dx, double dz, int steps) {
+        double horizDist = Math.sqrt(dx * dx + dz * dz);
+        if (horizDist < 0.1D) {
+            return false;
+        }
+        double hx = dx / horizDist;
+        double hz = dz / horizDist;
+        for (int step = 1; step <= steps; step++) {
+            BlockPos check = BlockPos.containing(feet.getX() + 0.5D + hx * step, feet.getY(), feet.getZ() + 0.5D + hz * step);
+            if (!check.equals(feet) && isDropAt(level, check)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private Boat getOrCreateOwnBoat(ServerLevel level) {
@@ -1206,11 +1893,12 @@ public class CreepingDeathEntity extends PathfinderMob {
         discardOwnBoat();
         double surfaceY = findWaterSurfaceY(level, this.blockPosition());
         this.setPos(this.getX(), surfaceY, this.getZ());
-        Boat boat = new Boat(level, this.getX(), surfaceY, this.getZ());
+        Boat boat = new Boat(EntityType.OAK_BOAT, level, () -> Items.OAK_BOAT);
+        boat.setInitialPos(this.getX(), surfaceY, this.getZ());
         boat.setYRot(this.getYRot());
         this.ownBoatUUID = boat.getUUID();
         level.addFreshEntity(boat);
-        this.startRiding(boat, true);
+        this.startRiding(boat, true, true);
         return boat;
     }
 
@@ -1228,7 +1916,7 @@ public class CreepingDeathEntity extends PathfinderMob {
                 continue;
             }
             this.swing(InteractionHand.MAIN_HAND);
-            boat.kill();
+            boat.kill(level);
         }
     }
 
@@ -1244,7 +1932,7 @@ public class CreepingDeathEntity extends PathfinderMob {
         level.playSound(null, this.getX(), this.getY(), this.getZ(),
                 SoundEvents.ENDER_PEARL_THROW, SoundSource.HOSTILE, 1.0F, 0.8F);
 
-        ThrownEnderpearl pearl = new ThrownEnderpearl(level, this);
+        ThrownEnderpearl pearl = new ThrownEnderpearl(level, this, new ItemStack(Items.ENDER_PEARL));
         pearl.setPos(this.getX(), this.getEyeY() - 0.1D, this.getZ());
         double dx = target.getX() - this.getX();
         double dy = target.getY(0.5D) - pearl.getY();
@@ -1257,10 +1945,12 @@ public class CreepingDeathEntity extends PathfinderMob {
     private BlockPos findBlockingBlock(ServerLevel level, ServerPlayer target) {
         BlockPos feet = this.blockPosition();
         BlockPos head = feet.above();
+        BlockPos supportBelow = feet.below();
+
         if (isBreakableObstacle(level, head)) {
             return head;
         }
-        if (isBreakableObstacle(level, feet)) {
+        if (isBreakableBodyObstacle(level, feet)) {
             return feet;
         }
 
@@ -1274,11 +1964,17 @@ public class CreepingDeathEntity extends PathfinderMob {
             double stepZ = dz / horizDist;
             BlockPos frontHead = BlockPos.containing(this.getX() + stepX * 0.9D, this.getY() + 1.0D, this.getZ() + stepZ * 0.9D);
             BlockPos frontFeet = BlockPos.containing(this.getX() + stepX * 0.9D, this.getY(), this.getZ() + stepZ * 0.9D);
-            if (isBreakableObstacle(level, frontHead)) {
+            if (!frontHead.equals(supportBelow) && isBreakableObstacle(level, frontHead)) {
                 return frontHead;
             }
-            if (isBreakableObstacle(level, frontFeet)) {
-                return frontFeet;
+            if (!frontFeet.equals(supportBelow) && !frontFeet.equals(feet) && isBreakableObstacle(level, frontFeet)) {
+                // Only mine a foot-level block ahead if Creeping Death cannot simply step up onto it
+                boolean canStepUp = isPassableForBody(level, frontFeet.above())
+                        && isPassableForBody(level, frontFeet.above(2))
+                        && isPassableForBody(level, head.above());
+                if (!canStepUp) {
+                    return frontFeet;
+                }
             }
         }
 
@@ -1287,14 +1983,57 @@ public class CreepingDeathEntity extends PathfinderMob {
             if (isBreakableObstacle(level, above)) {
                 return above;
             }
-        } else if (dy < -1.5D && horizDist < 4.0D) {
-            BlockPos below = feet.below();
-            if (isBreakableObstacle(level, below)) {
-                return below;
+        } else if (dy < -1.8D && horizDist < 2.2D && !this.hasLineOfSight(target)
+                && this.bridgingTicks <= 0 && this.pillaringTicks <= 0 && this.windPillarTicks <= 0) {
+            // Only dig straight down through a real floor/roof directly above a hiding target, never a pillar or bridge
+            if (isBreakableObstacle(level, supportBelow) && isSafeFloorToDigDown(level, supportBelow, target)) {
+                return supportBelow;
             }
         }
 
         return null;
+    }
+
+    private boolean isPassableForBody(ServerLevel level, BlockPos pos) {
+        BlockState state = level.getBlockState(pos);
+        return state.isAir() || state.canBeReplaced() || state.getCollisionShape(level, pos).isEmpty();
+    }
+
+    private boolean isBreakableBodyObstacle(ServerLevel level, BlockPos pos) {
+        if (!isBreakableObstacle(level, pos)) {
+            return false;
+        }
+        VoxelShape shape = level.getBlockState(pos).getCollisionShape(level, pos);
+        if (shape.isEmpty()) {
+            return false;
+        }
+        // Ignore slabs/stairs/paths/floors whose collision top is at or near feet level
+        double topY = pos.getY() + shape.max(net.minecraft.core.Direction.Axis.Y);
+        return topY > this.getY() + 0.55D;
+    }
+
+    private boolean isSafeFloorToDigDown(ServerLevel level, BlockPos floorPos, ServerPlayer target) {
+        // Must have at least 2 solid horizontal neighbors (i.e. a floor/ceiling, not a 1x1 pillar or narrow bridge)
+        int solidNeighbors = 0;
+        if (hasSolidSupport(level, floorPos.north())) solidNeighbors++;
+        if (hasSolidSupport(level, floorPos.south())) solidNeighbors++;
+        if (hasSolidSupport(level, floorPos.east())) solidNeighbors++;
+        if (hasSolidSupport(level, floorPos.west())) solidNeighbors++;
+        if (solidNeighbors < 2) {
+            return false;
+        }
+        // Ensure we don't drop into lava or an abyss far below the target
+        int minSafeY = Math.max(level.getMinY() + 2, target.getBlockY() - 4);
+        for (int y = floorPos.getY() - 1; y >= minSafeY; y--) {
+            BlockPos check = new BlockPos(floorPos.getX(), y, floorPos.getZ());
+            if (level.getFluidState(check).is(FluidTags.LAVA)) {
+                return false;
+            }
+            if (hasSolidSupport(level, check)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean isBreakableObstacle(ServerLevel level, BlockPos pos) {
@@ -1352,10 +2091,11 @@ public class CreepingDeathEntity extends PathfinderMob {
     }
 
     public static boolean scheduleHunt(ServerPlayer owner, ServerPlayer target, UUID skinUuid, String skinName) {
-        if (target == null || target.getServer() == null) {
+        if (target == null) {
             return false;
         }
-        if (isTargetAlreadyHunted(target.getServer(), target.getUUID())) {
+        MinecraftServer server = target.level().getServer();
+        if (server == null || isTargetAlreadyHunted(server, target.getUUID())) {
             return false;
         }
         scheduleSpawn(target.getUUID(), skinUuid, skinName);
@@ -1401,7 +2141,7 @@ public class CreepingDeathEntity extends PathfinderMob {
                     if (e instanceof CreepingDeathEntity assassin && assassin.isAlive() && !assassin.isDeadOrDying() && !assassin.isRemoved()) {
                         ServerPlayer target = server.getPlayerList().getPlayer(targetId);
                         if (target != null && target.isAlive() && target.level() != assassin.level()) {
-                            assassin.teleportToTargetDimension(target.serverLevel(), target);
+                            assassin.teleportToTargetDimension(target.level(), target);
                         }
                         return false;
                     }
@@ -1415,7 +2155,7 @@ public class CreepingDeathEntity extends PathfinderMob {
             while (it.hasNext()) {
                 PendingSpawn pending = it.next();
                 ServerPlayer target = server.getPlayerList().getPlayer(pending.targetUUID);
-                if (target != null && PersistentDataAccess.get(target).getBoolean("bodycam_active")) {
+                if (target != null && PersistentDataAccess.get(target).getBooleanOr("bodycam_active", false)) {
                     BodycamResetCameraPacket.executeReset(target);
                     sendHuntNoEscapeTitle(target);
                 }
@@ -1425,10 +2165,10 @@ public class CreepingDeathEntity extends PathfinderMob {
                 }
                 if (pending.ticksRemaining > 0) {
                     if (pending.ultraRareCurse && pending.ticksRemaining == 130) {
-                        scheduleOscNuke(target.serverLevel().dimension(), target.position());
+                        scheduleOscNuke(target.level().dimension(), target.position());
                     }
                     if (pending.ticksRemaining % 20 == 0) {
-                        target.serverLevel().playSound(
+                        target.level().playSound(
                                 null,
                                 target.getX(),
                                 target.getY(),
@@ -1443,9 +2183,9 @@ public class CreepingDeathEntity extends PathfinderMob {
                     continue;
                 }
 
-                BlockPos spawnPos = findBehindTargetSpawn(target.serverLevel(), target);
+                BlockPos spawnPos = findBehindTargetSpawn(target.level(), target);
                 if (spawnPos != null) {
-                    spawnAssassinAt(target.serverLevel(), target, pending.skinUUID, pending.skinName,
+                    spawnAssassinAt(target.level(), target, pending.skinUUID, pending.skinName,
                             pending.scholarSkin, pending.ultraRareCurse,
                             spawnPos.getX() + 0.5D, spawnPos.getY(), spawnPos.getZ() + 0.5D);
                     it.remove();
@@ -1453,7 +2193,7 @@ public class CreepingDeathEntity extends PathfinderMob {
                     pending.retryTicks--;
                     if (pending.retryTicks <= 0) {
                         Vec3 ringFallback = getRingFallbackPos(target);
-                        spawnAssassinAt(target.serverLevel(), target, pending.skinUUID, pending.skinName,
+                        spawnAssassinAt(target.level(), target, pending.skinUUID, pending.skinName,
                                 pending.scholarSkin, pending.ultraRareCurse,
                                 ringFallback.x, ringFallback.y, ringFallback.z);
                         it.remove();
@@ -1552,7 +2292,7 @@ public class CreepingDeathEntity extends PathfinderMob {
         CreepingDeathEntity assassin = new CreepingDeathEntity(ModEntityTypes.CREEPING_DEATH.get(), level);
         Vec3 toTarget = target.position().subtract(x, y, z);
         float yaw = (float) (Mth.atan2(toTarget.z, toTarget.x) * (double) (180F / (float) Math.PI)) - 90.0F;
-        assassin.moveTo(x, y, z, yaw, 0.0F);
+        assassin.snapTo(x, y, z, yaw, 0.0F);
         assassin.setYHeadRot(yaw);
         assassin.setYBodyRot(yaw);
         assassin.initializeAssassin(target.getUUID(), skinUUID, skinName, scholarSkin, ultraRareCurse);
@@ -1595,47 +2335,35 @@ public class CreepingDeathEntity extends PathfinderMob {
             level.addFreshEntity(ringTnt);
         }
 
-        level.sendParticles(ParticleTypes.FLASH, center.x, center.y + 2.0D, center.z, 5, 1.0D, 1.0D, 1.0D, 0.0D);
+        level.sendParticles(ColorParticleOption.create(ParticleTypes.FLASH, -1), center.x, center.y + 2.0D, center.z, 5, 1.0D, 1.0D, 1.0D, 0.0D);
         level.playSound(null, center.x, center.y, center.z,
                 SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 6.0F, 0.5F);
     }
 
     @Override
-    public void addAdditionalSaveData(CompoundTag tag) {
-        super.addAdditionalSaveData(tag);
-        if (getTargetUUID() != null) {
-            tag.putUUID("TargetUUID", getTargetUUID());
-        }
-        if (getSkinUUID() != null) {
-            tag.putUUID("SkinUUID", getSkinUUID());
-        }
-        tag.putString("SkinName", getSkinName());
-        tag.putString("ScholarSkin", getScholarSkin());
-        tag.putBoolean("UltraRareCurse", isUltraRareCurse());
-        tag.putBoolean("MissionAccomplished", this.missionAccomplished);
+    public void addAdditionalSaveData(ValueOutput output) {
+        super.addAdditionalSaveData(output);
+        output.storeNullable("TargetUUID", UUIDUtil.CODEC, getTargetUUID());
+        output.storeNullable("SkinUUID", UUIDUtil.CODEC, getSkinUUID());
+        output.putString("SkinName", getSkinName());
+        output.putString("ScholarSkin", getScholarSkin());
+        output.putBoolean("UltraRareCurse", isUltraRareCurse());
+        output.putBoolean("MissionAccomplished", this.missionAccomplished);
     }
 
     @Override
-    public void readAdditionalSaveData(CompoundTag tag) {
-        super.readAdditionalSaveData(tag);
-        if (tag.hasUUID("TargetUUID")) {
-            UUID tId = tag.getUUID("TargetUUID");
-            this.entityData.set(TARGET_UUID, Optional.of(tId));
+    public void readAdditionalSaveData(ValueInput input) {
+        super.readAdditionalSaveData(input);
+        input.read("TargetUUID", UUIDUtil.CODEC).ifPresent(tId -> {
+            this.entityData.set(TARGET_UUID, Optional.of(EntityReference.of(tId)));
             ACTIVE_HUNTS_BY_TARGET.put(tId, this.getUUID());
-        }
-        if (tag.hasUUID("SkinUUID")) {
-            this.entityData.set(SKIN_UUID, Optional.of(tag.getUUID("SkinUUID")));
-        }
-        if (tag.contains("SkinName")) {
-            this.entityData.set(SKIN_NAME, tag.getString("SkinName"));
-        }
-        if (tag.contains("ScholarSkin")) {
-            this.entityData.set(SCHOLAR_SKIN, tag.getString("ScholarSkin"));
-        }
-        if (tag.contains("UltraRareCurse")) {
-            this.entityData.set(ULTRA_RARE_CURSE, tag.getBoolean("UltraRareCurse"));
-        }
-        this.missionAccomplished = tag.getBoolean("MissionAccomplished");
+        });
+        input.read("SkinUUID", UUIDUtil.CODEC).ifPresent(sId ->
+                this.entityData.set(SKIN_UUID, Optional.of(EntityReference.of(sId))));
+        input.getString("SkinName").ifPresent(s -> this.entityData.set(SKIN_NAME, s));
+        input.getString("ScholarSkin").ifPresent(s -> this.entityData.set(SCHOLAR_SKIN, s));
+        this.entityData.set(ULTRA_RARE_CURSE, input.getBooleanOr("UltraRareCurse", false));
+        this.missionAccomplished = input.getBooleanOr("MissionAccomplished", false);
         this.setupEquipment(this.level().registryAccess());
     }
 }
