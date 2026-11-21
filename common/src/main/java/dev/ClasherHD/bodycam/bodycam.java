@@ -1,7 +1,6 @@
 package dev.ClasherHD.bodycam;
 
 import com.mojang.logging.LogUtils;
-import dev.ClasherHD.bodycam.config.ModClientConfig;
 import dev.ClasherHD.bodycam.config.ModServerConfig;
 import dev.ClasherHD.bodycam.event.ModEvents;
 import dev.ClasherHD.bodycam.event.ServerEvents;
@@ -31,7 +30,6 @@ public class bodycam {
 
     public static void init() {
         ModServerConfig.load();
-        ModClientConfig.load();
         ModSounds.register();
         ModBlocks.register();
         ModEntityTypes.register();

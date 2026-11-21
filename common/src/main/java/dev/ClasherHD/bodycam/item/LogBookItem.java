@@ -40,6 +40,8 @@ public class LogBookItem extends Item {
     public static final int ATTEMPT_COOLDOWN_TICKS = 20;
 
     public static final Map<UUID, Long> LAST_ATTEMPT = new ConcurrentHashMap<>();
+    private static final Map<UUID, Integer> FAILED_ATTEMPTS = new ConcurrentHashMap<>();
+    private static final Map<UUID, Long> LOCKOUT_UNTIL_TICK = new ConcurrentHashMap<>();
 
     public LogBookItem(Properties properties) {
         super(properties.stacksTo(1));
@@ -78,7 +80,7 @@ public class LogBookItem extends Item {
             }
             return builder.toString();
         } catch (Exception e) {
-            return pin;
+            throw new IllegalStateException("SHA-256 algorithm unavailable", e);
         }
     }
 
@@ -140,12 +142,42 @@ public class LogBookItem extends Item {
 
     public static void clearStaticState() {
         LAST_ATTEMPT.clear();
+        FAILED_ATTEMPTS.clear();
+        LOCKOUT_UNTIL_TICK.clear();
+    }
+
+    public static void clearPlayerCooldown(UUID playerId) {
+        if (playerId != null) {
+            LAST_ATTEMPT.remove(playerId);
+        }
+    }
+
+    static boolean isLockedOut(ServerPlayer player) {
+        long now = player.level().getGameTime();
+        Long until = LOCKOUT_UNTIL_TICK.get(player.getUUID());
+        return until != null && now < until;
+    }
+
+    static void recordFailedAttempt(ServerPlayer player) {
+        UUID id = player.getUUID();
+        int fails = FAILED_ATTEMPTS.merge(id, 1, Integer::sum);
+        if (fails >= 5) {
+            long penalty = Math.min(6000L, 200L * (1L << Math.min(fails - 5, 5)));
+            LOCKOUT_UNTIL_TICK.put(id, player.level().getGameTime() + penalty);
+        }
+    }
+
+    static void clearLockout(UUID playerId) {
+        if (playerId != null) {
+            FAILED_ATTEMPTS.remove(playerId);
+            LOCKOUT_UNTIL_TICK.remove(playerId);
+        }
     }
 
     public static boolean isOnCooldown(ServerPlayer player) {
         long now = player.level().getGameTime();
         Long last = LAST_ATTEMPT.get(player.getUUID());
-        if (last != null && now - last < ATTEMPT_COOLDOWN_TICKS) {
+        if (last != null && now - last < ATTEMPT_COOLDOWN_TICKS && now >= last) {
             return true;
         }
         LAST_ATTEMPT.put(player.getUUID(), now);
@@ -157,20 +189,22 @@ public class LogBookItem extends Item {
     }
 
     public static void handleUnlock(ServerPlayer player, ItemStack book, String pin) {
-        if (isOnCooldown(player)) {
+        if (isLockedOut(player) || isOnCooldown(player)) {
             return;
         }
         if (checkPin(book, pin)) {
+            clearLockout(player.getUUID());
             player.level().playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.LOG_BOOK_UNLOCK.get(), SoundSource.PLAYERS, 0.6F, 1.4F);
             sendBook(player, book);
         } else {
+            recordFailedAttempt(player);
             player.level().playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.LOG_BOOK_WRONG_PIN.get(), SoundSource.PLAYERS, 0.8F, 1.0F);
             player.displayClientMessage(Component.translatable("message.bodycam.logbook.wrong_pin").withStyle(ChatFormatting.RED), true);
         }
     }
 
     public static void handleSetPin(ServerPlayer player, ItemStack book, String oldPin, String newPin) {
-        if (isOnCooldown(player)) {
+        if (isLockedOut(player) || isOnCooldown(player)) {
             return;
         }
         boolean hadPin = hasPin(book);
@@ -179,10 +213,12 @@ public class LogBookItem extends Item {
             return;
         }
         if (hadPin && !checkPin(book, oldPin)) {
+            recordFailedAttempt(player);
             player.level().playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.LOG_BOOK_WRONG_PIN.get(), SoundSource.PLAYERS, 0.8F, 1.0F);
             player.displayClientMessage(Component.translatable("message.bodycam.logbook.wrong_pin").withStyle(ChatFormatting.RED), true);
             return;
         }
+        clearLockout(player.getUUID());
         if (newPin == null || newPin.isEmpty()) {
             if (hadPin) {
                 ItemNbtAccess.remove(book, TAG_PIN);

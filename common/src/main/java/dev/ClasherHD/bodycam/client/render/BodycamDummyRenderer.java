@@ -118,8 +118,13 @@ public class BodycamDummyRenderer<T extends BodycamDummyEntity>
             SubmitNodeCollector submitNodeCollector,
             CameraRenderState cameraRenderState
     ) {
+        PlayerModel previousModel = this.model;
         this.model = state.skin != null && state.skin.model() == PlayerModelType.SLIM ? this.slimModel : this.classicModel;
-        super.submit(state, poseStack, submitNodeCollector, cameraRenderState);
+        try {
+            super.submit(state, poseStack, submitNodeCollector, cameraRenderState);
+        } finally {
+            this.model = previousModel;
+        }
     }
 
     @Override

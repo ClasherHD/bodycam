@@ -11,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -77,7 +78,7 @@ class ServerConfigParityTest {
     }
 
     @Test
-    void blacklistedDimensions_saveAndLoadRoundtrip(@TempDir Path tempDir) {
+    void blacklistedDimensions_saveAndLoadRoundtrip(@TempDir Path tempDir) throws Exception {
         try (MockedStatic<BodycamPlatform> platformMock = Mockito.mockStatic(BodycamPlatform.class)) {
             platformMock.when(BodycamPlatform::getConfigDirectory).thenReturn(tempDir);
 
@@ -104,6 +105,40 @@ class ServerConfigParityTest {
             assertThat(ModServerConfig.isDimensionBlacklisted((String) null)).isFalse();
             assertThat(ModServerConfig.isDimensionBlacklisted("")).isFalse();
             assertThat(ModServerConfig.isDimensionBlacklisted((net.minecraft.world.level.Level) null)).isFalse();
+
+            try (Stream<Path> files = Files.list(tempDir)) {
+                assertThat(files.map(p -> p.getFileName().toString()))
+                        .noneMatch(name -> name.endsWith(".tmp"));
+            }
+        }
+    }
+
+    @Test
+    void clientConfig_atomicSaveAndLoadRoundtripLeavesNoTempFiles(@TempDir Path tempDir) throws Exception {
+        try (MockedStatic<BodycamPlatform> platformMock = Mockito.mockStatic(BodycamPlatform.class)) {
+            platformMock.when(BodycamPlatform::getConfigDirectory).thenReturn(tempDir);
+
+            boolean prevName = ModClientConfig.SHOW_NAME_OVERLAY.get();
+            String prevColor = ModClientConfig.COLOR_STANDARD.get();
+            try {
+                ModClientConfig.SHOW_NAME_OVERLAY.set(false);
+                ModClientConfig.COLOR_STANDARD.set("112233");
+                ModClientConfig.save();
+
+                ModClientConfig.SHOW_NAME_OVERLAY.set(true);
+                ModClientConfig.COLOR_STANDARD.set("FFFFFF");
+                ModClientConfig.load();
+
+                assertThat(ModClientConfig.SHOW_NAME_OVERLAY.get()).isFalse();
+                assertThat(ModClientConfig.COLOR_STANDARD.get()).isEqualTo("112233");
+                try (Stream<Path> files = Files.list(tempDir)) {
+                    assertThat(files.map(p -> p.getFileName().toString()))
+                            .containsExactly("bodycam-client.json");
+                }
+            } finally {
+                ModClientConfig.SHOW_NAME_OVERLAY.set(prevName);
+                ModClientConfig.COLOR_STANDARD.set(prevColor);
+            }
         }
     }
 }

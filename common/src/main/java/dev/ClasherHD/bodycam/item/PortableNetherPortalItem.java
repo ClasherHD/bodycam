@@ -94,9 +94,12 @@ public class PortableNetherPortalItem extends Item {
             return InteractionResult.FAIL;
         }
 
-        if (!ModServerConfig.ENABLE_PORTABLE_NETHER_PORTAL.get()) {
+        if (!ModServerConfig.ENABLE_PORTABLE_NETHER_PORTAL.get() || ModServerConfig.isDimensionBlacklisted(level)) {
             if (!level.isClientSide()) {
-                player.displayClientMessage(Component.translatable("message.bodycam.portable_portal_disabled").withStyle(ChatFormatting.RED), true);
+                String msgKey = ModServerConfig.isDimensionBlacklisted(level)
+                        ? "message.bodycam.dimension_blacklisted"
+                        : "message.bodycam.portable_portal_disabled";
+                player.displayClientMessage(Component.translatable(msgKey).withStyle(ChatFormatting.RED), true);
             }
             return InteractionResult.FAIL;
         }
@@ -175,6 +178,11 @@ public class PortableNetherPortalItem extends Item {
     @Override
     public ItemStack finishUsingItem(ItemStack stack, Level level, LivingEntity livingEntity) {
         if (!level.isClientSide() && livingEntity instanceof ServerPlayer player) {
+            if (!ModServerConfig.ENABLE_PORTABLE_NETHER_PORTAL.get()
+                    || ModServerConfig.isDimensionBlacklisted(player.level())
+                    || player.getCooldowns().isOnCooldown(stack)) {
+                return super.finishUsingItem(stack, level, livingEntity);
+            }
             int charges = getCharges(stack);
             if (charges > 0 && performDimensionTeleport(player)) {
                 ModAdvancements.award(player, ModAdvancements.USE_PORTABLE_PORTAL);
@@ -202,6 +210,10 @@ public class PortableNetherPortalItem extends Item {
             player.displayClientMessage(Component.translatable("message.bodycam.portable_portal_disabled").withStyle(ChatFormatting.RED), true);
             return;
         }
+        if (ModServerConfig.isDimensionBlacklisted(player.level())) {
+            player.displayClientMessage(Component.translatable("message.bodycam.dimension_blacklisted").withStyle(ChatFormatting.RED), true);
+            return;
+        }
         if (PersistentDataAccess.get(player).getBooleanOr("bodycam_active", false)) {
             return;
         }
@@ -211,6 +223,12 @@ public class PortableNetherPortalItem extends Item {
             if (!(stack.getItem() instanceof PortableNetherPortalItem)) {
                 return;
             }
+        }
+        if (player.getCooldowns().isOnCooldown(stack)) {
+            return;
+        }
+        if (!player.isUsingItem() || player.getUseItem() != stack || player.getTicksUsingItem() < CHANNEL_TICKS) {
+            return;
         }
         PortableNetherPortalItem portalItem = (PortableNetherPortalItem) stack.getItem();
         int charges = getCharges(stack);

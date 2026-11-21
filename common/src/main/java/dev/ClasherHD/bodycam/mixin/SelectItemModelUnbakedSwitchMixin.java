@@ -1,5 +1,6 @@
 package dev.ClasherHD.bodycam.mixin;
 
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import dev.ClasherHD.bodycam.bodycam;
 import net.minecraft.client.renderer.item.BlockModelWrapper;
 import net.minecraft.client.renderer.item.SelectItemModel;
@@ -16,7 +17,6 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Redirect;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,7 +49,7 @@ public abstract class SelectItemModelUnbakedSwitchMixin<P extends SelectItemMode
     @Final
     private List<SelectItemModel.SwitchCase<T>> cases;
 
-    @Redirect(
+    @ModifyExpressionValue(
             method = {"resolveDependencies", "bake"},
             at = @At(
                     value = "FIELD",
@@ -58,16 +58,16 @@ public abstract class SelectItemModelUnbakedSwitchMixin<P extends SelectItemMode
             )
     )
     private List<SelectItemModel.SwitchCase<T>> bodycam$injectObservationCrystalCase(
-            SelectItemModel.UnbakedSwitch<P, T> instance
+            List<SelectItemModel.SwitchCase<T>> original
     ) {
-        if (!(this.property instanceof TrimMaterialProperty)) {
-            return this.cases;
+        if (!(this.property instanceof TrimMaterialProperty) || original == null) {
+            return original;
         }
         BlockModelWrapper.Unbaked template = null;
-        for (SelectItemModel.SwitchCase<T> entry : this.cases) {
+        for (SelectItemModel.SwitchCase<T> entry : original) {
             for (T value : entry.values()) {
                 if (BODYCAM_OBSERVATION_CRYSTAL.equals(value)) {
-                    return this.cases;
+                    return original;
                 }
                 if (TrimMaterials.AMETHYST.equals(value)
                         && entry.model() instanceof BlockModelWrapper.Unbaked wrapped) {
@@ -76,23 +76,23 @@ public abstract class SelectItemModelUnbakedSwitchMixin<P extends SelectItemMode
             }
         }
         if (template == null) {
-            return this.cases;
+            return original;
         }
         Identifier templateModel = template.model();
         String path = templateModel.getPath();
         if (!"minecraft".equals(templateModel.getNamespace())
                 || !path.startsWith("item/")
                 || !path.endsWith("_amethyst_trim")) {
-            return this.cases;
+            return original;
         }
         String armorName = path.substring("item/".length(), path.length() - "_amethyst_trim".length());
         if (!BODYCAM_SUPPORTED_ARMORS.contains(armorName)) {
-            return this.cases;
+            return original;
         }
         Identifier observationModel = bodycam.id("item/trims/" + armorName + "_observation_crystal_trim");
         BlockModelWrapper.Unbaked wrappedObservation = new BlockModelWrapper.Unbaked(observationModel, template.tints());
-        List<SelectItemModel.SwitchCase<T>> extended = new ArrayList<>(this.cases.size() + 1);
-        extended.addAll(this.cases);
+        List<SelectItemModel.SwitchCase<T>> extended = new ArrayList<>(original.size() + 1);
+        extended.addAll(original);
         extended.add(new SelectItemModel.SwitchCase<>((List<T>) List.of(BODYCAM_OBSERVATION_CRYSTAL), wrappedObservation));
         return extended;
     }

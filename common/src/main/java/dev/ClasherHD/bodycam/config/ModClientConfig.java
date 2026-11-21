@@ -7,7 +7,6 @@ import dev.ClasherHD.bodycam.config.ModServerConfig.ConfigValue;
 import dev.ClasherHD.bodycam.platform.BodycamPlatform;
 
 import java.io.Reader;
-import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -71,9 +70,7 @@ public class ModClientConfig {
             obj.addProperty("colorDimension", COLOR_DIMENSION.get());
             obj.addProperty("colorOutOfRange", COLOR_OUT_OF_RANGE.get());
             obj.addProperty("colorOtherDimension", COLOR_OTHER_DIMENSION.get());
-            try (Writer writer = Files.newBufferedWriter(file)) {
-                GSON.toJson(obj, writer);
-            }
+            ModServerConfig.writeJsonAtomically(file, obj);
         } catch (Exception ignored) {
         }
     }

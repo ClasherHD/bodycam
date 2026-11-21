@@ -8,16 +8,17 @@ import net.minecraft.world.level.Level;
 
 @SuppressWarnings("null")
 public class ClientLocatorCache {
-    public static BlockPos structureTarget = null;
-    public static ResourceKey<Level> structureTargetDimension = null;
+    public static volatile BlockPos structureTarget = null;
+    public static volatile ResourceKey<Level> structureTargetDimension = null;
 
     public static void updateStructure(BlockPos pos, String dim) {
-        structureTarget = pos;
-        if (dim != null) {
-            structureTargetDimension = ResourceKey.create(Registries.DIMENSION, Identifier.parse(dim));
-        } else {
-            structureTargetDimension = null;
+        if (pos == null) {
+            clear();
+            return;
         }
+        Identifier id = dim == null ? null : Identifier.tryParse(dim);
+        structureTargetDimension = id != null ? ResourceKey.create(Registries.DIMENSION, id) : null;
+        structureTarget = pos;
     }
 
     public static void clear() {

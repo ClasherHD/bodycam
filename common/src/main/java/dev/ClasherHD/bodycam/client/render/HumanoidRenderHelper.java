@@ -34,8 +34,17 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class HumanoidRenderHelper {
     private static final Map<UUID, PlayerSkin> SKIN_CACHE = new ConcurrentHashMap<>();
     private static final Map<UUID, Boolean> SKIN_LOADING = new ConcurrentHashMap<>();
+    private static final Map<StaticSkinKey, PlayerSkin> STATIC_SKIN_CACHE = new ConcurrentHashMap<>();
+
+    private record StaticSkinKey(Identifier texture, boolean slim) {
+    }
 
     private HumanoidRenderHelper() {
+    }
+
+    public static void clearSkinCache() {
+        SKIN_CACHE.clear();
+        SKIN_LOADING.clear();
     }
 
     public static boolean isSpyglassOrMonitor(ItemStack stack) {
@@ -109,7 +118,10 @@ public final class HumanoidRenderHelper {
             PlayerInfo info = connection.getPlayerInfo(uuid);
             if (info != null) {
                 PlayerSkin liveSkin = info.getSkin();
-                SKIN_CACHE.put(uuid, liveSkin);
+                if (!liveSkin.equals(SKIN_CACHE.get(uuid))) {
+                    SKIN_CACHE.put(uuid, liveSkin);
+                }
+                SKIN_LOADING.remove(uuid);
                 return liveSkin;
             }
         }
@@ -122,11 +134,8 @@ public final class HumanoidRenderHelper {
         if (name != null && !name.isBlank() && SKIN_LOADING.putIfAbsent(uuid, Boolean.TRUE) == null) {
             GameProfile profile = new GameProfile(uuid, name);
             mc.getSkinManager().get(profile).thenAccept(opt -> {
-                if (opt.isPresent()) {
-                    SKIN_CACHE.put(uuid, opt.get());
-                } else {
-                    SKIN_LOADING.remove(uuid);
-                }
+                opt.ifPresent(skin -> SKIN_CACHE.put(uuid, skin));
+                SKIN_LOADING.remove(uuid);
             }).exceptionally(err -> {
                 SKIN_LOADING.remove(uuid);
                 return null;
@@ -137,8 +146,10 @@ public final class HumanoidRenderHelper {
     }
 
     public static PlayerSkin createStaticSkin(Identifier texture, boolean slim) {
-        ClientAsset.ResourceTexture asset = new ClientAsset.ResourceTexture(texture, texture);
-        return new PlayerSkin(asset, null, null, slim ? PlayerModelType.SLIM : PlayerModelType.WIDE, true);
+        return STATIC_SKIN_CACHE.computeIfAbsent(new StaticSkinKey(texture, slim), key -> {
+            ClientAsset.ResourceTexture asset = new ClientAsset.ResourceTexture(key.texture(), key.texture());
+            return new PlayerSkin(asset, null, null, key.slim() ? PlayerModelType.SLIM : PlayerModelType.WIDE, true);
+        });
     }
 
     public static boolean applyPlayerRotations(AvatarRenderState state, PoseStack poseStack) {

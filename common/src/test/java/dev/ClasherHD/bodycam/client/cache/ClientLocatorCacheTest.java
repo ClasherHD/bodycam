@@ -1,6 +1,5 @@
 package dev.ClasherHD.bodycam.client.cache;
 
-import net.minecraft.IdentifierException;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
@@ -11,7 +10,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SuppressWarnings("null")
 class ClientLocatorCacheTest {
@@ -45,8 +43,9 @@ class ClientLocatorCacheTest {
     }
 
     @Test
-    void updateStructure_withInvalidDimension_throwsIdentifierException() {
-        assertThatThrownBy(() -> ClientLocatorCache.updateStructure(BlockPos.ZERO, "Invalid Dimension"))
-                .isInstanceOf(IdentifierException.class);
+    void updateStructure_withInvalidDimension_clearsDimensionWithoutThrowing() {
+        ClientLocatorCache.updateStructure(BlockPos.ZERO, "Invalid Dimension");
+        assertThat(ClientLocatorCache.structureTarget).isEqualTo(BlockPos.ZERO);
+        assertThat(ClientLocatorCache.structureTargetDimension).isNull();
     }
 }

@@ -164,6 +164,9 @@ public class WatchPointDummyEntity extends BodycamDummyEntity {
                 setWatchPointPos(wpPos);
             }
 
+            if (!this.level().isLoaded(wpPos)) {
+                return;
+            }
             if (!this.level().getBlockState(wpPos).is(ModBlocks.WATCH_POINT.get())) {
                 kickObservingOwner(false);
                 this.discard();
@@ -206,7 +209,7 @@ public class WatchPointDummyEntity extends BodycamDummyEntity {
             }
         }
         BlockPos wpPos = getWatchPointPos();
-        if (wpPos != null && this.level().getBlockEntity(wpPos) instanceof WatchPointBlockEntity be) {
+        if (wpPos != null && this.level().isLoaded(wpPos) && this.level().getBlockEntity(wpPos) instanceof WatchPointBlockEntity be) {
             be.clearActiveDummyIfMatches(this.getUUID());
         }
     }

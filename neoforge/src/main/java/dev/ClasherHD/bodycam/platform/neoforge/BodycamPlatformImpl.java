@@ -25,6 +25,8 @@ public final class BodycamPlatformImpl {
     private static volatile Method getCuriosInventoryMethod = null;
     private static volatile Method findCuriosMethod = null;
     private static volatile Method slotResultStackMethod = null;
+    private static volatile Class<?> cachedResolveClass = null;
+    private static volatile Method cachedResolveMethod = null;
 
     private BodycamPlatformImpl() {
     }
@@ -76,7 +78,13 @@ public final class BodycamPlatformImpl {
                 }
                 handler = opt.get();
             } else if (invObj != null) {
-                Method resolve = invObj.getClass().getMethod("resolve");
+                Class<?> invClass = invObj.getClass();
+                Method resolve = cachedResolveClass == invClass ? cachedResolveMethod : null;
+                if (resolve == null) {
+                    resolve = invClass.getMethod("resolve");
+                    cachedResolveMethod = resolve;
+                    cachedResolveClass = invClass;
+                }
                 Object resolved = resolve.invoke(invObj);
                 if (resolved instanceof Optional<?> opt && opt.isPresent()) {
                     handler = opt.get();

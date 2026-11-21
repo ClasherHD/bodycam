@@ -125,14 +125,14 @@ public class CreepingDeathActionC2SPacket implements CustomPacketPayload {
                             Component.translatable("message.bodycam.creeping_death.invalid_target").withStyle(ChatFormatting.RED));
                     return;
                 }
-                if (targetInBodycam || targetData.getBooleanOr("bodycam_all_seeing_pending", false)) {
-                    BodycamResetCameraPacket.executeReset(target);
-                    CreepingDeathEntity.sendHuntNoEscapeTitle(target);
-                }
                 if (CreepingDeathEntity.isTargetAlreadyHunted(server, target.getUUID())) {
                     sender.sendSystemMessage(
                             Component.translatable("message.bodycam.creeping_death.already_hunted").withStyle(ChatFormatting.RED));
                     return;
+                }
+                if (targetInBodycam || targetData.getBooleanOr("bodycam_all_seeing_pending", false)) {
+                    BodycamResetCameraPacket.executeReset(target);
+                    CreepingDeathEntity.sendHuntNoEscapeTitle(target);
                 }
 
                 UUID skinUUID = CreepingDeathItem.getSkinUUID(stack);

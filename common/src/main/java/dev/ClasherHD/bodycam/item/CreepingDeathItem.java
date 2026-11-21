@@ -16,7 +16,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.Permissions;
-import net.minecraft.server.players.NameAndId;
+import net.minecraft.util.Util;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -25,11 +25,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.storage.LevelResource;
 
 import java.io.BufferedReader;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -37,8 +35,8 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 @SuppressWarnings("null")
@@ -49,6 +47,7 @@ public class CreepingDeathItem extends Item {
     public static final int USER_PARTICLE_TICKS = 20;
 
     private static final long KNOWN_PLAYERS_CACHE_TTL_MS = 30_000L;
+    private static final AtomicBoolean REFRESHING = new AtomicBoolean(false);
     private static volatile Map<UUID, String> cachedOfflinePlayers = Map.of();
     private static volatile long lastOfflineScanMs = 0L;
 
@@ -181,8 +180,7 @@ public class CreepingDeathItem extends Item {
 
         long nowMs = System.currentTimeMillis();
         if (lastOfflineScanMs == 0L || nowMs - lastOfflineScanMs >= KNOWN_PLAYERS_CACHE_TTL_MS) {
-            cachedOfflinePlayers = scanOfflinePlayers(server);
-            lastOfflineScanMs = nowMs;
+            refreshOfflinePlayersAsync(server);
         }
         cachedOfflinePlayers.forEach(known::putIfAbsent);
 
@@ -194,18 +192,31 @@ public class CreepingDeathItem extends Item {
         return result;
     }
 
-    private static Map<UUID, String> scanOfflinePlayers(MinecraftServer server) {
-        Map<UUID, String> known = new LinkedHashMap<>();
+    public static void refreshOfflinePlayersAsync(MinecraftServer server) {
+        if (server == null || !REFRESHING.compareAndSet(false, true)) {
+            return;
+        }
+        Path userCacheFile = server.getServerDirectory().resolve("usercache.json");
+        Util.ioPool().execute(() -> {
+            try {
+                cachedOfflinePlayers = scanUserCacheFile(userCacheFile);
+                lastOfflineScanMs = System.currentTimeMillis();
+            } finally {
+                REFRESHING.set(false);
+            }
+        });
+    }
 
+    public static Map<UUID, String> scanUserCacheFile(Path userCacheFile) {
+        Map<UUID, String> known = new LinkedHashMap<>();
         try {
-            Path userCacheFile = server.getServerDirectory().resolve("usercache.json");
-            if (Files.isRegularFile(userCacheFile)) {
+            if (userCacheFile != null && Files.isRegularFile(userCacheFile)) {
                 try (BufferedReader reader = Files.newBufferedReader(userCacheFile, StandardCharsets.UTF_8)) {
                     JsonElement root = JsonParser.parseReader(reader);
-                    if (root.isJsonArray()) {
+                    if (root != null && root.isJsonArray()) {
                         JsonArray arr = root.getAsJsonArray();
                         for (JsonElement el : arr) {
-                            if (el.isJsonObject()) {
+                            if (el != null && el.isJsonObject()) {
                                 JsonObject obj = el.getAsJsonObject();
                                 if (obj.has("uuid") && obj.has("name")) {
                                     UUID id = UUID.fromString(obj.get("uuid").getAsString());
@@ -221,34 +232,7 @@ public class CreepingDeathItem extends Item {
             }
         } catch (Exception ignored) {
         }
-
-        try {
-            Path playerDataDir = server.getWorldPath(LevelResource.PLAYER_DATA_DIR);
-            var resolver = server.services().nameToIdCache();
-            if (Files.isDirectory(playerDataDir) && resolver != null) {
-                try (DirectoryStream<Path> stream = Files.newDirectoryStream(playerDataDir, "*.dat")) {
-                    for (Path entry : stream) {
-                        String fileName = entry.getFileName().toString();
-                        if (fileName.endsWith(".dat")) {
-                            String uuidStr = fileName.substring(0, fileName.length() - 4);
-                            try {
-                                UUID id = UUID.fromString(uuidStr);
-                                if (!known.containsKey(id)) {
-                                    Optional<NameAndId> prof = resolver.get(id);
-                                    if (prof.isPresent() && prof.get().name() != null && !prof.get().name().isEmpty()) {
-                                        known.put(id, prof.get().name());
-                                    }
-                                }
-                            } catch (IllegalArgumentException ignored) {
-                            }
-                        }
-                    }
-                }
-            }
-        } catch (Exception ignored) {
-        }
-
-        return known;
+        return Map.copyOf(known);
     }
 
     @Override

@@ -107,6 +107,7 @@ public class ServerEvents {
 
     public static void init() {
         CommandRegistrationEvent.EVENT.register((dispatcher, registry, selection) -> BodycamCommands.register(dispatcher));
+        LifecycleEvent.SERVER_STARTED.register(CreepingDeathItem::refreshOfflinePlayersAsync);
         LifecycleEvent.SERVER_STOPPED.register(ServerEvents::onServerStopped);
         PlayerEvent.PLAYER_JOIN.register(ServerEvents::onPlayerLogin);
         PlayerEvent.PLAYER_QUIT.register(ServerEvents::onPlayerLogout);
@@ -429,6 +430,7 @@ public class ServerEvents {
         PlayerLocatorSelectC2SPacket.clearCooldown(id);
         DimensionLocatorRequestPacket.clearCooldown(id);
         LogBookActionC2SPacket.clearCooldown(id);
+        LogBookItem.clearPlayerCooldown(id);
         POSITION_LOCKS.remove(id);
 
         CompoundTag data = PersistentDataAccess.get(player);

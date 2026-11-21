@@ -1,6 +1,7 @@
 package dev.ClasherHD.bodycam.mixin;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import dev.ClasherHD.bodycam.client.gui.BodycamViewScreen;
 import dev.ClasherHD.bodycam.client.render.CherryHouseMapRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -23,7 +24,7 @@ public class ItemInHandRendererMixin {
             int packedLight,
             CallbackInfo ci
     ) {
-        if (Minecraft.getInstance().getCameraEntity() != Minecraft.getInstance().player) {
+        if (BodycamViewScreen.isMonitoring && Minecraft.getInstance().getCameraEntity() != Minecraft.getInstance().player) {
             ci.cancel();
         }
     }

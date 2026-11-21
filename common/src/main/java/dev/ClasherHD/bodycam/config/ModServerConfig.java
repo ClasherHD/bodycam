@@ -8,10 +8,14 @@ import com.google.gson.JsonObject;
 import dev.ClasherHD.bodycam.platform.BodycamPlatform;
 import net.minecraft.world.level.Level;
 
+import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
@@ -242,11 +246,29 @@ public class ModServerConfig {
             obj.addProperty("anonymizerIntervalTicks", clampInt(ANONYMIZER_INTERVAL_TICKS.get(), 1, 72000));
             obj.addProperty("playerLocatorDurabilityIntervalTicks", clampInt(PLAYER_LOCATOR_DURABILITY_INTERVAL_TICKS.get(), 1, 72000));
 
-            try (Writer writer = Files.newBufferedWriter(file)) {
-                GSON.toJson(obj, writer);
-            }
+            writeJsonAtomically(file, obj);
             loaded = true;
         } catch (Exception ignored) {
+        }
+    }
+
+    public static void writeJsonAtomically(Path file, JsonObject obj) throws IOException {
+        Path parent = file.getParent();
+        if (parent != null) {
+            Files.createDirectories(parent);
+        }
+        Path temp = Files.createTempFile(parent, file.getFileName().toString() + ".", ".tmp");
+        try {
+            try (Writer writer = Files.newBufferedWriter(temp, StandardCharsets.UTF_8)) {
+                GSON.toJson(obj, writer);
+            }
+            try {
+                Files.move(temp, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            } catch (AtomicMoveNotSupportedException e) {
+                Files.move(temp, file, StandardCopyOption.REPLACE_EXISTING);
+            }
+        } finally {
+            Files.deleteIfExists(temp);
         }
     }
 

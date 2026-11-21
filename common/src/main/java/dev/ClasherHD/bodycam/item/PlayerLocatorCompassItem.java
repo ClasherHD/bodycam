@@ -107,6 +107,9 @@ public class PlayerLocatorCompassItem extends Item {
             }
         }
         PlayerLocatorCompassItem compass = (PlayerLocatorCompassItem) stack.getItem();
+        if (ItemDurabilityHelper.isEmpty(stack)) {
+            return;
+        }
         if (deselect || targetUuid == null) {
             compass.resetToIdle(stack);
             return;

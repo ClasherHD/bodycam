@@ -42,8 +42,8 @@ public final class PlatformCommonHelper {
             return;
         }
         long chunkLong = ChunkPos.asLong(chunkX, chunkZ);
-        Map<Long, Set<String>> dimMap = FORCED_CHUNK_OWNERS.computeIfAbsent(level.dimension(), k -> new ConcurrentHashMap<>());
         if (add) {
+            Map<Long, Set<String>> dimMap = FORCED_CHUNK_OWNERS.computeIfAbsent(level.dimension(), k -> new ConcurrentHashMap<>());
             Set<String> owners = dimMap.computeIfAbsent(chunkLong, k -> ConcurrentHashMap.newKeySet());
             boolean wasEmpty = owners.isEmpty();
             owners.add(ownerKey);
@@ -51,15 +51,13 @@ public final class PlatformCommonHelper {
                 level.setChunkForced(chunkX, chunkZ, true);
             }
         } else {
-            Set<String> owners = dimMap.get(chunkLong);
-            if (owners != null) {
-                owners.remove(ownerKey);
-                if (owners.isEmpty()) {
-                    dimMap.remove(chunkLong);
+            Map<Long, Set<String>> dimMap = FORCED_CHUNK_OWNERS.get(level.dimension());
+            if (dimMap != null) {
+                Set<String> owners = dimMap.get(chunkLong);
+                if (owners != null && owners.remove(ownerKey) && owners.isEmpty()) {
+                    dimMap.remove(chunkLong, owners);
                     level.setChunkForced(chunkX, chunkZ, false);
                 }
-            } else {
-                level.setChunkForced(chunkX, chunkZ, false);
             }
         }
     }

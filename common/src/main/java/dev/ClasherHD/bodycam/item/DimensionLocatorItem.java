@@ -10,6 +10,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -108,15 +109,20 @@ public class DimensionLocatorItem extends Item {
     }
 
     public static void handleSelectDimension(ServerPlayer player, String dimension) {
-        if (player == null || dimension == null) {
+        if (player == null || dimension == null || player.level().getServer() == null) {
+            return;
+        }
+        Identifier parsed = Identifier.tryParse(dimension);
+        if (parsed == null || player.level().getServer().levelKeys().stream().noneMatch(k -> k.identifier().equals(parsed))) {
             return;
         }
         ItemStack main = player.getMainHandItem();
         ItemStack off = player.getOffhandItem();
         ItemStack target = main.getItem() instanceof DimensionLocatorItem ? main : (off.getItem() instanceof DimensionLocatorItem ? off : ItemStack.EMPTY);
-        if (!target.isEmpty()) {
-            ItemNbtAccess.putString(target, "SelectedDimension", dimension);
-            player.sendSystemMessage(Component.translatable("message.bodycam.dimension_selected", dimension).withStyle(ChatFormatting.GREEN));
+        if (!target.isEmpty() && !ItemDurabilityHelper.isEmpty(target)) {
+            String normalized = parsed.toString();
+            ItemNbtAccess.putString(target, "SelectedDimension", normalized);
+            player.sendSystemMessage(Component.translatable("message.bodycam.dimension_selected", normalized).withStyle(ChatFormatting.GREEN));
         }
     }
 

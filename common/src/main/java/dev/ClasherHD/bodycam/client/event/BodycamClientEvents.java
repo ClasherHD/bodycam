@@ -5,6 +5,7 @@ import dev.ClasherHD.bodycam.client.cache.ClientLocatorCache;
 import dev.ClasherHD.bodycam.client.camera.CameraSnapState;
 import dev.ClasherHD.bodycam.client.gui.BodycamViewScreen;
 import dev.ClasherHD.bodycam.client.gui.PlayerSelectionScreen;
+import dev.ClasherHD.bodycam.client.render.HumanoidRenderHelper;
 import dev.ClasherHD.bodycam.network.PacketHandler;
 import dev.ClasherHD.bodycam.network.bodycam.SyncBodycamRequestC2SPacket;
 import dev.ClasherHD.bodycam.registry.ModBlocks;
@@ -34,6 +35,7 @@ public final class BodycamClientEvents {
             ClientLocatorCache.clear();
             PlayerSelectionScreen.observingMe.clear();
             CameraSnapState.clearAll();
+            HumanoidRenderHelper.clearSkinCache();
         });
         InteractionEvent.RIGHT_CLICK_ITEM.register((player, hand) ->
                 handleHologramInteraction(player, hand) ? InteractionResult.SUCCESS : InteractionResult.PASS
