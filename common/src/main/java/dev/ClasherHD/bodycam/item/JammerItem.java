@@ -182,7 +182,9 @@ public class JammerItem extends Item {
                     });
                     itemMode = playerActiveMode;
                 } else {
-                    pData.putInt("bodycam_jammer_mode", itemMode);
+                    if (pData.getIntOr("bodycam_jammer_mode", -1) != itemMode) {
+                        pData.putInt("bodycam_jammer_mode", itemMode);
+                    }
                     playerActiveMode = itemMode;
                 }
 
@@ -209,7 +211,13 @@ public class JammerItem extends Item {
                     }
                 }
 
-                pData.putLong("bodycam_jammer_heartbeat", level.getGameTime());
+                long gameTime = level.getGameTime();
+                long lastHeartbeat = pData.getLongOr("bodycam_jammer_heartbeat", 0L);
+                if (!pData.contains("bodycam_jammer_heartbeat")
+                        || gameTime - lastHeartbeat >= 5L
+                        || gameTime < lastHeartbeat) {
+                    pData.putLong("bodycam_jammer_heartbeat", gameTime);
+                }
             } else {
                 if (itemMode > 0) {
                     ItemNbtAccess.updateTag(stack, tag -> {

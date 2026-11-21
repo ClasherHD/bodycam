@@ -25,11 +25,11 @@ public class PlayerLocatorStructureUpdateS2CPacket implements CustomPacketPayloa
 
     public static void encode(RegistryFriendlyByteBuf buf, PlayerLocatorStructureUpdateS2CPacket msg) {
         buf.writeBlockPos(msg.structurePos);
-        buf.writeUtf(msg.dimension);
+        buf.writeUtf(msg.dimension, 256);
     }
 
     public static PlayerLocatorStructureUpdateS2CPacket decode(RegistryFriendlyByteBuf buf) {
-        return new PlayerLocatorStructureUpdateS2CPacket(buf.readBlockPos(), buf.readUtf());
+        return new PlayerLocatorStructureUpdateS2CPacket(buf.readBlockPos(), buf.readUtf(256));
     }
 
     @Override

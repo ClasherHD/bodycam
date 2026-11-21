@@ -58,8 +58,6 @@ public final class PlatformCommonHelper {
                     dimMap.remove(chunkLong);
                     level.setChunkForced(chunkX, chunkZ, false);
                 }
-            } else {
-                level.setChunkForced(chunkX, chunkZ, false);
             }
         }
     }

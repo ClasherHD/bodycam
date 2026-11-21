@@ -142,6 +142,12 @@ public class LogBookItem extends Item {
         LAST_ATTEMPT.clear();
     }
 
+    public static void clearPlayerCooldown(UUID playerId) {
+        if (playerId != null) {
+            LAST_ATTEMPT.remove(playerId);
+        }
+    }
+
     public static boolean isOnCooldown(ServerPlayer player) {
         long now = player.level().getGameTime();
         Long last = LAST_ATTEMPT.get(player.getUUID());

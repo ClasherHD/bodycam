@@ -30,11 +30,11 @@ public class PlayerLocatorTargetUpdateS2CPacket implements CustomPacketPayload {
     public static void encode(RegistryFriendlyByteBuf buf, PlayerLocatorTargetUpdateS2CPacket msg) {
         buf.writeUUID(msg.targetUUID);
         buf.writeBlockPos(msg.pos);
-        buf.writeUtf(msg.dimension);
+        buf.writeUtf(msg.dimension, 256);
     }
 
     public static PlayerLocatorTargetUpdateS2CPacket decode(RegistryFriendlyByteBuf buf) {
-        return new PlayerLocatorTargetUpdateS2CPacket(buf.readUUID(), buf.readBlockPos(), buf.readUtf());
+        return new PlayerLocatorTargetUpdateS2CPacket(buf.readUUID(), buf.readBlockPos(), buf.readUtf(256));
     }
 
     @Override

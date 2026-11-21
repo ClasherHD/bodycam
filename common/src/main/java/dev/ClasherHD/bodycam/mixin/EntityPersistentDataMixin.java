@@ -33,6 +33,7 @@ public abstract class EntityPersistentDataMixin implements BodycamPersistentData
 
     @Inject(method = "load", at = @At("RETURN"))
     private void bodycam$loadPersistentData(ValueInput input, CallbackInfo ci) {
-        input.read("BodycamPersistentData", CompoundTag.CODEC).ifPresent(tag -> this.bodycam$persistentData = tag.copy());
+        input.read("BodycamPersistentData", CompoundTag.CODEC)
+                .ifPresentOrElse(tag -> this.bodycam$persistentData = tag.copy(), () -> this.bodycam$persistentData = null);
     }
 }

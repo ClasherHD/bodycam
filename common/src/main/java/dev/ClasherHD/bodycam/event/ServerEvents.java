@@ -406,6 +406,7 @@ public class ServerEvents {
         PlayerLocatorSelectC2SPacket.clearCooldown(id);
         DimensionLocatorRequestPacket.clearCooldown(id);
         LogBookActionC2SPacket.clearCooldown(id);
+        LogBookItem.clearPlayerCooldown(id);
         POSITION_LOCKS.remove(id);
 
         CompoundTag data = PersistentDataAccess.get(player);

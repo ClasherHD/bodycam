@@ -100,6 +100,12 @@ public class PortableNetherPortalItem extends Item {
             }
             return InteractionResult.FAIL;
         }
+        if (ModServerConfig.isDimensionBlacklisted(level)) {
+            if (!level.isClientSide()) {
+                player.sendOverlayMessage(Component.translatable("message.bodycam.dimension_blacklisted").withStyle(ChatFormatting.RED));
+            }
+            return InteractionResult.FAIL;
+        }
 
         BlockHitResult hitResult = getPlayerPOVHitResult(level, player, ClipContext.Fluid.NONE);
         if (hitResult.getType() == HitResult.Type.BLOCK && isNearActiveNetherPortal(level, hitResult.getBlockPos())) {
@@ -175,8 +181,16 @@ public class PortableNetherPortalItem extends Item {
     @Override
     public ItemStack finishUsingItem(ItemStack stack, Level level, LivingEntity livingEntity) {
         if (!level.isClientSide() && livingEntity instanceof ServerPlayer player) {
+            if (ModServerConfig.isDimensionBlacklisted(level)) {
+                player.sendOverlayMessage(Component.translatable("message.bodycam.dimension_blacklisted").withStyle(ChatFormatting.RED));
+                return super.finishUsingItem(stack, level, livingEntity);
+            }
+            if (player.getCooldowns().isOnCooldown(stack)) {
+                return super.finishUsingItem(stack, level, livingEntity);
+            }
             int charges = getCharges(stack);
             if (charges > 0 && performDimensionTeleport(player)) {
+                player.getCooldowns().addCooldown(stack, 100);
                 ModAdvancements.award(player, ModAdvancements.USE_PORTABLE_PORTAL);
                 if (!player.getAbilities().instabuild && !ItemDurabilityHelper.shouldSaveDurabilityByTrim(player)) {
                     int remaining = charges - 1;
@@ -202,6 +216,10 @@ public class PortableNetherPortalItem extends Item {
             player.sendOverlayMessage(Component.translatable("message.bodycam.portable_portal_disabled").withStyle(ChatFormatting.RED));
             return;
         }
+        if (ModServerConfig.isDimensionBlacklisted(player.level())) {
+            player.sendOverlayMessage(Component.translatable("message.bodycam.dimension_blacklisted").withStyle(ChatFormatting.RED));
+            return;
+        }
         if (PersistentDataAccess.get(player).getBooleanOr("bodycam_active", false)) {
             return;
         }
@@ -211,6 +229,9 @@ public class PortableNetherPortalItem extends Item {
             if (!(stack.getItem() instanceof PortableNetherPortalItem)) {
                 return;
             }
+        }
+        if (player.getCooldowns().isOnCooldown(stack)) {
+            return;
         }
         PortableNetherPortalItem portalItem = (PortableNetherPortalItem) stack.getItem();
         int charges = getCharges(stack);
@@ -224,6 +245,7 @@ public class PortableNetherPortalItem extends Item {
             return;
         }
         if (portalItem.performDimensionTeleport(player)) {
+            player.getCooldowns().addCooldown(stack, 100);
             ModAdvancements.award(player, ModAdvancements.USE_PORTABLE_PORTAL);
             if (!player.getAbilities().instabuild && !ItemDurabilityHelper.shouldSaveDurabilityByTrim(player)) {
                 int remaining = charges - 1;

@@ -3,6 +3,7 @@ package dev.ClasherHD.bodycam.mixin;
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.ClasherHD.bodycam.client.render.CherryHouseFrameStateAccess;
 import dev.ClasherHD.bodycam.client.render.CherryHouseMapRenderer;
+import dev.ClasherHD.bodycam.item.CherryHouseExplorerMapItem;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.ItemFrameRenderer;
 import net.minecraft.client.renderer.entity.state.ItemFrameRenderState;
@@ -24,7 +25,10 @@ public abstract class ItemFrameRendererMixin<T extends ItemFrame> {
 
     @Inject(method = "extractRenderState(Lnet/minecraft/world/entity/decoration/ItemFrame;Lnet/minecraft/client/renderer/entity/state/ItemFrameRenderState;F)V", at = @At("TAIL"))
     private void bodycam$extractFramedItem(T entity, ItemFrameRenderState renderState, float partialTick, CallbackInfo ci) {
-        ((CherryHouseFrameStateAccess) renderState).bodycam$setFramedItem(entity.getItem().copy());
+        ItemStack framed = entity.getItem();
+        ((CherryHouseFrameStateAccess) renderState).bodycam$setFramedItem(
+                framed.getItem() instanceof CherryHouseExplorerMapItem ? framed.copy() : ItemStack.EMPTY
+        );
     }
 
     @Inject(

@@ -13,7 +13,12 @@ import dev.ClasherHD.bodycam.network.config.OpenServerConfigS2CPacket;
 import dev.ClasherHD.bodycam.network.config.ReloadClientConfigS2CPacket;
 import dev.ClasherHD.bodycam.network.config.SaveServerConfigC2SPacket;
 import dev.ClasherHD.bodycam.network.locator.DimensionLocatorRequestPacket;
+import dev.ClasherHD.bodycam.network.locator.DimensionLocatorSelectC2SPacket;
+import dev.ClasherHD.bodycam.network.locator.PlayerLocatorStructureUpdateS2CPacket;
+import dev.ClasherHD.bodycam.network.locator.PlayerLocatorTargetUpdateS2CPacket;
+import dev.ClasherHD.bodycam.network.portal.PortablePortalActionC2SPacket;
 import io.netty.buffer.Unpooled;
+import io.netty.handler.codec.EncoderException;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.RegistryAccess;
@@ -28,6 +33,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SuppressWarnings("null")
 class PacketCodecRegressionTest {
@@ -195,5 +201,58 @@ class PacketCodecRegressionTest {
         SaveServerConfigC2SPacket saveDecoded = SaveServerConfigC2SPacket.STREAM_CODEC.decode(saveBuf);
         assertThat(saveDecoded.snapshot).isEqualTo(snapshot);
         assertThat(saveBuf.readableBytes()).isZero();
+    }
+
+    @Test
+    void locatorAndPortalPackets_roundtripAndEnforceDimensionCap() {
+        BlockPos structPos = new BlockPos(120, 64, -340);
+        PlayerLocatorStructureUpdateS2CPacket structOriginal =
+                new PlayerLocatorStructureUpdateS2CPacket(structPos, "minecraft:the_nether");
+        RegistryFriendlyByteBuf structBuf = newRegistryBuffer();
+        PlayerLocatorStructureUpdateS2CPacket.STREAM_CODEC.encode(structBuf, structOriginal);
+        PlayerLocatorStructureUpdateS2CPacket structDecoded =
+                PlayerLocatorStructureUpdateS2CPacket.STREAM_CODEC.decode(structBuf);
+        assertThat(structDecoded.structurePos).isEqualTo(structPos);
+        assertThat(structDecoded.dimension).isEqualTo("minecraft:the_nether");
+        assertThat(structBuf.readableBytes()).isZero();
+
+        UUID targetId = UUID.randomUUID();
+        BlockPos targetPos = new BlockPos(-42, 71, 88);
+        PlayerLocatorTargetUpdateS2CPacket targetOriginal =
+                new PlayerLocatorTargetUpdateS2CPacket(targetId, targetPos, "minecraft:overworld");
+        RegistryFriendlyByteBuf targetBuf = newRegistryBuffer();
+        PlayerLocatorTargetUpdateS2CPacket.STREAM_CODEC.encode(targetBuf, targetOriginal);
+        PlayerLocatorTargetUpdateS2CPacket targetDecoded =
+                PlayerLocatorTargetUpdateS2CPacket.STREAM_CODEC.decode(targetBuf);
+        assertThat(targetDecoded.targetUUID).isEqualTo(targetId);
+        assertThat(targetDecoded.pos).isEqualTo(targetPos);
+        assertThat(targetDecoded.dimension).isEqualTo("minecraft:overworld");
+        assertThat(targetBuf.readableBytes()).isZero();
+
+        String oversizedDim = "a".repeat(257);
+        assertThatThrownBy(() -> PlayerLocatorStructureUpdateS2CPacket.STREAM_CODEC.encode(
+                newRegistryBuffer(),
+                new PlayerLocatorStructureUpdateS2CPacket(BlockPos.ZERO, oversizedDim)
+        )).isInstanceOf(EncoderException.class);
+        assertThatThrownBy(() -> PlayerLocatorTargetUpdateS2CPacket.STREAM_CODEC.encode(
+                newRegistryBuffer(),
+                new PlayerLocatorTargetUpdateS2CPacket(targetId, BlockPos.ZERO, oversizedDim)
+        )).isInstanceOf(EncoderException.class);
+
+        RegistryFriendlyByteBuf dimSelectBuf = newRegistryBuffer();
+        DimensionLocatorSelectC2SPacket.STREAM_CODEC.encode(
+                dimSelectBuf,
+                new DimensionLocatorSelectC2SPacket("minecraft:the_end")
+        );
+        DimensionLocatorSelectC2SPacket dimSelectDecoded =
+                DimensionLocatorSelectC2SPacket.STREAM_CODEC.decode(dimSelectBuf);
+        assertThat(dimSelectDecoded.dimension).isEqualTo("minecraft:the_end");
+        assertThat(dimSelectBuf.readableBytes()).isZero();
+
+        RegistryFriendlyByteBuf portalBuf = newRegistryBuffer();
+        PortablePortalActionC2SPacket.STREAM_CODEC.encode(portalBuf, new PortablePortalActionC2SPacket(true));
+        PortablePortalActionC2SPacket portalDecoded = PortablePortalActionC2SPacket.STREAM_CODEC.decode(portalBuf);
+        assertThat(portalDecoded.complete).isTrue();
+        assertThat(portalBuf.readableBytes()).isZero();
     }
 }
