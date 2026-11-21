@@ -365,6 +365,7 @@ public class ServerEvents {
                 || data.contains("bodycam_target_uuid")
                 || data.contains("bodycam_dummy_uuid")) {
 
+            boolean teleportedToOrig = false;
             if (data.contains("bodycam_orig_dim")) {
                 String dimStr = data.getString("bodycam_orig_dim");
                 ResourceLocation rl = ResourceLocation.tryParse(dimStr);
@@ -377,20 +378,25 @@ public class ServerEvents {
                         double oz = data.getDouble("bodycam_orig_z");
                         float oyrot = data.getFloat("bodycam_orig_yrot");
                         float oxrot = data.getFloat("bodycam_orig_xrot");
-                        player.teleportTo(origLvl, ox, oy, oz, Set.of(), oyrot, oxrot);
-                        player.setOldPosAndRot();
+                        if (Double.isFinite(ox) && Double.isFinite(oy) && Double.isFinite(oz)
+                                && Float.isFinite(oyrot) && Float.isFinite(oxrot)) {
+                            player.teleportTo(origLvl, ox, oy, oz, Set.of(), oyrot, oxrot);
+                            player.setOldPosAndRot();
+                            teleportedToOrig = true;
+                        }
                     }
                 }
             }
 
-            if (data.contains("bodycam_dummy_uuid")) {
+            if (data.hasUUID("bodycam_dummy_uuid")) {
                 UUID dummyId = data.getUUID("bodycam_dummy_uuid");
                 for (ServerLevel lvl : player.server.getAllLevels()) {
                     Entity e = lvl.getEntity(dummyId);
                     if (e != null) {
-                        if (!data.contains("bodycam_orig_dim")) {
+                        if (!teleportedToOrig) {
                             player.teleportTo(lvl, e.getX(), e.getY(), e.getZ(), Set.of(), e.getYRot(), e.getXRot());
                             player.setOldPosAndRot();
+                            teleportedToOrig = true;
                         }
                         e.discard();
                         break;
@@ -398,7 +404,14 @@ public class ServerEvents {
                 }
             }
 
-            if (data.contains("bodycam_target_uuid")) {
+            if (!teleportedToOrig && (data.contains("bodycam_orig_dim") || data.getBoolean("bodycam_active"))) {
+                ServerLevel fallback = player.server.overworld();
+                BlockPos spawn = fallback.getSharedSpawnPos();
+                player.teleportTo(fallback, spawn.getX() + 0.5D, spawn.getY(), spawn.getZ() + 0.5D, Set.of(), 0.0F, 0.0F);
+                player.setOldPosAndRot();
+            }
+
+            if (data.hasUUID("bodycam_target_uuid")) {
                 UUID oldTargetId = data.getUUID("bodycam_target_uuid");
                 if (oldTargetId != null) {
                     ServerPlayer oldTarget = player.server.getPlayerList().getPlayer(oldTargetId);
@@ -429,6 +442,7 @@ public class ServerEvents {
         PlayerLocatorSelectC2SPacket.clearCooldown(id);
         DimensionLocatorRequestPacket.clearCooldown(id);
         LogBookActionC2SPacket.clearCooldown(id);
+        LogBookItem.clearCooldown(id);
         POSITION_LOCKS.remove(id);
 
         CompoundTag data = PersistentDataAccess.get(player);
@@ -491,69 +505,79 @@ public class ServerEvents {
             fogLevel.sendParticles(ParticleTypes.SCULK_SOUL, fx, fy + 1.0D, fz, 12, 0.75D, 0.85D, 0.75D, 0.03D);
         }
 
-        if (data.hasUUID("bodycam_active_jammer_id")) {
-            boolean hasJammer = (carried.getItem() instanceof JammerItem && !ItemDurabilityHelper.isEmpty(carried));
-            if (!hasJammer) {
-                for (ItemStack accStack : BodycamPlatform.getEquippedAccessoryItems(observer, ModItems.JAMMER.get())) {
-                    if (!ItemDurabilityHelper.isEmpty(accStack)) {
-                        hasJammer = true;
-                        break;
+        boolean activeJammer = data.hasUUID("bodycam_active_jammer_id");
+        boolean activeAnonymizer = data.hasUUID("bodycam_active_anonymizer_id");
+        if ((observer.tickCount & 3) == 0) {
+            if (activeJammer) {
+                boolean hasJammer = (carried.getItem() instanceof JammerItem && !ItemDurabilityHelper.isEmpty(carried));
+                if (!hasJammer) {
+                    for (ItemStack accStack : BodycamPlatform.getEquippedAccessoryItems(observer, ModItems.JAMMER.get())) {
+                        if (!ItemDurabilityHelper.isEmpty(accStack)) {
+                            hasJammer = true;
+                            break;
+                        }
                     }
                 }
-            }
-            if (!hasJammer) {
-                for (int i = 0; i < observer.getInventory().getContainerSize(); i++) {
-                    ItemStack invStack = observer.getInventory().getItem(i);
-                    if (invStack.getItem() instanceof JammerItem && !ItemDurabilityHelper.isEmpty(invStack)) {
-                        hasJammer = true;
-                        break;
+                if (!hasJammer) {
+                    for (int i = 0; i < observer.getInventory().getContainerSize(); i++) {
+                        ItemStack invStack = observer.getInventory().getItem(i);
+                        if (invStack.getItem() instanceof JammerItem && !ItemDurabilityHelper.isEmpty(invStack)) {
+                            hasJammer = true;
+                            break;
+                        }
                     }
                 }
+                if (hasJammer) {
+                    data.putInt("bodycam_jammer_missing_ticks", 0);
+                } else {
+                    data.remove("bodycam_active_jammer_id");
+                    data.remove("bodycam_jammer_mode");
+                    data.remove("bodycam_jammer_missing_ticks");
+                    activeJammer = false;
+                }
             }
-            if (hasJammer) {
-                data.putInt("bodycam_jammer_missing_ticks", 0);
-            } else {
-                data.remove("bodycam_active_jammer_id");
-                data.remove("bodycam_jammer_mode");
-                data.remove("bodycam_jammer_missing_ticks");
-            }
-        }
 
-        if (data.hasUUID("bodycam_active_anonymizer_id")) {
-            boolean hasAnonymizer = (carried.getItem() instanceof AnonymizerItem && !ItemDurabilityHelper.isEmpty(carried));
-            if (!hasAnonymizer) {
-                for (ItemStack accStack : BodycamPlatform.getEquippedAccessoryItems(observer, ModItems.ANONYMIZER.get())) {
-                    if (!ItemDurabilityHelper.isEmpty(accStack)) {
-                        hasAnonymizer = true;
-                        break;
+            if (activeAnonymizer) {
+                boolean hasAnonymizer = (carried.getItem() instanceof AnonymizerItem && !ItemDurabilityHelper.isEmpty(carried));
+                if (!hasAnonymizer) {
+                    for (ItemStack accStack : BodycamPlatform.getEquippedAccessoryItems(observer, ModItems.ANONYMIZER.get())) {
+                        if (!ItemDurabilityHelper.isEmpty(accStack)) {
+                            hasAnonymizer = true;
+                            break;
+                        }
                     }
                 }
-            }
-            if (!hasAnonymizer) {
-                for (int i = 0; i < observer.getInventory().getContainerSize(); i++) {
-                    ItemStack invStack = observer.getInventory().getItem(i);
-                    if (invStack.getItem() instanceof AnonymizerItem && !ItemDurabilityHelper.isEmpty(invStack)) {
-                        hasAnonymizer = true;
-                        break;
+                if (!hasAnonymizer) {
+                    for (int i = 0; i < observer.getInventory().getContainerSize(); i++) {
+                        ItemStack invStack = observer.getInventory().getItem(i);
+                        if (invStack.getItem() instanceof AnonymizerItem && !ItemDurabilityHelper.isEmpty(invStack)) {
+                            hasAnonymizer = true;
+                            break;
+                        }
                     }
                 }
-            }
-            if (hasAnonymizer) {
-                data.putInt("bodycam_anonymizer_missing_ticks", 0);
-            } else {
-                data.remove("bodycam_active_anonymizer_id");
-                data.remove("bodycam_anonymizer_missing_ticks");
+                if (hasAnonymizer) {
+                    data.putInt("bodycam_anonymizer_missing_ticks", 0);
+                } else {
+                    data.remove("bodycam_active_anonymizer_id");
+                    data.remove("bodycam_anonymizer_missing_ticks");
+                    activeAnonymizer = false;
+                }
             }
         }
 
         if (!carried.isEmpty() && (carried.getItem() instanceof JammerItem || carried.getItem() instanceof AnonymizerItem)) {
             carried.getItem().inventoryTick(carried, observer.level(), observer, -1, false);
         }
-        for (ItemStack accStack : BodycamPlatform.getEquippedAccessoryItems(observer, ModItems.JAMMER.get())) {
-            accStack.getItem().inventoryTick(accStack, observer.level(), observer, -1, false);
+        if (activeJammer || observer.tickCount % 10 == 0) {
+            for (ItemStack accStack : BodycamPlatform.getEquippedAccessoryItems(observer, ModItems.JAMMER.get())) {
+                accStack.getItem().inventoryTick(accStack, observer.level(), observer, -1, false);
+            }
         }
-        for (ItemStack accStack : BodycamPlatform.getEquippedAccessoryItems(observer, ModItems.ANONYMIZER.get())) {
-            accStack.getItem().inventoryTick(accStack, observer.level(), observer, -1, false);
+        if (activeAnonymizer || observer.tickCount % 10 == 0) {
+            for (ItemStack accStack : BodycamPlatform.getEquippedAccessoryItems(observer, ModItems.ANONYMIZER.get())) {
+                accStack.getItem().inventoryTick(accStack, observer.level(), observer, -1, false);
+            }
         }
 
         LockData lockData = POSITION_LOCKS.get(observer.getUUID());
@@ -570,11 +594,11 @@ public class ServerEvents {
             }
         }
 
-        if (data.getBoolean("bodycam_active") && data.contains("bodycam_target_uuid") && observer.server != null) {
+        if (data.getBoolean("bodycam_active") && data.hasUUID("bodycam_target_uuid") && observer.server != null) {
             UUID targetId = data.getUUID("bodycam_target_uuid");
 
             BodycamDummyEntity dummy = null;
-            if (data.contains("bodycam_dummy_uuid")) {
+            if (data.hasUUID("bodycam_dummy_uuid")) {
                 UUID dummyId = data.getUUID("bodycam_dummy_uuid");
                 for (ServerLevel lvl : observer.server.getAllLevels()) {
                     Entity e = lvl.getEntity(dummyId);

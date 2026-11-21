@@ -24,6 +24,7 @@ import net.minecraft.world.level.Level;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -71,13 +72,13 @@ public class LogBookItem extends Item {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] bytes = digest.digest(("bodycam:logbook:" + pin).getBytes(StandardCharsets.UTF_8));
-            StringBuilder builder = new StringBuilder();
+            StringBuilder builder = new StringBuilder(bytes.length * 2);
             for (byte b : bytes) {
                 builder.append(String.format("%02x", b));
             }
             return builder.toString();
-        } catch (Exception e) {
-            return pin;
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 unavailable", e);
         }
     }
 
@@ -135,6 +136,12 @@ public class LogBookItem extends Item {
     public static void sendBook(ServerPlayer player, ItemStack book) {
         player.level().playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.BOOK_PAGE_TURN, SoundSource.PLAYERS, 1.0F, 1.0F);
         PacketHandler.sendToPlayer(player, new OpenLogBookScreenS2CPacket(buildViewData(book)));
+    }
+
+    public static void clearCooldown(UUID playerId) {
+        if (playerId != null) {
+            LAST_ATTEMPT.remove(playerId);
+        }
     }
 
     public static void clearStaticState() {

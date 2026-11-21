@@ -190,51 +190,6 @@ public class PortableNetherPortalItem extends Item {
         return super.finishUsingItem(stack, level, livingEntity);
     }
 
-    public static void executeTeleport(ServerPlayer player) {
-        if (ModServerConfig.OP_ONLY_MODE.get() && !player.hasPermissions(2)) {
-            player.sendSystemMessage(Component.translatable("message.bodycam.op_only").withStyle(ChatFormatting.RED));
-            return;
-        }
-        if (!ModServerConfig.ENABLE_PORTABLE_NETHER_PORTAL.get()) {
-            player.displayClientMessage(Component.translatable("message.bodycam.portable_portal_disabled").withStyle(ChatFormatting.RED), true);
-            return;
-        }
-        if (PersistentDataAccess.get(player).getBoolean("bodycam_active")) {
-            return;
-        }
-        ItemStack stack = player.getMainHandItem();
-        if (!(stack.getItem() instanceof PortableNetherPortalItem)) {
-            stack = player.getOffhandItem();
-            if (!(stack.getItem() instanceof PortableNetherPortalItem)) {
-                return;
-            }
-        }
-        PortableNetherPortalItem portalItem = (PortableNetherPortalItem) stack.getItem();
-        int charges = getCharges(stack);
-        if (charges <= 0) {
-            player.displayClientMessage(Component.translatable("message.bodycam.portable_portal.not_charged").withStyle(ChatFormatting.RED), true);
-            return;
-        }
-        ResourceKey<Level> currentDim = player.level().dimension();
-        if (currentDim != Level.OVERWORLD && currentDim != Level.NETHER) {
-            player.displayClientMessage(Component.translatable("message.bodycam.portable_portal.invalid_dimension").withStyle(ChatFormatting.RED), true);
-            return;
-        }
-        if (portalItem.performDimensionTeleport(player)) {
-            ModAdvancements.award(player, ModAdvancements.USE_PORTABLE_PORTAL);
-            if (!player.getAbilities().instabuild && !ItemDurabilityHelper.shouldSaveDurabilityByTrim(player)) {
-                int remaining = charges - 1;
-                if (remaining <= 0) {
-                    player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
-                            SoundEvents.ITEM_BREAK, SoundSource.PLAYERS, 0.8F, 0.9F);
-                    stack.shrink(1);
-                } else {
-                    setCharges(stack, remaining);
-                }
-            }
-        }
-    }
-
     private boolean performDimensionTeleport(ServerPlayer player) {
         ServerLevel sourceLevel = player.serverLevel();
         boolean destIsNether = sourceLevel.dimension() != Level.NETHER;

@@ -25,6 +25,9 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 
+import java.util.Map;
+import java.util.WeakHashMap;
+
 public class PodestBlockEntityRenderer implements BlockEntityRenderer<PodestBlockEntity> {
 
     private static final float[][] OUTLINE_OFFSETS = {
@@ -33,17 +36,50 @@ public class PodestBlockEntityRenderer implements BlockEntityRenderer<PodestBloc
             {0.0F, -0.035F},
             {0.0F, 0.035F}
     };
+    private static final RenderType OUTLINE_RENDER_TYPE = RenderType.entityTranslucentEmissive(InventoryMenu.BLOCK_ATLAS);
 
     private final ItemRenderer itemRenderer;
+    private final TintedOutlineVertexConsumer reusableOutlineConsumer = new TintedOutlineVertexConsumer();
+    private final Map<PodestBlockEntity, CachedRenderStack> stackCache = new WeakHashMap<>();
+    private MultiBufferSource activeBufferSource;
+    private final MultiBufferSource tintedSource = renderType -> {
+        this.reusableOutlineConsumer.setDelegate(this.activeBufferSource.getBuffer(OUTLINE_RENDER_TYPE));
+        return this.reusableOutlineConsumer;
+    };
 
     public PodestBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
         this.itemRenderer = context.getItemRenderer();
+    }
+
+    private ItemStack getRenderStack(PodestBlockEntity podest, ItemStack rawStack, boolean active) {
+        boolean isJammer = rawStack.getItem() instanceof JammerItem;
+        boolean isAnonymizer = !isJammer && rawStack.getItem() instanceof AnonymizerItem;
+        if (!isJammer && !isAnonymizer) {
+            return rawStack;
+        }
+        int mode = isJammer ? (active ? podest.getEffectiveJammerMode() : 0) : -1;
+        CachedRenderStack cached = this.stackCache.get(podest);
+        if (cached != null && cached.active == active && cached.jammerMode == mode && ItemStack.matches(rawStack, cached.sourceSnapshot)) {
+            return cached.renderStack;
+        }
+        ItemStack copy = rawStack.copy();
+        if (isJammer) {
+            ItemNbtAccess.updateTag(copy, tag -> tag.putInt("JammerMode", mode));
+        } else {
+            ItemNbtAccess.updateTag(copy, tag -> tag.putBoolean("AnonymizerActive", active));
+        }
+        this.stackCache.put(podest, new CachedRenderStack(rawStack.copy(), copy, active, mode));
+        return copy;
+    }
+
+    private record CachedRenderStack(ItemStack sourceSnapshot, ItemStack renderStack, boolean active, int jammerMode) {
     }
 
     @Override
     public void render(PodestBlockEntity podest, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
         ItemStack rawStack = podest.getHeldItem();
         if (rawStack.isEmpty()) {
+            this.stackCache.remove(podest);
             return;
         }
 
@@ -54,13 +90,7 @@ public class PodestBlockEntityRenderer implements BlockEntityRenderer<PodestBloc
         boolean isEmptyItem = ItemDurabilityHelper.isEmpty(rawStack);
         boolean active = powered && charges > 0 && !isEmptyItem;
 
-        ItemStack renderStack = rawStack.copy();
-        if (renderStack.getItem() instanceof JammerItem) {
-            int mode = active ? podest.getEffectiveJammerMode() : 0;
-            ItemNbtAccess.updateTag(renderStack, tag -> tag.putInt("JammerMode", mode));
-        } else if (renderStack.getItem() instanceof AnonymizerItem) {
-            ItemNbtAccess.updateTag(renderStack, tag -> tag.putBoolean("AnonymizerActive", active));
-        }
+        ItemStack renderStack = getRenderStack(podest, rawStack, active);
 
         poseStack.pushPose();
         poseStack.translate(0.5F, 1.0625F, 0.5F);
@@ -99,22 +129,20 @@ public class PodestBlockEntityRenderer implements BlockEntityRenderer<PodestBloc
                 }
             }
 
-            final int cr = r;
-            final int cg = g;
-            final int cb = b;
-            final int ca = a;
-
+            this.reusableOutlineConsumer.configure(r, g, b, a);
+            this.activeBufferSource = bufferSource;
             BakedModel model = this.itemRenderer.getModel(renderStack, podest.getLevel(), null, 0);
-            MultiBufferSource tintedSource = renderType -> new TintedOutlineVertexConsumer(
-                    bufferSource.getBuffer(RenderType.entityTranslucentEmissive(InventoryMenu.BLOCK_ATLAS)),
-                    cr, cg, cb, ca
-            );
 
-            for (float[] offset : OUTLINE_OFFSETS) {
-                poseStack.pushPose();
-                poseStack.translate(offset[0], offset[1], 0.004F);
-                this.itemRenderer.render(renderStack, ItemDisplayContext.FIXED, false, poseStack, tintedSource, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, model);
-                poseStack.popPose();
+            try {
+                for (float[] offset : OUTLINE_OFFSETS) {
+                    poseStack.pushPose();
+                    poseStack.translate(offset[0], offset[1], 0.004F);
+                    this.itemRenderer.render(renderStack, ItemDisplayContext.FIXED, false, poseStack, this.tintedSource, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, model);
+                    poseStack.popPose();
+                }
+            } finally {
+                this.activeBufferSource = null;
+                this.reusableOutlineConsumer.setDelegate(null);
             }
         }
 
@@ -124,18 +152,21 @@ public class PodestBlockEntityRenderer implements BlockEntityRenderer<PodestBloc
     }
 
     private static class TintedOutlineVertexConsumer implements VertexConsumer {
-        private final VertexConsumer delegate;
-        private final int r;
-        private final int g;
-        private final int b;
-        private final int a;
+        private VertexConsumer delegate;
+        private int r;
+        private int g;
+        private int b;
+        private int a;
 
-        TintedOutlineVertexConsumer(VertexConsumer delegate, int r, int g, int b, int a) {
-            this.delegate = delegate;
+        void configure(int r, int g, int b, int a) {
             this.r = r;
             this.g = g;
             this.b = b;
             this.a = a;
+        }
+
+        void setDelegate(VertexConsumer delegate) {
+            this.delegate = delegate;
         }
 
         @Override

@@ -12,6 +12,7 @@ import dev.ClasherHD.bodycam.util.ModAdvancements;
 import dev.ClasherHD.bodycam.util.PersistentDataAccess;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.RegistryAccess;
@@ -57,18 +58,26 @@ import net.minecraft.world.entity.projectile.ThrownEnderpearl;
 import net.minecraft.world.entity.vehicle.Boat;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.MaceItem;
 import net.minecraft.world.item.armortrim.ArmorTrim;
 import net.minecraft.world.item.armortrim.TrimMaterial;
 import net.minecraft.world.item.armortrim.TrimPattern;
 import net.minecraft.world.item.armortrim.TrimPatterns;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.ExplosionDamageCalculator;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.SimpleExplosionDamageCalculator;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Portal;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -77,6 +86,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 @SuppressWarnings("null")
 public class CreepingDeathEntity extends PathfinderMob {
@@ -136,7 +146,51 @@ public class CreepingDeathEntity extends PathfinderMob {
         }
     }
 
+    private enum MaceState {
+        NONE,
+        LAUNCHING,
+        DESCENDING
+    }
+
+    static final double PEARL_LAUNCH_SPEED = 1.65D;
+    static final double PEARL_GRAVITY = 0.03D;
+    static final double PEARL_AIR_DRAG = 0.99D;
+    static final int PEARL_MAX_SIM_TICKS = 60;
+    static final int PEARL_RECOVERY_MAX_SIM_TICKS = 160;
+    static final int PEARL_RECOVERY_MIN_MARGIN_TICKS = 4;
+    static final double PEARL_MISS_DROP_THRESHOLD = 8.0D;
+    static final double PEARL_MISS_FAR_DROP_THRESHOLD = 6.0D;
+    static final double PEARL_MISS_FAR_DIST_MARGIN = 4.0D;
+    static final double PEARL_RECOVERY_MAX_DROP_BELOW_REF = 4.0D;
+    static final double PEARL_MIN_TRAVEL_DIST = 5.0D;
+    static final int PEARL_MIN_FLIGHT_TICKS = 3;
+    private static final int PEARL_RETRY_COOLDOWN = 25;
+
+    @FunctionalInterface
+    interface PearlRayCollider {
+        PearlHit clip(Vec3 from, Vec3 to);
+    }
+
+    @FunctionalInterface
+    interface PearlLandingResolver {
+        Vec3 resolveSafeLanding(Vec3 impactPos, Direction hitFace, BlockPos hitBlockPos);
+    }
+
+    record PearlHit(Vec3 location, Direction face, BlockPos blockPos, boolean hitTargetEntity) {
+    }
+
+    record PearlCandidate(Vec3 launchVelocity, Vec3 landingPos, double travelDist, double progress) {
+    }
+
+    record LivePearlPrediction(Vec3 impactPos, Vec3 landingPos, int remainingTicks, boolean unsafeOrVoid, boolean hitTargetEntity) {
+    }
+
+    record RecoveryPearlCandidate(Vec3 launchVelocity, Vec3 landingPos, int flightTicks, double score) {
+    }
+
     private ItemStack godSword = ItemStack.EMPTY;
+    private ItemStack godMace = ItemStack.EMPTY;
+    private ItemStack windChargeStack = ItemStack.EMPTY;
     private ItemStack pickaxeStack = ItemStack.EMPTY;
     private ItemStack axeStack = ItemStack.EMPTY;
     private ItemStack shovelStack = ItemStack.EMPTY;
@@ -146,8 +200,28 @@ public class CreepingDeathEntity extends PathfinderMob {
 
     private int attackCooldown = 0;
     private int pearlCooldown = 60;
+    private int fallRecoveryCooldown = 0;
+    private UUID trackedOffensivePearlUUID = null;
+    private boolean trackedPearlRecoveryThrown = false;
+    private Vec3 trackedPearlAnchorPos = null;
+    private UUID activeRecoveryPearlUUID = null;
     private int buildCooldown = 0;
     private int pillaringTicks = 0;
+    private int bridgingTicks = 0;
+    private int windChargeCooldown = 0;
+    private int windPillarTicks = 0;
+    private double windPillarX = 0.0D;
+    private double windPillarZ = 0.0D;
+    private MaceState maceState = MaceState.NONE;
+    private int maceTicks = 0;
+    private int maceCooldown = 60;
+    private int maceChainCount = 0;
+    private Vec3 lastTargetPos = null;
+    private Vec3 smoothedTargetVel = Vec3.ZERO;
+    private double targetStartYWindow = 0.0D;
+    private int targetYWindowTicks = 0;
+    private int targetBuildingUpTicks = 0;
+    private int targetRunningAwayTicks = 0;
     private int fireworkTicks = 0;
     private BlockPos miningPos = null;
     private int miningTicks = 0;
@@ -226,37 +300,62 @@ public class CreepingDeathEntity extends PathfinderMob {
     }
 
     public void setupEquipment(RegistryAccess registryAccess) {
+        Holder<Enchantment> sharpness = getEnchantHolder(registryAccess, Enchantments.SHARPNESS);
+        Holder<Enchantment> unbreaking = getEnchantHolder(registryAccess, Enchantments.UNBREAKING);
+        Holder<Enchantment> mending = getEnchantHolder(registryAccess, Enchantments.MENDING);
+        Holder<Enchantment> looting = getEnchantHolder(registryAccess, Enchantments.LOOTING);
+        Holder<Enchantment> fireAspect = getEnchantHolder(registryAccess, Enchantments.FIRE_ASPECT);
+        Holder<Enchantment> vanishing = getEnchantHolder(registryAccess, Enchantments.VANISHING_CURSE);
+
         this.godSword = new ItemStack(Items.NETHERITE_SWORD);
-        this.godSword.enchant(getEnchantHolder(registryAccess, Enchantments.SHARPNESS), 5);
-        this.godSword.enchant(getEnchantHolder(registryAccess, Enchantments.UNBREAKING), 3);
-        this.godSword.enchant(getEnchantHolder(registryAccess, Enchantments.MENDING), 1);
+        this.godSword.enchant(sharpness, 5);
+        this.godSword.enchant(unbreaking, 3);
+        this.godSword.enchant(mending, 1);
         this.godSword.enchant(getEnchantHolder(registryAccess, Enchantments.SWEEPING_EDGE), 3);
-        this.godSword.enchant(getEnchantHolder(registryAccess, Enchantments.LOOTING), 3);
-        this.godSword.enchant(getEnchantHolder(registryAccess, Enchantments.FIRE_ASPECT), 2);
+        this.godSword.enchant(looting, 3);
+        this.godSword.enchant(fireAspect, 2);
+        this.godSword.enchant(vanishing, 1);
+
+        this.godMace = new ItemStack(Items.MACE);
+        this.godMace.enchant(getEnchantHolder(registryAccess, Enchantments.DENSITY), 5);
+        this.godMace.enchant(getEnchantHolder(registryAccess, Enchantments.WIND_BURST), 1);
+        this.godMace.enchant(unbreaking, 3);
+        this.godMace.enchant(mending, 1);
+        this.godMace.enchant(fireAspect, 2);
+        this.godMace.enchant(vanishing, 1);
+
+        this.windChargeStack = new ItemStack(Items.WIND_CHARGE, 64);
 
         Holder<Enchantment> eff = getEnchantHolder(registryAccess, Enchantments.EFFICIENCY);
-        Holder<Enchantment> unbreaking = getEnchantHolder(registryAccess, Enchantments.UNBREAKING);
 
         this.pickaxeStack = new ItemStack(Items.NETHERITE_PICKAXE);
         this.pickaxeStack.enchant(eff, 10);
         this.pickaxeStack.enchant(unbreaking, 3);
+        this.pickaxeStack.enchant(vanishing, 1);
 
         this.axeStack = new ItemStack(Items.NETHERITE_AXE);
         this.axeStack.enchant(eff, 10);
         this.axeStack.enchant(unbreaking, 3);
+        this.axeStack.enchant(vanishing, 1);
 
         this.shovelStack = new ItemStack(Items.NETHERITE_SHOVEL);
         this.shovelStack.enchant(eff, 10);
         this.shovelStack.enchant(unbreaking, 3);
+        this.shovelStack.enchant(vanishing, 1);
 
         this.cobbleStack = new ItemStack(Items.COBBLESTONE, 64);
         this.elytraStack = new ItemStack(Items.ELYTRA);
+        this.elytraStack.enchant(vanishing, 1);
 
         ItemStack helmet = new ItemStack(Items.NETHERITE_HELMET);
+        helmet.enchant(vanishing, 1);
         ItemStack chest = new ItemStack(Items.NETHERITE_CHESTPLATE);
+        chest.enchant(vanishing, 1);
         ItemStack legs = new ItemStack(Items.NETHERITE_LEGGINGS);
+        legs.enchant(vanishing, 1);
         ItemStack boots = new ItemStack(Items.NETHERITE_BOOTS);
         boots.enchant(getEnchantHolder(registryAccess, Enchantments.DEPTH_STRIDER), 3);
+        boots.enchant(vanishing, 1);
 
         try {
             Optional<? extends HolderLookup.RegistryLookup<TrimMaterial>> matRegOpt = registryAccess.lookup(Registries.TRIM_MATERIAL);
@@ -476,6 +575,8 @@ public class CreepingDeathEntity extends PathfinderMob {
         int currentTickCount = this.tickCount;
 
         discardOwnBoat();
+        clearTrackedOffensivePearl();
+        this.activeRecoveryPearlUUID = null;
         setSwimmingPose(false);
         releaseForcedChunk();
 
@@ -626,7 +727,7 @@ public class CreepingDeathEntity extends PathfinderMob {
             return;
         }
 
-        if (this.godSword.isEmpty()) {
+        if (this.godSword.isEmpty() || this.godMace.isEmpty() || this.windChargeStack.isEmpty()) {
             this.setupEquipment(this.level().registryAccess());
         }
 
@@ -687,11 +788,18 @@ public class CreepingDeathEntity extends PathfinderMob {
 
         if (this.attackCooldown > 0) this.attackCooldown--;
         if (this.pearlCooldown > 0) this.pearlCooldown--;
+        if (this.fallRecoveryCooldown > 0) this.fallRecoveryCooldown--;
         if (this.buildCooldown > 0) this.buildCooldown--;
         if (this.pillaringTicks > 0) this.pillaringTicks--;
+        if (this.bridgingTicks > 0) this.bridgingTicks--;
+        if (this.windChargeCooldown > 0) this.windChargeCooldown--;
+        if (this.windPillarTicks > 0) this.windPillarTicks--;
+        if (this.maceCooldown > 0) this.maceCooldown--;
 
         if (this.tickCount % 10 == 0) {
-            if (this.pillaringTicks <= 0 && !this.voidRecoveryFlight && this.position().distanceToSqr(this.lastCheckPos) < 0.25D) {
+            if (this.pillaringTicks <= 0 && this.windPillarTicks <= 0 && this.miningPos == null
+                    && this.maceState == MaceState.NONE
+                    && !this.voidRecoveryFlight && this.position().distanceToSqr(this.lastCheckPos) < 0.25D) {
                 this.stuckTicks += 10;
             } else {
                 this.stuckTicks = 0;
@@ -704,6 +812,8 @@ public class CreepingDeathEntity extends PathfinderMob {
         double dz = target.getZ() - this.getZ();
         double horizDistSq = dx * dx + dz * dz;
         double totalDistSq = horizDistSq + dy * dy;
+
+        updateTargetBehaviorTracking(target, dx, dz);
 
         if (this.isUltraRareCurse()) {
             if (!this.hasEffect(MobEffects.MOVEMENT_SPEED)) {
@@ -732,14 +842,14 @@ public class CreepingDeathEntity extends PathfinderMob {
         if (this.voidRecoveryFlight) {
             this.voidRecoveryTicks++;
             this.pillaringTicks = 0;
+            this.windPillarTicks = 0;
+            this.bridgingTicks = 0;
+            this.maceState = MaceState.NONE;
+            clearTrackedOffensivePearl();
             discardOwnBoat();
             setSwimmingPose(false);
             this.getNavigation().stop();
-            if (this.miningPos != null) {
-                sLevel.destroyBlockProgress(this.getId(), this.miningPos, -1);
-                this.miningPos = null;
-                this.miningTicks = 0;
-            }
+            clearMining(sLevel);
             equipWeapon(this.godSword);
 
             if (!this.getSharedFlag(7)) {
@@ -817,14 +927,14 @@ public class CreepingDeathEntity extends PathfinderMob {
 
         if (shouldFlyElytra) {
             this.pillaringTicks = 0;
+            this.windPillarTicks = 0;
+            this.bridgingTicks = 0;
+            this.maceState = MaceState.NONE;
+            clearTrackedOffensivePearl();
             discardOwnBoat();
             setSwimmingPose(false);
             this.getNavigation().stop();
-            if (this.miningPos != null) {
-                sLevel.destroyBlockProgress(this.getId(), this.miningPos, -1);
-                this.miningPos = null;
-                this.miningTicks = 0;
-            }
+            clearMining(sLevel);
             if (!this.getSharedFlag(7)) {
                 this.setItemSlot(EquipmentSlot.CHEST, this.elytraStack.copy());
                 this.setSharedFlag(7, true);
@@ -891,6 +1001,10 @@ public class CreepingDeathEntity extends PathfinderMob {
         }
 
         if (shouldUseBoat) {
+            this.maceState = MaceState.NONE;
+            this.windPillarTicks = 0;
+            this.bridgingTicks = 0;
+            clearTrackedOffensivePearl();
             setSwimmingPose(false);
             this.getNavigation().stop();
 
@@ -921,7 +1035,27 @@ public class CreepingDeathEntity extends PathfinderMob {
             discardOwnBoat();
         }
 
-        if (totalDistSq <= 25.0D && this.miningPos == null && this.pillaringTicks <= 0) {
+        if (handleTrackedPearlRecovery(sLevel, target) && this.maceState == MaceState.NONE && this.windPillarTicks <= 0) {
+            return;
+        }
+
+        if (this.maceState != MaceState.NONE) {
+            if (handleActiveMaceAttack(sLevel, target, dx, dy, dz, horizDistSq, totalDistSq)) {
+                return;
+            }
+        }
+
+        if (this.windPillarTicks > 0) {
+            handleActiveWindPillar(sLevel, target);
+            return;
+        }
+
+        if (canStartWindChargeMace(sLevel, target, dx, dy, dz, horizDistSq)) {
+            startWindChargeMace(sLevel, target, dx, dz, horizDistSq);
+            return;
+        }
+
+        if (totalDistSq <= 25.0D && this.miningPos == null && this.pillaringTicks <= 0 && this.bridgingTicks <= 0) {
             equipWeapon(target.isBlocking() ? this.axeStack : this.godSword);
         }
 
@@ -934,27 +1068,47 @@ public class CreepingDeathEntity extends PathfinderMob {
             }
         }
 
-        if (this.pearlCooldown <= 0 && (horizDistSq > 196.0D || (dy > 5.0D && horizDistSq > 36.0D) || this.stuckTicks >= 40)) {
-            setSwimmingPose(false);
-            throwEnderPearlAt(sLevel, target);
-            this.pearlCooldown = 90;
-            this.stuckTicks = 0;
-            this.pillaringTicks = 0;
+        if (handleMountainFallRecovery(sLevel, target)) {
             return;
+        }
+
+        if (this.pearlCooldown <= 0
+                && !hasActiveRecoveryPearl(sLevel)
+                && this.miningPos == null
+                && !this.isUnderWater()
+                && (horizDistSq > 196.0D || (dy > 5.0D && horizDistSq > 36.0D) || this.stuckTicks >= 40)) {
+            PearlCandidate pearlCandidate = findViablePearlCandidate(sLevel, target);
+            if (pearlCandidate != null) {
+                setSwimmingPose(false);
+                this.bridgingTicks = 0;
+                clearMining(sLevel);
+                ThrownEnderpearl thrownPearl = throwEnderPearlAt(sLevel, pearlCandidate.launchVelocity());
+                this.trackedOffensivePearlUUID = thrownPearl.getUUID();
+                this.trackedPearlRecoveryThrown = false;
+                this.trackedPearlAnchorPos = this.position();
+                this.pearlCooldown = 90;
+                this.stuckTicks = 0;
+                this.pillaringTicks = 0;
+                return;
+            }
+            this.pearlCooldown = PEARL_RETRY_COOLDOWN;
         }
 
         if (this.isInWater()) {
             this.pillaringTicks = 0;
+            this.windPillarTicks = 0;
+            this.bridgingTicks = 0;
+            this.maceState = MaceState.NONE;
             this.getNavigation().stop();
 
             BlockPos waterObstacle = findBlockingBlock(sLevel, target);
             if (waterObstacle != null) {
                 handleMining(sLevel, waterObstacle);
-            } else if (this.miningPos != null) {
-                sLevel.destroyBlockProgress(this.getId(), this.miningPos, -1);
-                this.miningPos = null;
-                this.miningTicks = 0;
-                equipWeapon(target.isBlocking() ? this.axeStack : this.godSword);
+            } else {
+                if (this.miningPos != null) {
+                    clearMining(sLevel);
+                }
+                equipCombatWeaponIfHoldingTool(target);
             }
 
             boolean shouldSwimPose = totalDistSq > 2.25D || this.isUnderWater() || target.isUnderWater();
@@ -996,41 +1150,62 @@ public class CreepingDeathEntity extends PathfinderMob {
             setSwimmingPose(false);
         }
 
-        boolean shouldPillar = dy >= 2.0D && horizDistSq < 64.0D && (this.onGround() || this.pillaringTicks > 0);
+        BlockPos pillarFeet = this.blockPosition();
+        BlockPos pillarAboveHead = pillarFeet.above(2);
+        boolean pillarBlockedByUnbreakable = !isPassableForBody(sLevel, pillarAboveHead)
+                && !isBreakableObstacle(sLevel, pillarAboveHead);
+        boolean shouldPillar = dy >= 2.0D && horizDistSq < 64.0D
+                && (this.onGround() || this.pillaringTicks > 0)
+                && !pillarBlockedByUnbreakable;
         if (shouldPillar) {
+            this.bridgingTicks = 0;
             this.getNavigation().stop();
             this.setSprinting(false);
             this.xxa = 0.0F;
             this.zza = 0.0F;
 
-            BlockPos feetPos = this.blockPosition();
-            double centerX = feetPos.getX() + 0.5D;
-            double centerZ = feetPos.getZ() + 0.5D;
+            double centerX = pillarFeet.getX() + 0.5D;
+            double centerZ = pillarFeet.getZ() + 0.5D;
             this.setDeltaMovement(0.0D, this.getDeltaMovement().y, 0.0D);
 
-            BlockPos aboveHead = feetPos.above(2);
-            if (!sLevel.getBlockState(aboveHead).isAir() && !sLevel.getBlockState(aboveHead).canBeReplaced()) {
+            if (isBreakableObstacle(sLevel, pillarAboveHead)) {
                 this.setPos(centerX, this.getY(), centerZ);
                 this.pillaringTicks = 10;
-                handleMining(sLevel, aboveHead);
+                handleMining(sLevel, pillarAboveHead);
                 return;
             }
-            if (this.miningPos != null) {
-                sLevel.destroyBlockProgress(this.getId(), this.miningPos, -1);
-                this.miningPos = null;
-                this.miningTicks = 0;
+            if (isBreakableObstacle(sLevel, pillarFeet.above())) {
+                this.setPos(centerX, this.getY(), centerZ);
+                this.pillaringTicks = 10;
+                handleMining(sLevel, pillarFeet.above());
+                return;
+            }
+            BlockState feetState = sLevel.getBlockState(pillarFeet);
+            if (!feetState.isAir() && !feetState.canBeReplaced() && isBreakableObstacle(sLevel, pillarFeet)) {
+                this.setPos(centerX, this.getY(), centerZ);
+                this.pillaringTicks = 10;
+                handleMining(sLevel, pillarFeet);
+                return;
+            }
+            clearMining(sLevel);
+
+            if (dy >= 4.0D && this.windChargeCooldown <= 0 && this.onGround()
+                    && hasOpenHeadroom(sLevel, pillarFeet, 6)) {
+                startWindPillar(sLevel, pillarFeet, centerX, centerZ);
+                return;
             }
 
             if (this.buildCooldown <= 0 && this.onGround()) {
-                if (sLevel.getBlockState(feetPos).isAir() || sLevel.getBlockState(feetPos).canBeReplaced()) {
-                    equipWeapon(this.cobbleStack);
-                    this.swing(InteractionHand.MAIN_HAND);
-                    sLevel.setBlock(feetPos, Blocks.COBBLESTONE.defaultBlockState(), 3);
-                    sLevel.playSound(null, feetPos, SoundEvents.STONE_PLACE, SoundSource.BLOCKS, 1.0F, 1.0F);
-                    this.setPos(centerX, feetPos.getY() + 1.0D, centerZ);
+                boolean canPlaceAtFeet = feetState.isAir()
+                        || feetState.canBeReplaced()
+                        || (feetState.getCollisionShape(sLevel, pillarFeet).isEmpty()
+                                && feetState.getDestroySpeed(sLevel, pillarFeet) >= 0.0F);
+                if (canPlaceAtFeet) {
+                    placeCobbleBlock(sLevel, pillarFeet);
+                    this.setPos(centerX, pillarFeet.getY() + 1.0D, centerZ);
                     this.setDeltaMovement(0.0D, 0.0D, 0.0D);
-                    this.buildCooldown = 7;
-                    this.pillaringTicks = 12;
+                    this.buildCooldown = 5;
+                    this.pillaringTicks = 10;
                 }
             } else {
                 this.setPos(centerX, this.getY(), centerZ);
@@ -1038,32 +1213,39 @@ public class CreepingDeathEntity extends PathfinderMob {
             return;
         }
 
-        this.getNavigation().moveTo(target, 1.0D);
-        this.setSprinting(true);
+        if (shouldBridge(sLevel, dx, dy, dz, horizDistSq)) {
+            handleBridging(sLevel, target, dx, dy, dz, horizDistSq);
+            return;
+        }
 
         BlockPos obstacle = findBlockingBlock(sLevel, target);
         if (obstacle != null) {
+            this.getNavigation().stop();
+            this.setSprinting(false);
             handleMining(sLevel, obstacle);
             return;
-        } else if (this.miningPos != null) {
-            sLevel.destroyBlockProgress(this.getId(), this.miningPos, -1);
-            this.miningPos = null;
-            this.miningTicks = 0;
-            equipWeapon(this.godSword);
         }
+        if (this.miningPos != null) {
+            clearMining(sLevel);
+        }
+        equipCombatWeaponIfHoldingTool(target);
 
-        if (this.buildCooldown <= 0 && horizDistSq > 9.0D && dy >= -1.0D) {
-            Vec3 horizDir = new Vec3(dx, 0, dz).normalize();
-            BlockPos aheadPos = BlockPos.containing(this.getX() + horizDir.x * 1.1D, this.getY(), this.getZ() + horizDir.z * 1.1D);
-            BlockPos belowAhead = aheadPos.below();
-            BlockState belowState = sLevel.getBlockState(belowAhead);
-            if (belowState.isAir() || belowState.canBeReplaced()) {
-                equipWeapon(this.cobbleStack);
-                this.swing(InteractionHand.MAIN_HAND);
-                sLevel.setBlock(belowAhead, Blocks.COBBLESTONE.defaultBlockState(), 3);
-                sLevel.playSound(null, belowAhead, SoundEvents.STONE_PLACE, SoundSource.BLOCKS, 1.0F, 1.0F);
-                this.buildCooldown = 6;
-            }
+        this.getNavigation().moveTo(target, 1.0D);
+        this.setSprinting(true);
+
+        if (horizDistSq > 0.25D && !this.hasLineOfSight(target)
+                && (this.stuckTicks >= 10 || this.getNavigation().isDone())
+                && !isDropAhead(sLevel, this.blockPosition(), dx, dz)) {
+            double horizDist = Math.sqrt(horizDistSq);
+            double stepX = dx / horizDist;
+            double stepZ = dz / horizDist;
+            this.getNavigation().stop();
+            this.getMoveControl().setWantedPosition(
+                    this.getX() + stepX * 1.5D,
+                    this.getY(),
+                    this.getZ() + stepZ * 1.5D,
+                    1.0D
+            );
         }
     }
 
@@ -1198,6 +1380,540 @@ public class CreepingDeathEntity extends PathfinderMob {
         }
     }
 
+    private void performMaceSmashAttack(ServerLevel level, ServerPlayer target, double dx, double dy, double dz, double horizDistSq) {
+        equipWeapon(this.godMace);
+        this.swing(InteractionHand.MAIN_HAND);
+        boolean hit = this.doHurtTarget(target);
+        this.resetFallDistance();
+        this.hurtMarked = true;
+        this.attackCooldown = 12;
+        if (!target.isAlive() || target.isDeadOrDying()) {
+            this.maceState = MaceState.NONE;
+            onTargetKilled();
+            return;
+        }
+        if (hit && this.maceChainCount < 2 && this.getDeltaMovement().y > 0.20D
+                && horizDistSq <= 30.25D && Math.abs(dy) <= 3.0D
+                && this.targetRunningAwayTicks < 6 && this.targetBuildingUpTicks < 6
+                && !target.isBlocking() && this.hasLineOfSight(target)
+                && hasOpenHeadroom(level, this.blockPosition(), 6)
+                && hasSafeGroundArea(level, target.blockPosition())) {
+            this.maceChainCount++;
+            this.maceState = MaceState.LAUNCHING;
+            this.maceTicks = 4;
+            return;
+        }
+        endMaceSequence(target, 110);
+    }
+
+    private void clearMining(ServerLevel level) {
+        if (this.miningPos != null) {
+            level.destroyBlockProgress(this.getId(), this.miningPos, -1);
+            this.miningPos = null;
+            this.miningTicks = 0;
+        }
+    }
+
+    private void triggerWindChargeBurst(ServerLevel level, double x, double y, double z) {
+        level.playSound(null, this.getX(), this.getY(), this.getZ(),
+                SoundEvents.WIND_CHARGE_THROW, SoundSource.HOSTILE, 0.7F, 0.4F / (this.getRandom().nextFloat() * 0.4F + 0.8F));
+        ExplosionDamageCalculator windCalc = new SimpleExplosionDamageCalculator(
+                true,
+                false,
+                Optional.of(0.0F),
+                level.registryAccess().lookupOrThrow(Registries.BLOCK)
+                        .get(BlockTags.BLOCKS_WIND_CHARGE_EXPLOSIONS)
+                        .map(Function.identity())
+        );
+        level.explode(
+                this,
+                null,
+                windCalc,
+                x,
+                y,
+                z,
+                1.2F,
+                false,
+                Level.ExplosionInteraction.TRIGGER,
+                ParticleTypes.GUST_EMITTER_SMALL,
+                ParticleTypes.GUST_EMITTER_LARGE,
+                SoundEvents.WIND_CHARGE_BURST
+        );
+    }
+
+    private void updateTargetBehaviorTracking(ServerPlayer target, double dx, double dz) {
+        Vec3 curTargetPos = target.position();
+        if (this.lastTargetPos == null) {
+            this.lastTargetPos = curTargetPos;
+            this.smoothedTargetVel = Vec3.ZERO;
+            this.targetStartYWindow = curTargetPos.y;
+            this.targetYWindowTicks = 0;
+            this.targetBuildingUpTicks = 0;
+            this.targetRunningAwayTicks = 0;
+            return;
+        }
+
+        Vec3 delta = curTargetPos.subtract(this.lastTargetPos);
+        if (delta.lengthSqr() > 64.0D) {
+            this.smoothedTargetVel = Vec3.ZERO;
+            this.targetStartYWindow = curTargetPos.y;
+            this.targetYWindowTicks = 0;
+        } else {
+            this.smoothedTargetVel = this.smoothedTargetVel.scale(0.65D).add(delta.scale(0.35D));
+        }
+        this.lastTargetPos = curTargetPos;
+
+        double horizDist = Math.sqrt(dx * dx + dz * dz);
+        if (horizDist > 0.25D) {
+            double awaySpeed = (this.smoothedTargetVel.x * dx + this.smoothedTargetVel.z * dz) / horizDist;
+            if (awaySpeed > 0.14D || (target.isSprinting() && awaySpeed > 0.09D)) {
+                this.targetRunningAwayTicks = Math.min(30, this.targetRunningAwayTicks + 3);
+            } else {
+                this.targetRunningAwayTicks = Math.max(0, this.targetRunningAwayTicks - 1);
+            }
+        } else {
+            this.targetRunningAwayTicks = Math.max(0, this.targetRunningAwayTicks - 1);
+        }
+
+        this.targetYWindowTicks++;
+        if (delta.y > 0.25D) {
+            this.targetBuildingUpTicks = Math.min(40, this.targetBuildingUpTicks + 4);
+        } else {
+            this.targetBuildingUpTicks = Math.max(0, this.targetBuildingUpTicks - 1);
+        }
+        if (this.targetYWindowTicks >= 20) {
+            if (curTargetPos.y - this.targetStartYWindow >= 1.5D) {
+                this.targetBuildingUpTicks = Math.max(this.targetBuildingUpTicks, 25);
+            }
+            this.targetStartYWindow = curTargetPos.y;
+            this.targetYWindowTicks = 0;
+        }
+    }
+
+    private boolean canStartWindChargeMace(ServerLevel level, ServerPlayer target, double dx, double dy, double dz, double horizDistSq) {
+        if (this.maceState != MaceState.NONE || this.maceCooldown > 0 || this.windChargeCooldown > 0) {
+            return false;
+        }
+        if (!this.onGround() || this.isInWater() || this.isInLava() || this.pillaringTicks > 0 || this.bridgingTicks > 0) {
+            return false;
+        }
+        if (target.isInWater() || target.isInLava() || target.isFallFlying() || target.isPassenger() || target.isBlocking()) {
+            return false;
+        }
+        if (horizDistSq < 1.2D || horizDistSq > 25.0D || Math.abs(dy) > 1.8D) {
+            return false;
+        }
+        if (this.targetRunningAwayTicks >= 6 || this.targetBuildingUpTicks >= 6) {
+            return false;
+        }
+        double horizDist = Math.sqrt(horizDistSq);
+        double awaySpeed = (this.smoothedTargetVel.x * dx + this.smoothedTargetVel.z * dz) / horizDist;
+        if (awaySpeed > 0.12D) {
+            return false;
+        }
+        if (!this.hasLineOfSight(target) || isTargetEnclosedOrHiding(level, target)) {
+            return false;
+        }
+        BlockPos selfPos = this.blockPosition();
+        BlockPos targetPos = target.blockPosition();
+        if (!hasOpenHeadroom(level, selfPos, 7) || !hasOpenHeadroom(level, targetPos, 6)) {
+            return false;
+        }
+        return hasSafeGroundArea(level, selfPos) && hasSafeGroundArea(level, targetPos);
+    }
+
+    private void startWindChargeMace(ServerLevel level, ServerPlayer target, double dx, double dz, double horizDistSq) {
+        this.getNavigation().stop();
+        this.setSprinting(false);
+        clearMining(level);
+        equipWeapon(this.windChargeStack);
+        this.swing(InteractionHand.MAIN_HAND);
+        triggerWindChargeBurst(level, this.getX(), this.getY() - 0.15D, this.getZ());
+
+        double horizDist = Math.sqrt(Math.max(0.0001D, horizDistSq));
+        double launchHoriz = Mth.clamp(horizDist * 0.11D, 0.06D, 0.30D);
+        this.setDeltaMovement((dx / horizDist) * launchHoriz, 1.04D, (dz / horizDist) * launchHoriz);
+        this.hurtMarked = true;
+        this.resetFallDistance();
+
+        this.maceState = MaceState.LAUNCHING;
+        this.maceTicks = 0;
+        this.maceChainCount = 0;
+        this.windChargeCooldown = 40;
+    }
+
+    private boolean handleActiveMaceAttack(ServerLevel level, ServerPlayer target, double dx, double dy, double dz,
+            double horizDistSq, double totalDistSq) {
+        this.getNavigation().stop();
+        clearMining(level);
+
+        if (this.isInWater() || this.isInLava() || target.isInWater() || target.isFallFlying()
+                || horizDistSq > 49.0D || dy > 6.0D || this.maceTicks > 60) {
+            endMaceSequence(target, 90);
+            return false;
+        }
+
+        this.maceTicks++;
+        Vec3 curVel = this.getDeltaMovement();
+        double horizDist = Math.sqrt(horizDistSq);
+        if (horizDist > 0.35D) {
+            double desiredSpeed = Mth.clamp(
+                    horizDist * (this.maceState == MaceState.DESCENDING ? 0.22D : 0.15D),
+                    0.05D,
+                    0.40D
+            );
+            double targetVx = (dx / horizDist) * desiredSpeed;
+            double targetVz = (dz / horizDist) * desiredSpeed;
+            double nextVx = Mth.lerp(0.35D, curVel.x, targetVx);
+            double nextVz = Mth.lerp(0.35D, curVel.z, targetVz);
+            this.setDeltaMovement(nextVx, curVel.y, nextVz);
+            this.hurtMarked = true;
+        }
+
+        if (this.maceState == MaceState.LAUNCHING) {
+            if (this.maceTicks >= 4) {
+                equipWeapon(this.godMace);
+            }
+            if (this.getDeltaMovement().y <= 0.0D && this.maceTicks >= 4) {
+                this.maceState = MaceState.DESCENDING;
+            } else if (this.onGround() && this.maceTicks >= 6) {
+                endMaceSequence(target, 80);
+                return false;
+            }
+            return true;
+        }
+
+        equipWeapon(this.godMace);
+        if (MaceItem.canSmashAttack(this) && totalDistSq <= 13.5D
+                && (this.hasLineOfSight(target) || totalDistSq <= 6.25D)) {
+            performMaceSmashAttack(level, target, dx, dy, dz, horizDistSq);
+            return true;
+        }
+
+        if (this.onGround()) {
+            if (totalDistSq <= 9.0D && this.attackCooldown <= 0) {
+                performMeleeAttack(target);
+            }
+            endMaceSequence(target, 90);
+            return false;
+        }
+        return true;
+    }
+
+    private void endMaceSequence(ServerPlayer target, int cooldown) {
+        this.maceState = MaceState.NONE;
+        this.maceTicks = 0;
+        this.maceChainCount = 0;
+        this.maceCooldown = cooldown;
+        equipWeapon(target.isBlocking() ? this.axeStack : this.godSword);
+    }
+
+    private void startWindPillar(ServerLevel level, BlockPos feetPos, double centerX, double centerZ) {
+        this.setPos(centerX, this.getY(), centerZ);
+        equipWeapon(this.windChargeStack);
+        this.swing(InteractionHand.MAIN_HAND);
+        triggerWindChargeBurst(level, centerX, this.getY() - 0.15D, centerZ);
+
+        if (level.getBlockState(feetPos).isAir() || level.getBlockState(feetPos).canBeReplaced()) {
+            level.setBlock(feetPos, Blocks.COBBLESTONE.defaultBlockState(), 3);
+            level.playSound(null, feetPos, SoundEvents.STONE_PLACE, SoundSource.BLOCKS, 1.0F, 1.0F);
+        }
+
+        this.setPos(centerX, feetPos.getY() + 1.0D, centerZ);
+        this.setDeltaMovement(0.0D, 0.96D, 0.0D);
+        this.hurtMarked = true;
+        this.resetFallDistance();
+
+        this.windPillarX = centerX;
+        this.windPillarZ = centerZ;
+        this.windPillarTicks = 18;
+        this.windChargeCooldown = 36;
+        this.pillaringTicks = 22;
+        this.stuckTicks = 0;
+    }
+
+    private void handleActiveWindPillar(ServerLevel level, ServerPlayer target) {
+        this.getNavigation().stop();
+        this.setSprinting(false);
+        this.xxa = 0.0F;
+        this.zza = 0.0F;
+
+        Vec3 curVel = this.getDeltaMovement();
+        this.setPos(this.windPillarX, this.getY(), this.windPillarZ);
+        this.setDeltaMovement(0.0D, curVel.y, 0.0D);
+        this.hurtMarked = true;
+
+        BlockPos feetPos = this.blockPosition();
+        placePillarColumnBelow(level, feetPos, target.getBlockY());
+
+        boolean hitCeiling = !isPassableForBody(level, feetPos.above(2));
+        if (curVel.y <= 0.06D || this.getY() >= target.getY() || this.onGround() || hitCeiling || this.windPillarTicks <= 1) {
+            BlockPos below = feetPos.below();
+            if (!hasSolidSupport(level, below)) {
+                placeCobbleBlock(level, below);
+            }
+            this.setPos(this.windPillarX, feetPos.getY(), this.windPillarZ);
+            this.setDeltaMovement(0.0D, 0.0D, 0.0D);
+            this.resetFallDistance();
+            this.windPillarTicks = 0;
+            this.pillaringTicks = 6;
+            this.buildCooldown = 3;
+        }
+    }
+
+    private void placePillarColumnBelow(ServerLevel level, BlockPos feetPos, int targetBlockY) {
+        for (int depth = 1; depth <= 3; depth++) {
+            BlockPos pos = feetPos.below(depth);
+            if (pos.getY() >= targetBlockY) {
+                continue;
+            }
+            BlockState state = level.getBlockState(pos);
+            if (state.isAir() || state.canBeReplaced()) {
+                placeCobbleBlock(level, pos);
+            } else {
+                break;
+            }
+        }
+    }
+
+    private void placeCobbleBlock(ServerLevel level, BlockPos pos) {
+        equipWeapon(this.cobbleStack);
+        this.swing(InteractionHand.MAIN_HAND);
+        level.setBlock(pos, Blocks.COBBLESTONE.defaultBlockState(), 3);
+        level.playSound(null, pos, SoundEvents.STONE_PLACE, SoundSource.BLOCKS, 1.0F, 1.0F);
+    }
+
+    private boolean hasOpenHeadroom(ServerLevel level, BlockPos basePos, int height) {
+        for (int y = 2; y <= height; y++) {
+            if (!isPassableForBody(level, basePos.above(y))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean hasSafeGroundArea(ServerLevel level, BlockPos center) {
+        int solidNeighbors = 0;
+        for (int ox = -1; ox <= 1; ox++) {
+            for (int oz = -1; oz <= 1; oz++) {
+                BlockPos check = center.offset(ox, 0, oz);
+                if (isHazardousDrop(level, check)) {
+                    continue;
+                }
+                if (hasSolidSupport(level, check.below()) || hasSolidSupport(level, check.below(2))) {
+                    solidNeighbors++;
+                }
+            }
+        }
+        return solidNeighbors >= 6;
+    }
+
+    private boolean isHazardousDrop(ServerLevel level, BlockPos pos) {
+        for (int d = 1; d <= 5; d++) {
+            BlockPos check = pos.below(d);
+            FluidState fluid = level.getFluidState(check);
+            if (fluid.is(FluidTags.LAVA)) {
+                return true;
+            }
+            if (hasSolidSupport(level, check)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean isTargetEnclosedOrHiding(ServerLevel level, ServerPlayer target) {
+        BlockPos tPos = target.blockPosition();
+        if (!hasOpenHeadroom(level, tPos, 5)) {
+            return true;
+        }
+        int walledSides = 0;
+        if (!isPassableForBody(level, tPos.north()) || !isPassableForBody(level, tPos.north().above())) walledSides++;
+        if (!isPassableForBody(level, tPos.south()) || !isPassableForBody(level, tPos.south().above())) walledSides++;
+        if (!isPassableForBody(level, tPos.east()) || !isPassableForBody(level, tPos.east().above())) walledSides++;
+        if (!isPassableForBody(level, tPos.west()) || !isPassableForBody(level, tPos.west().above())) walledSides++;
+        return walledSides >= 3;
+    }
+
+    private boolean shouldBridge(ServerLevel level, double dx, double dy, double dz, double horizDistSq) {
+        if (horizDistSq <= 1.44D || dy < -3.0D) {
+            return false;
+        }
+        BlockPos feet = this.blockPosition();
+        if (!hasSolidSupport(level, feet.below()) && isDropAt(level, feet)) {
+            return true;
+        }
+        if (isDropAhead(level, feet, dx, dz)) {
+            return true;
+        }
+        return this.bridgingTicks > 0 && isDropAheadWithin(level, feet, dx, dz, 2);
+    }
+
+    private void handleBridging(ServerLevel level, ServerPlayer target, double dx, double dy, double dz, double horizDistSq) {
+        this.getNavigation().stop();
+        this.setSprinting(false);
+        this.xxa = 0.0F;
+        this.zza = 0.0F;
+        this.bridgingTicks = 10;
+
+        BlockPos feet = this.blockPosition();
+        double horizDist = Math.sqrt(Math.max(0.0001D, horizDistSq));
+        double hx = dx / horizDist;
+        double hz = dz / horizDist;
+
+        BlockPos belowFeet = feet.below();
+        if (!hasSolidSupport(level, belowFeet)) {
+            BlockState belowState = level.getBlockState(belowFeet);
+            if (belowState.isAir() || belowState.canBeReplaced()) {
+                placeCobbleBlock(level, belowFeet);
+                this.setDeltaMovement(0.0D, Math.max(0.0D, this.getDeltaMovement().y), 0.0D);
+                this.buildCooldown = 3;
+                this.stuckTicks = 0;
+                return;
+            }
+        }
+
+        BlockPos nextStep = BlockPos.containing(feet.getX() + 0.5D + hx, feet.getY(), feet.getZ() + 0.5D + hz);
+        if (nextStep.equals(feet)) {
+            nextStep = Math.abs(hx) >= Math.abs(hz)
+                    ? feet.offset(hx >= 0 ? 1 : -1, 0, 0)
+                    : feet.offset(0, 0, hz >= 0 ? 1 : -1);
+        }
+
+        if (!isPassableForBody(level, nextStep.above()) && isBreakableObstacle(level, nextStep.above())) {
+            this.setDeltaMovement(0.0D, this.getDeltaMovement().y, 0.0D);
+            handleMining(level, nextStep.above());
+            return;
+        }
+        boolean canStepUpNext = isPassableForBody(level, nextStep.above())
+                && isPassableForBody(level, nextStep.above(2))
+                && isPassableForBody(level, feet.above(2));
+        if (!isPassableForBody(level, nextStep) && !canStepUpNext && isBreakableObstacle(level, nextStep)) {
+            this.setDeltaMovement(0.0D, this.getDeltaMovement().y, 0.0D);
+            handleMining(level, nextStep);
+            return;
+        }
+        clearMining(level);
+
+        boolean isDiagonal = nextStep.getX() != feet.getX() && nextStep.getZ() != feet.getZ();
+        boolean cornerReady = true;
+        if (isDiagonal) {
+            BlockPos cornerX = new BlockPos(nextStep.getX(), feet.getY() - 1, feet.getZ());
+            BlockPos cornerZ = new BlockPos(feet.getX(), feet.getY() - 1, nextStep.getZ());
+            if (!hasSolidSupport(level, cornerX) && !hasSolidSupport(level, cornerZ)) {
+                cornerReady = false;
+                BlockPos preferredCorner = Math.abs(hx) >= Math.abs(hz) ? cornerX : cornerZ;
+                if (this.buildCooldown <= 0) {
+                    BlockState cornerState = level.getBlockState(preferredCorner);
+                    if (cornerState.isAir() || cornerState.canBeReplaced()) {
+                        placeCobbleBlock(level, preferredCorner);
+                        this.buildCooldown = 3;
+                        this.stuckTicks = 0;
+                        cornerReady = true;
+                    }
+                }
+            }
+        }
+
+        BlockPos nextSupport = nextStep.below();
+        boolean nextReady = hasSolidSupport(level, nextSupport) || !isPassableForBody(level, nextStep);
+        if (!nextReady && this.buildCooldown <= 0) {
+            BlockState supState = level.getBlockState(nextSupport);
+            if (supState.isAir() || supState.canBeReplaced()) {
+                placeCobbleBlock(level, nextSupport);
+                this.buildCooldown = 3;
+                this.stuckTicks = 0;
+                nextReady = true;
+            }
+        }
+
+        if (nextReady && cornerReady && dy >= 0.9D && dy < 2.2D && this.buildCooldown <= 0
+                && isPassableForBody(level, nextStep) && isPassableForBody(level, nextStep.above())
+                && isPassableForBody(level, nextStep.above(2)) && isPassableForBody(level, feet.above(2))) {
+            BlockState stepState = level.getBlockState(nextStep);
+            if (stepState.isAir() || stepState.canBeReplaced()) {
+                placeCobbleBlock(level, nextStep);
+                this.buildCooldown = 4;
+                this.stuckTicks = 0;
+            }
+        }
+
+        if (nextReady && cornerReady && this.buildCooldown <= 0) {
+            BlockPos lookAhead = BlockPos.containing(nextStep.getX() + 0.5D + hx, feet.getY(), nextStep.getZ() + 0.5D + hz);
+            BlockPos lookAheadSupport = lookAhead.below();
+            if (!hasSolidSupport(level, lookAheadSupport) && isDropAt(level, lookAhead)) {
+                BlockState laState = level.getBlockState(lookAheadSupport);
+                if (laState.isAir() || laState.canBeReplaced()) {
+                    placeCobbleBlock(level, lookAheadSupport);
+                    this.buildCooldown = 3;
+                    this.stuckTicks = 0;
+                }
+            }
+        }
+
+        if (!nextReady || !cornerReady) {
+            double centerX = feet.getX() + 0.5D;
+            double centerZ = feet.getZ() + 0.5D;
+            double pullX = Mth.clamp((centerX - this.getX()) * 0.25D, -0.10D, 0.10D);
+            double pullZ = Mth.clamp((centerZ - this.getZ()) * 0.25D, -0.10D, 0.10D);
+            this.setDeltaMovement(pullX, this.getDeltaMovement().y, pullZ);
+            this.hurtMarked = true;
+            return;
+        }
+
+        double goalX = nextStep.getX() + 0.5D;
+        double goalZ = nextStep.getZ() + 0.5D;
+        double toNextX = goalX - this.getX();
+        double toNextZ = goalZ - this.getZ();
+        double toNextDist = Math.sqrt(toNextX * toNextX + toNextZ * toNextZ);
+        if (toNextDist > 0.05D) {
+            double bridgeSpeed = Math.min(0.24D, toNextDist);
+            this.setDeltaMovement((toNextX / toNextDist) * bridgeSpeed, this.getDeltaMovement().y, (toNextZ / toNextDist) * bridgeSpeed);
+            this.hurtMarked = true;
+            float yaw = (float) (Mth.atan2(toNextZ, toNextX) * (double) (180F / (float) Math.PI)) - 90.0F;
+            this.setYRot(yaw);
+            this.yBodyRot = yaw;
+            this.yHeadRot = yaw;
+        }
+    }
+
+    private static boolean hasSolidSupport(ServerLevel level, BlockPos pos) {
+        BlockState state = level.getBlockState(pos);
+        return !state.isAir() && !state.canBeReplaced() && !state.getCollisionShape(level, pos).isEmpty();
+    }
+
+    private static boolean isDropAt(ServerLevel level, BlockPos standPos) {
+        BlockPos b1 = standPos.below();
+        if (hasSolidSupport(level, b1)) {
+            return false;
+        }
+        if (level.getFluidState(b1).is(FluidTags.LAVA)) {
+            return true;
+        }
+        BlockPos b2 = standPos.below(2);
+        return !hasSolidSupport(level, b2) || level.getFluidState(b2).is(FluidTags.LAVA);
+    }
+
+    private static boolean isDropAhead(ServerLevel level, BlockPos feet, double dx, double dz) {
+        return isDropAheadWithin(level, feet, dx, dz, 1);
+    }
+
+    private static boolean isDropAheadWithin(ServerLevel level, BlockPos feet, double dx, double dz, int steps) {
+        double horizDist = Math.sqrt(dx * dx + dz * dz);
+        if (horizDist < 0.1D) {
+            return false;
+        }
+        double hx = dx / horizDist;
+        double hz = dz / horizDist;
+        for (int step = 1; step <= steps; step++) {
+            BlockPos check = BlockPos.containing(feet.getX() + 0.5D + hx * step, feet.getY(), feet.getZ() + 0.5D + hz * step);
+            if (!check.equals(feet) && isDropAt(level, check)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private Boat getOrCreateOwnBoat(ServerLevel level) {
         if (this.getVehicle() instanceof Boat currentBoat && currentBoat.isAlive()
                 && this.ownBoatUUID != null && currentBoat.getUUID().equals(this.ownBoatUUID)) {
@@ -1239,28 +1955,602 @@ public class CreepingDeathEntity extends PathfinderMob {
         }
     }
 
-    private void throwEnderPearlAt(ServerLevel level, LivingEntity target) {
+    private void equipCombatWeaponIfHoldingTool(ServerPlayer target) {
+        ItemStack current = this.getItemBySlot(EquipmentSlot.MAINHAND);
+        boolean holdingTool = ItemStack.isSameItemSameComponents(current, this.pickaxeStack)
+                || ItemStack.isSameItemSameComponents(current, this.shovelStack)
+                || ItemStack.isSameItemSameComponents(current, this.cobbleStack)
+                || ItemStack.isSameItemSameComponents(current, this.windChargeStack)
+                || (ItemStack.isSameItemSameComponents(current, this.axeStack) && !target.isBlocking());
+        if (holdingTool || current.isEmpty()) {
+            equipWeapon(target.isBlocking() ? this.axeStack : this.godSword);
+        }
+    }
+
+    static List<Vec3> buildPearlCandidateVelocities(Vec3 startPos, Vec3 targetAim) {
+        double dx = targetAim.x - startPos.x;
+        double dy = targetAim.y - startPos.y;
+        double dz = targetAim.z - startPos.z;
+        double horizDist = Math.sqrt(dx * dx + dz * dz);
+        List<Vec3> candidates = new ArrayList<>(3);
+
+        double ballisticLift = Mth.clamp(0.0065D * horizDist * horizDist, 0.0D, horizDist * 0.35D);
+        addNormalizedPearlVelocity(candidates, dx, dy + ballisticLift, dz);
+
+        double mediumLift = horizDist * 0.18D;
+        if (Math.abs(mediumLift - ballisticLift) > 0.35D) {
+            addNormalizedPearlVelocity(candidates, dx, dy + mediumLift, dz);
+        }
+
+        if (dy > 2.0D || horizDist > 10.0D) {
+            double highLift = (dy > 2.0D || horizDist > 30.0D) ? horizDist * 0.32D : horizDist * 0.24D;
+            if (Math.abs(highLift - ballisticLift) > 0.35D && Math.abs(highLift - mediumLift) > 0.35D) {
+                addNormalizedPearlVelocity(candidates, dx, dy + highLift, dz);
+            }
+        }
+        return candidates;
+    }
+
+    private static void addNormalizedPearlVelocity(List<Vec3> candidates, double vx, double vy, double vz) {
+        Vec3 dir = new Vec3(vx, vy, vz);
+        if (dir.lengthSqr() > 1.0E-6D) {
+            candidates.add(dir.normalize().scale(PEARL_LAUNCH_SPEED));
+        }
+    }
+
+    static double requiredPearlProgress(double startDist) {
+        return Math.min(8.0D, Math.max(4.0D, startDist * 0.25D));
+    }
+
+    static PearlCandidate simulatePearlTrajectory(Vec3 startPos, Vec3 launchVelocity, Vec3 selfPos, Vec3 targetPos,
+            int minSafeY, PearlRayCollider collider, PearlLandingResolver landingResolver) {
+        double startDist = selfPos.distanceTo(targetPos);
+        if (startDist < PEARL_MIN_TRAVEL_DIST) {
+            return null;
+        }
+
+        Vec3 pos = startPos;
+        Vec3 vel = launchVelocity;
+        for (int tick = 1; tick <= PEARL_MAX_SIM_TICKS; tick++) {
+            vel = new Vec3(vel.x, vel.y - PEARL_GRAVITY, vel.z).scale(PEARL_AIR_DRAG);
+            Vec3 nextPos = pos.add(vel);
+            PearlHit hit = collider.clip(pos, nextPos);
+            if (hit != null) {
+                double travelDist = startPos.distanceTo(hit.location());
+                if (hit.hitTargetEntity()) {
+                    if (travelDist < PEARL_MIN_TRAVEL_DIST - 0.5D) {
+                        return null;
+                    }
+                    double progress = startDist - hit.location().distanceTo(targetPos);
+                    if (progress < Math.min(4.0D, startDist * 0.5D)) {
+                        return null;
+                    }
+                    return new PearlCandidate(launchVelocity, hit.location(), travelDist, progress);
+                }
+                if (tick < PEARL_MIN_FLIGHT_TICKS || travelDist < PEARL_MIN_TRAVEL_DIST) {
+                    return null;
+                }
+                Vec3 landingPos = landingResolver.resolveSafeLanding(hit.location(), hit.face(), hit.blockPos());
+                if (landingPos == null) {
+                    return null;
+                }
+                double progress = startDist - landingPos.distanceTo(targetPos);
+                if (progress < requiredPearlProgress(startDist)) {
+                    return null;
+                }
+                return new PearlCandidate(launchVelocity, landingPos, travelDist, progress);
+            }
+            if (tick <= PEARL_MIN_FLIGHT_TICKS) {
+                PearlHit upperHit = collider.clip(pos.add(0.0D, 0.25D, 0.0D), nextPos.add(0.0D, 0.25D, 0.0D));
+                if (upperHit != null && !upperHit.hitTargetEntity()) {
+                    return null;
+                }
+            }
+            if (nextPos.y < minSafeY) {
+                return null;
+            }
+            pos = nextPos;
+        }
+        return null;
+    }
+
+    static PearlCandidate selectBestPearlCandidate(Vec3 startPos, Vec3 selfPos, Vec3 targetPos, Vec3 targetAim,
+            int minSafeY, PearlRayCollider collider, PearlLandingResolver landingResolver) {
+        PearlCandidate best = null;
+        for (Vec3 candidateVel : buildPearlCandidateVelocities(startPos, targetAim)) {
+            PearlCandidate result = simulatePearlTrajectory(
+                    startPos,
+                    candidateVel,
+                    selfPos,
+                    targetPos,
+                    minSafeY,
+                    collider,
+                    landingResolver
+            );
+            if (result != null && (best == null || result.progress() > best.progress())) {
+                best = result;
+            }
+        }
+        return best;
+    }
+
+    static LivePearlPrediction simulateLivePearlImpact(Vec3 startPos, Vec3 startVel, int minSafeY,
+            PearlRayCollider collider, PearlLandingResolver landingResolver) {
+        Vec3 pos = startPos;
+        Vec3 vel = startVel;
+        for (int tick = 1; tick <= PEARL_RECOVERY_MAX_SIM_TICKS; tick++) {
+            vel = new Vec3(vel.x, vel.y - PEARL_GRAVITY, vel.z).scale(PEARL_AIR_DRAG);
+            Vec3 nextPos = pos.add(vel);
+            PearlHit hit = collider.clip(pos, nextPos);
+            if (hit != null) {
+                if (hit.hitTargetEntity()) {
+                    return new LivePearlPrediction(hit.location(), hit.location(), tick, false, true);
+                }
+                Vec3 landingPos = landingResolver.resolveSafeLanding(hit.location(), hit.face(), hit.blockPos());
+                boolean unsafe = landingPos == null;
+                Vec3 effectivePos = landingPos != null ? landingPos : hit.location();
+                return new LivePearlPrediction(hit.location(), effectivePos, tick, unsafe, false);
+            }
+            if (nextPos.y < minSafeY) {
+                return new LivePearlPrediction(nextPos, nextPos, tick, true, false);
+            }
+            pos = nextPos;
+        }
+        return new LivePearlPrediction(pos, pos, PEARL_RECOVERY_MAX_SIM_TICKS + 1, true, false);
+    }
+
+    static boolean isMissedMountainPearl(LivePearlPrediction prediction, Vec3 selfPos, Vec3 targetPos, double referenceY) {
+        if (prediction == null || prediction.hitTargetEntity()) {
+            return false;
+        }
+        Vec3 landing = prediction.landingPos();
+        double dropBelowRef = referenceY - landing.y;
+        if (dropBelowRef >= PEARL_MISS_DROP_THRESHOLD) {
+            return true;
+        }
+        if (prediction.unsafeOrVoid()) {
+            return true;
+        }
+        double currentTargetDist = selfPos.distanceTo(targetPos);
+        double predictedTargetDist = landing.distanceTo(targetPos);
+        return dropBelowRef >= PEARL_MISS_FAR_DROP_THRESHOLD
+                && predictedTargetDist > currentTargetDist + PEARL_MISS_FAR_DIST_MARGIN;
+    }
+
+    static int estimateVerticalFlightTicks(double startY, double goalY, double vy) {
+        double y = startY;
+        double curVy = vy;
+        boolean clearedGoal = y >= goalY;
+        for (int tick = 1; tick <= PEARL_RECOVERY_MAX_SIM_TICKS; tick++) {
+            curVy = (curVy - PEARL_GRAVITY) * PEARL_AIR_DRAG;
+            y += curVy;
+            if (y >= goalY + 0.5D) {
+                clearedGoal = true;
+            }
+            if (clearedGoal && curVy <= 0.0D && y <= goalY) {
+                return tick;
+            }
+        }
+        return -1;
+    }
+
+    static double horizontalDragSum(int ticks) {
+        return (PEARL_AIR_DRAG / (1.0D - PEARL_AIR_DRAG)) * (1.0D - Math.pow(PEARL_AIR_DRAG, ticks));
+    }
+
+    static List<Vec3> buildRecoveryPearlCandidateVelocities(Vec3 startPos, Vec3 anchorPos, Vec3 targetPos) {
+        List<Vec3> candidates = new ArrayList<>(16);
+        double[] verticalSpeeds = new double[]{0.65D, 0.85D, 1.10D, 1.35D, 1.65D};
+        for (double vy : verticalSpeeds) {
+            candidates.add(new Vec3(0.0D, vy, 0.0D));
+        }
+
+        double[] targetedSpeeds = new double[]{0.65D, 0.85D, 1.10D, 1.35D, 1.55D};
+        boolean hasSeparateAnchor = anchorPos != null && anchorPos.distanceToSqr(targetPos) > 0.5625D;
+        Vec3 midpoint = hasSeparateAnchor && anchorPos.distanceToSqr(targetPos) > 36.0D
+                ? anchorPos.lerp(targetPos, 0.5D)
+                : null;
+
+        for (double vy : targetedSpeeds) {
+            if (targetPos != null) {
+                addTargetedRecoveryVelocity(candidates, startPos, targetPos, vy);
+            }
+            if (hasSeparateAnchor) {
+                addTargetedRecoveryVelocity(candidates, startPos, anchorPos, vy);
+            }
+            if (midpoint != null) {
+                addTargetedRecoveryVelocity(candidates, startPos, midpoint, vy);
+            }
+        }
+        return candidates;
+    }
+
+    private static void addTargetedRecoveryVelocity(List<Vec3> candidates, Vec3 startPos, Vec3 goalPos, double vy) {
+        double dx = goalPos.x - startPos.x;
+        double dz = goalPos.z - startPos.z;
+        double horizDistSq = dx * dx + dz * dz;
+        if (horizDistSq <= 0.5625D) {
+            return;
+        }
+        int estTicks = estimateVerticalFlightTicks(startPos.y, goalPos.y, vy);
+        if (estTicks < PEARL_MIN_FLIGHT_TICKS) {
+            return;
+        }
+        double dragSum = horizontalDragSum(estTicks);
+        if (dragSum <= 1.0E-6D) {
+            return;
+        }
+        double vx = dx / dragSum;
+        double vz = dz / dragSum;
+        double horizSpeed = Math.sqrt(vx * vx + vz * vz);
+        if (vy < horizSpeed * 0.75D) {
+            return;
+        }
+        double totalSpeedSq = vx * vx + vy * vy + vz * vz;
+        if (totalSpeedSq > PEARL_LAUNCH_SPEED * PEARL_LAUNCH_SPEED) {
+            return;
+        }
+        candidates.add(new Vec3(vx, vy, vz));
+    }
+
+    static RecoveryPearlCandidate simulateRecoveryPearlTrajectory(Vec3 startPos, Vec3 launchVelocity,
+            Vec3 targetPos, double referenceY, int minRequiredFlightTicks, int minSafeY,
+            PearlRayCollider collider, PearlLandingResolver landingResolver) {
+        double minFloorY = referenceY - PEARL_RECOVERY_MAX_DROP_BELOW_REF - 1.0D;
+        int maxValidTick = estimateVerticalFlightTicks(startPos.y, minFloorY, launchVelocity.y);
+        if (maxValidTick < 0 || maxValidTick < minRequiredFlightTicks) {
+            return null;
+        }
+        Vec3 pos = startPos;
+        Vec3 vel = launchVelocity;
+        for (int tick = 1; tick <= maxValidTick; tick++) {
+            vel = new Vec3(vel.x, vel.y - PEARL_GRAVITY, vel.z).scale(PEARL_AIR_DRAG);
+            Vec3 nextPos = pos.add(vel);
+            PearlHit hit = collider.clip(pos, nextPos);
+            if (hit != null) {
+                if (tick < minRequiredFlightTicks) {
+                    return null;
+                }
+                if (!hit.hitTargetEntity() && (hit.face() == Direction.DOWN || vel.y > 0.15D)) {
+                    return null;
+                }
+                Vec3 landingPos = hit.hitTargetEntity()
+                        ? hit.location()
+                        : landingResolver.resolveSafeLanding(hit.location(), hit.face(), hit.blockPos());
+                if (landingPos == null) {
+                    return null;
+                }
+                if (landingPos.y < referenceY - PEARL_RECOVERY_MAX_DROP_BELOW_REF) {
+                    return null;
+                }
+                double distToTarget = landingPos.distanceTo(targetPos);
+                double heightBonus = Math.min(4.0D, landingPos.y - referenceY) * 2.0D;
+                double waitExcess = Math.max(0, tick - minRequiredFlightTicks);
+                double score = 100.0D - distToTarget * 1.25D + heightBonus - waitExcess * 0.45D;
+                return new RecoveryPearlCandidate(launchVelocity, landingPos, tick, score);
+            }
+            if (tick <= PEARL_MIN_FLIGHT_TICKS) {
+                PearlHit upperHit = collider.clip(pos.add(0.0D, 0.25D, 0.0D), nextPos.add(0.0D, 0.25D, 0.0D));
+                if (upperHit != null && !upperHit.hitTargetEntity()) {
+                    return null;
+                }
+            }
+            if (nextPos.y < minSafeY || (vel.y <= 0.0D && nextPos.y < minFloorY)) {
+                return null;
+            }
+            pos = nextPos;
+        }
+        return null;
+    }
+
+    static RecoveryPearlCandidate selectRecoveryPearlCandidate(Vec3 startPos, Vec3 anchorPos, Vec3 targetPos,
+            double referenceY, int minRequiredFlightTicks, int minSafeY,
+            PearlRayCollider collider, PearlLandingResolver landingResolver) {
+        if (minRequiredFlightTicks > PEARL_RECOVERY_MAX_SIM_TICKS) {
+            return null;
+        }
+        RecoveryPearlCandidate best = null;
+        for (Vec3 candidateVel : buildRecoveryPearlCandidateVelocities(startPos, anchorPos, targetPos)) {
+            RecoveryPearlCandidate result = simulateRecoveryPearlTrajectory(
+                    startPos,
+                    candidateVel,
+                    targetPos,
+                    referenceY,
+                    minRequiredFlightTicks,
+                    minSafeY,
+                    collider,
+                    landingResolver
+            );
+            if (result != null && (best == null || result.score() > best.score())) {
+                best = result;
+            }
+        }
+        return best;
+    }
+
+    static RecoveryPearlCandidate evaluatePearlBackRecovery(Vec3 trackedPearlPos, Vec3 trackedPearlVel,
+            Vec3 launchStartPos, Vec3 selfPos, Vec3 anchorPos, Vec3 targetPos, double referenceY,
+            int minSafeY, PearlRayCollider livePearlCollider, PearlRayCollider recoveryCollider,
+            PearlLandingResolver landingResolver) {
+        LivePearlPrediction prediction = simulateLivePearlImpact(
+                trackedPearlPos,
+                trackedPearlVel,
+                minSafeY,
+                livePearlCollider,
+                landingResolver
+        );
+        if (!isMissedMountainPearl(prediction, selfPos, targetPos, referenceY)) {
+            return null;
+        }
+        int minRequiredFlightTicks = Math.max(
+                PEARL_MIN_FLIGHT_TICKS,
+                prediction.remainingTicks() + PEARL_RECOVERY_MIN_MARGIN_TICKS
+        );
+        return selectRecoveryPearlCandidate(
+                launchStartPos,
+                anchorPos,
+                targetPos,
+                referenceY,
+                minRequiredFlightTicks,
+                minSafeY,
+                recoveryCollider,
+                landingResolver
+        );
+    }
+
+    private void clearTrackedOffensivePearl() {
+        this.trackedOffensivePearlUUID = null;
+        this.trackedPearlRecoveryThrown = false;
+        this.trackedPearlAnchorPos = null;
+    }
+
+    private boolean hasActiveRecoveryPearl(ServerLevel level) {
+        if (this.activeRecoveryPearlUUID == null) {
+            return false;
+        }
+        Entity entity = level.getEntity(this.activeRecoveryPearlUUID);
+        if (entity instanceof ThrownEnderpearl pearl && pearl.isAlive() && !pearl.isRemoved()) {
+            return true;
+        }
+        this.activeRecoveryPearlUUID = null;
+        return false;
+    }
+
+    private boolean handleTrackedPearlRecovery(ServerLevel level, ServerPlayer target) {
+        if (this.trackedOffensivePearlUUID == null) {
+            return false;
+        }
+        Entity entity = level.getEntity(this.trackedOffensivePearlUUID);
+        if (!(entity instanceof ThrownEnderpearl pearl) || !pearl.isAlive() || pearl.isRemoved()) {
+            clearTrackedOffensivePearl();
+            return false;
+        }
+        if (this.trackedPearlRecoveryThrown || hasActiveRecoveryPearl(level)) {
+            return false;
+        }
+        if (this.isUnderWater() || this.isInLava()) {
+            return false;
+        }
+
+        Vec3 anchorPos = this.trackedPearlAnchorPos != null ? this.trackedPearlAnchorPos : this.position();
+        double referenceY = Math.min(anchorPos.y, target.getY());
+        Vec3 launchStartPos = new Vec3(this.getX(), this.getEyeY() - 0.1D, this.getZ());
+        int minSafeY = level.getMinBuildHeight() + 2;
+        PearlRayCollider liveCollider = createPearlCollider(level, target);
+        PearlRayCollider blockOnlyCollider = createBlockOnlyPearlCollider(level);
+        PearlLandingResolver landingResolver = (impactPos, hitFace, hitBlockPos) ->
+                resolveSafePearlLanding(level, hitFace, hitBlockPos);
+
+        RecoveryPearlCandidate recovery = evaluatePearlBackRecovery(
+                pearl.position(),
+                pearl.getDeltaMovement(),
+                launchStartPos,
+                this.position(),
+                anchorPos,
+                target.position(),
+                referenceY,
+                minSafeY,
+                liveCollider,
+                blockOnlyCollider,
+                landingResolver
+        );
+        if (recovery == null) {
+            return false;
+        }
+
+        setSwimmingPose(false);
+        this.bridgingTicks = 0;
+        clearMining(level);
+        ThrownEnderpearl recoveryPearl = throwEnderPearlAt(level, recovery.launchVelocity());
+        this.trackedPearlRecoveryThrown = true;
+        this.activeRecoveryPearlUUID = recoveryPearl.getUUID();
+        this.pearlCooldown = Math.max(this.pearlCooldown, 90);
+        this.fallRecoveryCooldown = Math.max(this.fallRecoveryCooldown, 70);
+        this.stuckTicks = 0;
+        this.pillaringTicks = 0;
+        return true;
+    }
+
+    private boolean handleMountainFallRecovery(ServerLevel level, ServerPlayer target) {
+        if (this.fallRecoveryCooldown > 0
+                || this.maceState != MaceState.NONE
+                || this.windPillarTicks > 0
+                || this.voidRecoveryFlight
+                || this.getSharedFlag(7)
+                || this.isInWater()
+                || this.isUnderWater()
+                || this.isInLava()
+                || this.trackedOffensivePearlUUID != null
+                || hasActiveRecoveryPearl(level)) {
+            return false;
+        }
+        if (this.onGround()
+                || this.getDeltaMovement().y >= -0.35D
+                || this.fallDistance < 3.0F
+                || this.getY() >= target.getY() - 5.0D) {
+            return false;
+        }
+        if (!target.onGround() && !hasSolidGroundBelow(level, target.blockPosition())) {
+            return false;
+        }
+
+        Vec3 launchStartPos = new Vec3(this.getX(), this.getEyeY() - 0.1D, this.getZ());
+        Vec3 targetPos = target.position();
+        int minSafeY = level.getMinBuildHeight() + 2;
+        PearlRayCollider blockOnlyCollider = createBlockOnlyPearlCollider(level);
+        PearlLandingResolver landingResolver = (impactPos, hitFace, hitBlockPos) ->
+                resolveSafePearlLanding(level, hitFace, hitBlockPos);
+
+        RecoveryPearlCandidate recovery = selectRecoveryPearlCandidate(
+                launchStartPos,
+                targetPos,
+                targetPos,
+                targetPos.y,
+                PEARL_MIN_FLIGHT_TICKS,
+                minSafeY,
+                blockOnlyCollider,
+                landingResolver
+        );
+        if (recovery == null) {
+            this.fallRecoveryCooldown = 12;
+            return false;
+        }
+
+        setSwimmingPose(false);
+        this.bridgingTicks = 0;
+        clearMining(level);
+        ThrownEnderpearl recoveryPearl = throwEnderPearlAt(level, recovery.launchVelocity());
+        this.activeRecoveryPearlUUID = recoveryPearl.getUUID();
+        this.fallRecoveryCooldown = 70;
+        this.pearlCooldown = Math.max(this.pearlCooldown, 60);
+        this.stuckTicks = 0;
+        this.pillaringTicks = 0;
+        return true;
+    }
+
+    private PearlRayCollider createPearlCollider(ServerLevel level, ServerPlayer target) {
+        AABB targetBox = target.getBoundingBox().inflate(0.35D);
+        return (from, to) -> {
+            BlockHitResult blockHit = level.clip(new ClipContext(
+                    from,
+                    to,
+                    ClipContext.Block.COLLIDER,
+                    ClipContext.Fluid.NONE,
+                    this
+            ));
+            Vec3 end = blockHit.getType() != HitResult.Type.MISS ? blockHit.getLocation() : to;
+            Optional<Vec3> entityHit = targetBox.clip(from, end);
+            if (entityHit.isPresent()) {
+                return new PearlHit(entityHit.get(), Direction.UP, BlockPos.containing(entityHit.get()), true);
+            }
+            if (blockHit.getType() != HitResult.Type.MISS) {
+                return new PearlHit(blockHit.getLocation(), blockHit.getDirection(), blockHit.getBlockPos(), false);
+            }
+            return null;
+        };
+    }
+
+    private PearlRayCollider createBlockOnlyPearlCollider(ServerLevel level) {
+        return (from, to) -> {
+            BlockHitResult blockHit = level.clip(new ClipContext(
+                    from,
+                    to,
+                    ClipContext.Block.COLLIDER,
+                    ClipContext.Fluid.NONE,
+                    this
+            ));
+            if (blockHit.getType() != HitResult.Type.MISS) {
+                return new PearlHit(blockHit.getLocation(), blockHit.getDirection(), blockHit.getBlockPos(), false);
+            }
+            return null;
+        };
+    }
+
+    private PearlCandidate findViablePearlCandidate(ServerLevel level, ServerPlayer target) {
+        Vec3 startPos = new Vec3(this.getX(), this.getEyeY() - 0.1D, this.getZ());
+        Vec3 selfPos = this.position();
+        Vec3 targetPos = target.position();
+        Vec3 targetAim = new Vec3(target.getX(), target.getY(0.5D), target.getZ());
+        int minSafeY = level.getMinBuildHeight() + 2;
+        PearlRayCollider collider = createPearlCollider(level, target);
+        PearlLandingResolver landingResolver = (impactPos, hitFace, hitBlockPos) ->
+                resolveSafePearlLanding(level, hitFace, hitBlockPos);
+
+        return selectBestPearlCandidate(startPos, selfPos, targetPos, targetAim, minSafeY, collider, landingResolver);
+    }
+
+    private Vec3 resolveSafePearlLanding(ServerLevel level, Direction hitFace, BlockPos hitBlockPos) {
+        BlockPos standPos;
+        if (hitFace == Direction.UP) {
+            standPos = hitBlockPos.above();
+        } else if (hitFace == Direction.DOWN) {
+            BlockPos belowCeiling = hitBlockPos.below();
+            standPos = isPassableForBody(level, belowCeiling.below()) ? belowCeiling.below() : belowCeiling;
+        } else {
+            standPos = hitBlockPos.relative(hitFace);
+        }
+
+        if (standPos.getY() <= level.getMinBuildHeight() + 1) {
+            return null;
+        }
+        if (level.getFluidState(standPos).is(FluidTags.LAVA)
+                || level.getFluidState(standPos.above()).is(FluidTags.LAVA)) {
+            return null;
+        }
+        if (!isPassableForBody(level, standPos) || !isPassableForBody(level, standPos.above())) {
+            return null;
+        }
+
+        if (hasSolidSupport(level, standPos.below()) || level.getFluidState(standPos.below()).is(FluidTags.WATER)) {
+            if (level.getFluidState(standPos.below()).is(FluidTags.LAVA)) {
+                return null;
+            }
+            return new Vec3(standPos.getX() + 0.5D, standPos.getY(), standPos.getZ() + 0.5D);
+        }
+
+        for (int drop = 1; drop <= 12; drop++) {
+            BlockPos belowPos = standPos.below(drop);
+            if (belowPos.getY() <= level.getMinBuildHeight() + 1) {
+                return null;
+            }
+            if (level.getFluidState(belowPos).is(FluidTags.LAVA)) {
+                return null;
+            }
+            if (hasSolidSupport(level, belowPos) || level.getFluidState(belowPos).is(FluidTags.WATER)) {
+                BlockPos landed = belowPos.above();
+                if (level.getFluidState(landed).is(FluidTags.LAVA)
+                        || !isPassableForBody(level, landed)
+                        || !isPassableForBody(level, landed.above())) {
+                    return null;
+                }
+                return new Vec3(landed.getX() + 0.5D, landed.getY(), landed.getZ() + 0.5D);
+            }
+        }
+        return null;
+    }
+
+    private ThrownEnderpearl throwEnderPearlAt(ServerLevel level, Vec3 launchVelocity) {
         this.swing(InteractionHand.MAIN_HAND);
         level.playSound(null, this.getX(), this.getY(), this.getZ(),
                 SoundEvents.ENDER_PEARL_THROW, SoundSource.HOSTILE, 1.0F, 0.8F);
 
         ThrownEnderpearl pearl = new ThrownEnderpearl(level, this);
         pearl.setPos(this.getX(), this.getEyeY() - 0.1D, this.getZ());
-        double dx = target.getX() - this.getX();
-        double dy = target.getY(0.5D) - pearl.getY();
-        double dz = target.getZ() - this.getZ();
-        double horizDist = Math.sqrt(dx * dx + dz * dz);
-        pearl.shoot(dx, dy + horizDist * 0.18D, dz, 1.65F, 1.0F);
+        float speed = (float) Math.min(PEARL_LAUNCH_SPEED, Math.max(0.05D, launchVelocity.length()));
+        pearl.shoot(launchVelocity.x, launchVelocity.y, launchVelocity.z, speed, 0.0F);
         level.addFreshEntity(pearl);
+        return pearl;
     }
 
     private BlockPos findBlockingBlock(ServerLevel level, ServerPlayer target) {
         BlockPos feet = this.blockPosition();
         BlockPos head = feet.above();
+        BlockPos supportBelow = feet.below();
+
         if (isBreakableObstacle(level, head)) {
             return head;
         }
-        if (isBreakableObstacle(level, feet)) {
+        if (isBreakableBodyObstacle(level, feet)) {
             return feet;
         }
 
@@ -1272,29 +2562,123 @@ public class CreepingDeathEntity extends PathfinderMob {
         if (horizDist > 0.2D) {
             double stepX = dx / horizDist;
             double stepZ = dz / horizDist;
-            BlockPos frontHead = BlockPos.containing(this.getX() + stepX * 0.9D, this.getY() + 1.0D, this.getZ() + stepZ * 0.9D);
             BlockPos frontFeet = BlockPos.containing(this.getX() + stepX * 0.9D, this.getY(), this.getZ() + stepZ * 0.9D);
-            if (isBreakableObstacle(level, frontHead)) {
-                return frontHead;
+            if (frontFeet.equals(feet)) {
+                frontFeet = BlockPos.containing(feet.getX() + 0.5D + stepX, feet.getY(), feet.getZ() + 0.5D + stepZ);
             }
-            if (isBreakableObstacle(level, frontFeet)) {
-                return frontFeet;
+            boolean allowStepUp = this.stuckTicks < 20;
+
+            BlockPos primary = findPassThroughObstacle(level, feet, head, supportBelow, frontFeet, frontFeet.above(), allowStepUp);
+            if (primary != null) {
+                return primary;
+            }
+
+            if (frontFeet.getX() != feet.getX() && frontFeet.getZ() != feet.getZ()) {
+                BlockPos cornerXFeet = new BlockPos(frontFeet.getX(), feet.getY(), feet.getZ());
+                BlockPos cornerZFeet = new BlockPos(feet.getX(), feet.getY(), frontFeet.getZ());
+                boolean cornerXPassable = isPassableForBody(level, cornerXFeet) && isPassableForBody(level, cornerXFeet.above());
+                boolean cornerZPassable = isPassableForBody(level, cornerZFeet) && isPassableForBody(level, cornerZFeet.above());
+                if ((!cornerXPassable && !cornerZPassable)
+                        || ((!cornerXPassable || !cornerZPassable) && (this.horizontalCollision || this.stuckTicks >= 10))) {
+                    BlockPos preferredCorner = Math.abs(stepX) >= Math.abs(stepZ) ? cornerXFeet : cornerZFeet;
+                    BlockPos fallbackCorner = preferredCorner.equals(cornerXFeet) ? cornerZFeet : cornerXFeet;
+                    BlockPos cornerObstacle = findPassThroughObstacle(
+                            level,
+                            feet,
+                            head,
+                            supportBelow,
+                            preferredCorner,
+                            preferredCorner.above(),
+                            allowStepUp
+                    );
+                    if (cornerObstacle != null) {
+                        return cornerObstacle;
+                    }
+                    cornerObstacle = findPassThroughObstacle(
+                            level,
+                            feet,
+                            head,
+                            supportBelow,
+                            fallbackCorner,
+                            fallbackCorner.above(),
+                            allowStepUp
+                    );
+                    if (cornerObstacle != null) {
+                        return cornerObstacle;
+                    }
+                }
             }
         }
 
-        if (dy > 1.5D && horizDist < 4.0D) {
+        if (dy > 1.5D && (horizDist < 4.0D || (this.stuckTicks >= 20 && !this.hasLineOfSight(target)))) {
             BlockPos above = head.above();
             if (isBreakableObstacle(level, above)) {
                 return above;
             }
-        } else if (dy < -1.5D && horizDist < 4.0D) {
-            BlockPos below = feet.below();
-            if (isBreakableObstacle(level, below)) {
-                return below;
+        } else if (dy < -1.8D && (horizDist < 2.2D || (this.stuckTicks >= 20 && horizDist < 4.5D)) && !this.hasLineOfSight(target)
+                && this.bridgingTicks <= 0 && this.pillaringTicks <= 0 && this.windPillarTicks <= 0) {
+            if (isBreakableObstacle(level, supportBelow) && isSafeFloorToDigDown(level, supportBelow, target)) {
+                return supportBelow;
             }
         }
 
         return null;
+    }
+
+    private BlockPos findPassThroughObstacle(ServerLevel level, BlockPos feet, BlockPos head, BlockPos supportBelow,
+            BlockPos targetFeet, BlockPos targetHead, boolean allowStepUp) {
+        if (!targetHead.equals(supportBelow) && isBreakableObstacle(level, targetHead)) {
+            return targetHead;
+        }
+        if (!targetFeet.equals(supportBelow) && !targetFeet.equals(feet) && isBreakableObstacle(level, targetFeet)) {
+            boolean canStepUp = allowStepUp
+                    && isPassableForBody(level, targetFeet.above())
+                    && isPassableForBody(level, targetFeet.above(2))
+                    && isPassableForBody(level, head.above());
+            if (!canStepUp) {
+                return targetFeet;
+            }
+        }
+        return null;
+    }
+
+    private boolean isPassableForBody(ServerLevel level, BlockPos pos) {
+        BlockState state = level.getBlockState(pos);
+        return state.isAir() || state.canBeReplaced() || state.getCollisionShape(level, pos).isEmpty();
+    }
+
+    private boolean isBreakableBodyObstacle(ServerLevel level, BlockPos pos) {
+        if (!isBreakableObstacle(level, pos)) {
+            return false;
+        }
+        VoxelShape shape = level.getBlockState(pos).getCollisionShape(level, pos);
+        if (shape.isEmpty()) {
+            return false;
+        }
+        double topY = pos.getY() + shape.max(Direction.Axis.Y);
+        return topY > this.getY() + 0.55D;
+    }
+
+    private boolean isSafeFloorToDigDown(ServerLevel level, BlockPos floorPos, ServerPlayer target) {
+        int solidNeighbors = 0;
+        if (hasSolidSupport(level, floorPos.north())) solidNeighbors++;
+        if (hasSolidSupport(level, floorPos.south())) solidNeighbors++;
+        if (hasSolidSupport(level, floorPos.east())) solidNeighbors++;
+        if (hasSolidSupport(level, floorPos.west())) solidNeighbors++;
+        if (solidNeighbors < 2) {
+            return false;
+        }
+        int minSafeY = Math.max(level.getMinBuildHeight() + 2, target.getBlockY() - 4);
+        for (int y = floorPos.getY() - 1; y >= minSafeY; y--) {
+            BlockPos check = new BlockPos(floorPos.getX(), y, floorPos.getZ());
+            if (level.getFluidState(check).is(FluidTags.LAVA)) {
+                return false;
+            }
+            if (hasSolidSupport(level, check)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean isBreakableObstacle(ServerLevel level, BlockPos pos) {
@@ -1331,7 +2715,6 @@ public class CreepingDeathEntity extends PathfinderMob {
             level.destroyBlock(this.miningPos, true, this);
             this.miningPos = null;
             this.miningTicks = 0;
-            equipWeapon(this.godSword);
         }
     }
 

@@ -71,7 +71,7 @@ public class BodycamResetCameraPacket implements CustomPacketPayload {
         NightspyEffectHandler.end(sender);
 
         BodycamDummyEntity dummy = null;
-        if (data.contains("bodycam_dummy_uuid")) {
+        if (data.hasUUID("bodycam_dummy_uuid")) {
             UUID dummyId = data.getUUID("bodycam_dummy_uuid");
             for (ServerLevel lvl : sender.server.getAllLevels()) {
                 Entity e = lvl.getEntity(dummyId);
@@ -131,22 +131,31 @@ public class BodycamResetCameraPacket implements CustomPacketPayload {
                 }
             }
             Vec3 origPos = BodycamSetCameraPacket.ORIGINAL_POS.get(sender.getUUID());
-            if (origPos != null) {
+            if (origPos != null && Double.isFinite(origPos.x) && Double.isFinite(origPos.y) && Double.isFinite(origPos.z)) {
                 x = origPos.x;
                 y = origPos.y;
                 z = origPos.z;
             } else if (data.contains("bodycam_orig_x")) {
-                x = data.getDouble("bodycam_orig_x");
-                y = data.getDouble("bodycam_orig_y");
-                z = data.getDouble("bodycam_orig_z");
+                double ox = data.getDouble("bodycam_orig_x");
+                double oy = data.getDouble("bodycam_orig_y");
+                double oz = data.getDouble("bodycam_orig_z");
+                if (Double.isFinite(ox) && Double.isFinite(oy) && Double.isFinite(oz)) {
+                    x = ox;
+                    y = oy;
+                    z = oz;
+                }
             }
             Vec2 origRot = BodycamSetCameraPacket.ORIGINAL_ROT.get(sender.getUUID());
-            if (origRot != null) {
+            if (origRot != null && Float.isFinite(origRot.x) && Float.isFinite(origRot.y)) {
                 xRot = origRot.x;
                 yRot = origRot.y;
             } else if (data.contains("bodycam_orig_yrot")) {
-                yRot = data.getFloat("bodycam_orig_yrot");
-                xRot = data.getFloat("bodycam_orig_xrot");
+                float oyRot = data.getFloat("bodycam_orig_yrot");
+                float oxRot = data.getFloat("bodycam_orig_xrot");
+                if (Float.isFinite(oyRot) && Float.isFinite(oxRot)) {
+                    yRot = oyRot;
+                    xRot = oxRot;
+                }
             }
             lastPos = BodycamDummyEntity.DUMMY_POS.getOrDefault(sender.getUUID(), new Vec3(x, y, z));
             lastFall = BodycamDummyEntity.DUMMY_FALL.getOrDefault(sender.getUUID(), 0.0F);
@@ -231,7 +240,7 @@ public class BodycamResetCameraPacket implements CustomPacketPayload {
     }
 
     private static void notifyOldTargetObservationEnd(ServerPlayer sender, CompoundTag data) {
-        if (data.contains("bodycam_target_uuid")) {
+        if (data.hasUUID("bodycam_target_uuid")) {
             UUID oldTargetId = data.getUUID("bodycam_target_uuid");
             if (oldTargetId != null && sender.server != null) {
                 ServerPlayer oldTarget = sender.server.getPlayerList().getPlayer(oldTargetId);

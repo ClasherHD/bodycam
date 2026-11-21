@@ -1,12 +1,10 @@
 package dev.ClasherHD.bodycam.network.portal;
 
 import dev.ClasherHD.bodycam.bodycam;
-import dev.ClasherHD.bodycam.item.PortableNetherPortalItem;
 import dev.architectury.networking.NetworkManager;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.server.level.ServerPlayer;
 
 public class PortablePortalActionC2SPacket implements CustomPacketPayload {
     public static final Type<PortablePortalActionC2SPacket> TYPE = new Type<>(bodycam.id("portable_portal_action"));
@@ -33,10 +31,6 @@ public class PortablePortalActionC2SPacket implements CustomPacketPayload {
     }
 
     public static void handle(PortablePortalActionC2SPacket msg, NetworkManager.PacketContext context) {
-        context.queue(() -> {
-            if (context.getPlayer() instanceof ServerPlayer sender && msg.complete) {
-                PortableNetherPortalItem.executeTeleport(sender);
-            }
-        });
+        // Portal teleportation is completed server-side via PortableNetherPortalItem#finishUsingItem.
     }
 }

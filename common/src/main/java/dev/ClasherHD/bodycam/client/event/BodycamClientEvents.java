@@ -5,6 +5,7 @@ import dev.ClasherHD.bodycam.client.cache.ClientLocatorCache;
 import dev.ClasherHD.bodycam.client.camera.CameraSnapState;
 import dev.ClasherHD.bodycam.client.gui.BodycamViewScreen;
 import dev.ClasherHD.bodycam.client.gui.PlayerSelectionScreen;
+import dev.ClasherHD.bodycam.client.render.CreepingDeathRenderer;
 import dev.ClasherHD.bodycam.network.PacketHandler;
 import dev.ClasherHD.bodycam.network.bodycam.SyncBodycamRequestC2SPacket;
 import dev.ClasherHD.bodycam.registry.ModBlocks;
@@ -32,6 +33,7 @@ public final class BodycamClientEvents {
             BodycamViewScreen.lastIsAllSeeingEye = false;
             ClientBodycamCache.clear();
             ClientLocatorCache.clear();
+            CreepingDeathRenderer.clearProfileCache();
             PlayerSelectionScreen.observingMe.clear();
             CameraSnapState.clearAll();
         });

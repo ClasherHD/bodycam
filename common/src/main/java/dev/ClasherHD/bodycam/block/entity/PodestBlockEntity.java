@@ -225,11 +225,12 @@ public class PodestBlockEntity extends BlockEntity {
                 return origVec;
             }
             if (pData.contains("bodycam_orig_x")) {
-                return new Vec3(
-                        pData.getDouble("bodycam_orig_x"),
-                        pData.getDouble("bodycam_orig_y"),
-                        pData.getDouble("bodycam_orig_z")
-                );
+                double ox = pData.getDouble("bodycam_orig_x");
+                double oy = pData.getDouble("bodycam_orig_y");
+                double oz = pData.getDouble("bodycam_orig_z");
+                if (Double.isFinite(ox) && Double.isFinite(oy) && Double.isFinite(oz)) {
+                    return new Vec3(ox, oy, oz);
+                }
             }
         }
         return player.position();

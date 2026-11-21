@@ -2,6 +2,7 @@ package dev.ClasherHD.bodycam.mixin;
 
 import dev.ClasherHD.bodycam.item.ItemDurabilityHelper;
 import dev.ClasherHD.bodycam.item.PortableNetherPortalItem;
+import dev.architectury.platform.Platform;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AnvilMenu;
 import net.minecraft.world.inventory.ContainerLevelAccess;
@@ -29,6 +30,9 @@ public abstract class AnvilMenuMixin extends ItemCombinerMenu {
 
     @Inject(method = "createResult", at = @At("HEAD"), cancellable = true)
     private void bodycam$restrictAnvil(CallbackInfo ci) {
+        if (!Platform.isFabric()) {
+            return;
+        }
         ItemStack left = this.inputSlots.getItem(0);
         ItemStack right = this.inputSlots.getItem(1);
         if (left.isEmpty() || right.isEmpty()) {

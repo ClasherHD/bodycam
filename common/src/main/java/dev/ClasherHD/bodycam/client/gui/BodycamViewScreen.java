@@ -63,6 +63,10 @@ public class BodycamViewScreen extends Screen {
     private int lastDamageTier = 0;
     private long lastRenderNanoTime = System.nanoTime();
     private final String cachedExitText;
+    private final Component cachedRecComponent;
+    private final String cachedDotWithSpace;
+    private static final Component SIGNAL_CRITICAL_COMPONENT = Component.translatable("gui.bodycam.signal_critical");
+    private static final Component SIGNAL_WEAK_COMPONENT = Component.translatable("gui.bodycam.signal_weak");
     private int textTickTimer = 60;
 
     public BodycamViewScreen(UUID targetId, String targetName, boolean isOnHologram) {
@@ -90,6 +94,8 @@ public class BodycamViewScreen extends Screen {
                 "gui.bodycam.exit_message",
                 Minecraft.getInstance().options.keyShift.getTranslatedKeyMessage()
         ).getString();
+        this.cachedRecComponent = Component.translatable("gui.bodycam.rec", this.targetName);
+        this.cachedDotWithSpace = (this.isAllSeeingEye ? "\u25c9" : "\u25cf") + " ";
     }
 
     public UUID getTargetId() {
@@ -241,21 +247,20 @@ public class BodycamViewScreen extends Screen {
             RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 
             if (damageTier >= 3 && (System.currentTimeMillis() % 900L) < 600L) {
-                Component alert = Component.translatable(damageTier >= 4 ? "gui.bodycam.signal_critical" : "gui.bodycam.signal_weak");
+                Component alert = damageTier >= 4 ? SIGNAL_CRITICAL_COMPONENT : SIGNAL_WEAK_COMPONENT;
                 int alertColor = damageTier >= 4 ? 0xFFFF3B3B : 0xFFFFAA22;
                 int textW = this.font.width(alert);
                 graphics.drawString(this.font, alert, (this.width - textW) / 2, 10, alertColor, true);
             }
 
             if (ModClientConfig.SHOW_NAME_OVERLAY.get()) {
-                Component recComp = Component.translatable("gui.bodycam.rec", this.targetName);
                 String dotChar = this.isAllSeeingEye ? "\u25c9" : "\u25cf";
                 int dotColor = this.isAllSeeingEye ? 0xFFFFAA00 : 0xFFFF0000;
                 int textColor = 0xFFFFFFFF;
                 if ((System.currentTimeMillis() % 1000L) >= 500L) {
                     graphics.drawString(this.font, dotChar, 10, 10, dotColor, true);
                 }
-                graphics.drawString(this.font, recComp, 10 + this.font.width(dotChar + " "), 10, textColor, true);
+                graphics.drawString(this.font, this.cachedRecComponent, 10 + this.font.width(this.cachedDotWithSpace), 10, textColor, true);
             }
 
             if (ModClientConfig.SHOW_SHIFT_OVERLAY.get()) {
@@ -302,7 +307,9 @@ public class BodycamViewScreen extends Screen {
                     }
                 }
             }
-        } catch (Exception e) {
+        } catch (Exception ignored) {
+        } finally {
+            RenderSystem.disableBlend();
         }
     }
 

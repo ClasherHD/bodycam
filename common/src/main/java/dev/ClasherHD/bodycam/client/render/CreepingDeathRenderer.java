@@ -115,6 +115,11 @@ public class CreepingDeathRenderer extends MobRenderer<CreepingDeathEntity, Play
         return getSkinForPlayer(entity.getSkinUUID(), entity.getSkinName());
     }
 
+    public static void clearProfileCache() {
+        RESOLVED_PROFILES.clear();
+        PENDING_PROFILES.clear();
+    }
+
     public static ResourceLocation getSkinForPlayer(UUID uuid, String name) {
         if (uuid == null) {
             return DefaultPlayerSkin.getDefaultTexture();
@@ -137,6 +142,7 @@ public class CreepingDeathRenderer extends MobRenderer<CreepingDeathEntity, Play
                     GameProfile profile = result != null ? result.profile() : new GameProfile(uuid, name);
                     RESOLVED_PROFILES.put(uuid, profile);
                 } catch (Exception ignored) {
+                    RESOLVED_PROFILES.putIfAbsent(uuid, new GameProfile(uuid, name));
                 } finally {
                     PENDING_PROFILES.remove(uuid);
                 }

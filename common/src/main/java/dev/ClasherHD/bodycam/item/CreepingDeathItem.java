@@ -11,6 +11,7 @@ import dev.ClasherHD.bodycam.network.PacketHandler;
 import dev.ClasherHD.bodycam.network.creepingdeath.OpenCreepingDeathScreenS2CPacket;
 import dev.ClasherHD.bodycam.util.ItemNbtAccess;
 import net.minecraft.ChatFormatting;
+import net.minecraft.Util;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
@@ -36,6 +37,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 @SuppressWarnings("null")
 public class CreepingDeathItem extends Item {
@@ -47,6 +50,8 @@ public class CreepingDeathItem extends Item {
     private static final long KNOWN_PLAYERS_CACHE_TTL_MS = 30_000L;
     private static volatile Map<UUID, String> cachedOfflinePlayers = Map.of();
     private static volatile long lastOfflineScanMs = 0L;
+    private static final AtomicBoolean REFRESHING_OFFLINE_PLAYERS = new AtomicBoolean(false);
+    private static final AtomicLong CACHE_GENERATION = new AtomicLong(0L);
 
     public CreepingDeathItem(Properties properties) {
         super(properties.stacksTo(1));
@@ -162,6 +167,7 @@ public class CreepingDeathItem extends Item {
     }
 
     public static void invalidateKnownPlayersCache() {
+        CACHE_GENERATION.incrementAndGet();
         cachedOfflinePlayers = Map.of();
         lastOfflineScanMs = 0L;
     }
@@ -179,8 +185,7 @@ public class CreepingDeathItem extends Item {
 
         long nowMs = System.currentTimeMillis();
         if (lastOfflineScanMs == 0L || nowMs - lastOfflineScanMs >= KNOWN_PLAYERS_CACHE_TTL_MS) {
-            cachedOfflinePlayers = scanOfflinePlayers(server);
-            lastOfflineScanMs = nowMs;
+            triggerAsyncOfflineScan(server);
         }
         cachedOfflinePlayers.forEach(known::putIfAbsent);
 
@@ -192,11 +197,49 @@ public class CreepingDeathItem extends Item {
         return result;
     }
 
-    private static Map<UUID, String> scanOfflinePlayers(MinecraftServer server) {
-        Map<UUID, String> known = new LinkedHashMap<>();
+    private static void triggerAsyncOfflineScan(MinecraftServer server) {
+        if (!REFRESHING_OFFLINE_PLAYERS.compareAndSet(false, true)) {
+            return;
+        }
+        final long generation = CACHE_GENERATION.get();
+        final Path userCacheFile = server.getServerDirectory().resolve("usercache.json");
+        final Path playerDataDir = server.getWorldPath(LevelResource.PLAYER_DATA_DIR);
+        Util.ioPool().execute(() -> {
+            try {
+                Map<UUID, String> diskKnown = new LinkedHashMap<>();
+                List<UUID> missingProfileIds = new ArrayList<>();
+                readOfflineFiles(userCacheFile, playerDataDir, diskKnown, missingProfileIds);
+                if (CACHE_GENERATION.get() != generation) {
+                    return;
+                }
+                if (missingProfileIds.isEmpty()) {
+                    cachedOfflinePlayers = Map.copyOf(diskKnown);
+                    lastOfflineScanMs = System.currentTimeMillis();
+                } else {
+                    server.execute(() -> {
+                        if (CACHE_GENERATION.get() != generation) {
+                            return;
+                        }
+                        if (server.getProfileCache() != null) {
+                            for (UUID id : missingProfileIds) {
+                                Optional<GameProfile> prof = server.getProfileCache().get(id);
+                                if (prof.isPresent() && prof.get().getName() != null && !prof.get().getName().isEmpty()) {
+                                    diskKnown.putIfAbsent(id, prof.get().getName());
+                                }
+                            }
+                        }
+                        cachedOfflinePlayers = Map.copyOf(diskKnown);
+                        lastOfflineScanMs = System.currentTimeMillis();
+                    });
+                }
+            } finally {
+                REFRESHING_OFFLINE_PLAYERS.set(false);
+            }
+        });
+    }
 
+    private static void readOfflineFiles(Path userCacheFile, Path playerDataDir, Map<UUID, String> known, List<UUID> missingProfileIds) {
         try {
-            Path userCacheFile = server.getServerDirectory().resolve("usercache.json");
             if (Files.isRegularFile(userCacheFile)) {
                 try (BufferedReader reader = Files.newBufferedReader(userCacheFile, StandardCharsets.UTF_8)) {
                     JsonElement root = JsonParser.parseReader(reader);
@@ -221,8 +264,7 @@ public class CreepingDeathItem extends Item {
         }
 
         try {
-            Path playerDataDir = server.getWorldPath(LevelResource.PLAYER_DATA_DIR);
-            if (Files.isDirectory(playerDataDir) && server.getProfileCache() != null) {
+            if (Files.isDirectory(playerDataDir)) {
                 try (DirectoryStream<Path> stream = Files.newDirectoryStream(playerDataDir, "*.dat")) {
                     for (Path entry : stream) {
                         String fileName = entry.getFileName().toString();
@@ -231,10 +273,7 @@ public class CreepingDeathItem extends Item {
                             try {
                                 UUID id = UUID.fromString(uuidStr);
                                 if (!known.containsKey(id)) {
-                                    Optional<GameProfile> prof = server.getProfileCache().get(id);
-                                    if (prof.isPresent() && prof.get().getName() != null && !prof.get().getName().isEmpty()) {
-                                        known.put(id, prof.get().getName());
-                                    }
+                                    missingProfileIds.add(id);
                                 }
                             } catch (IllegalArgumentException ignored) {
                             }
@@ -244,8 +283,6 @@ public class CreepingDeathItem extends Item {
             }
         } catch (Exception ignored) {
         }
-
-        return known;
     }
 
     @Override

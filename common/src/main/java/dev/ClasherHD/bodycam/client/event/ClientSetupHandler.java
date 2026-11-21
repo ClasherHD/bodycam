@@ -211,9 +211,7 @@ public final class ClientSetupHandler {
                             return GlobalPos.of(ResourceKey.create(Registries.DIMENSION, dimRl), targetPos);
                         }
                     } else if (state == 3) {
-                        if (ClientLocatorCache.structureTarget != null && ClientLocatorCache.structureTargetDimension != null) {
-                            return GlobalPos.of(ClientLocatorCache.structureTargetDimension, ClientLocatorCache.structureTarget);
-                        }
+                        return ClientLocatorCache.structureGlobalPos;
                     }
                     return null;
                 })

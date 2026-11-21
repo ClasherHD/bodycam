@@ -8,8 +8,11 @@ import dev.ClasherHD.bodycam.util.ItemNbtAccess;
 import dev.ClasherHD.bodycam.util.PersistentDataAccess;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
@@ -113,10 +116,18 @@ public class DimensionLocatorItem extends Item {
         ItemStack main = player.getMainHandItem();
         ItemStack off = player.getOffhandItem();
         ItemStack target = main.getItem() instanceof DimensionLocatorItem ? main : (off.getItem() instanceof DimensionLocatorItem ? off : ItemStack.EMPTY);
-        if (!target.isEmpty()) {
-            ItemNbtAccess.putString(target, "SelectedDimension", dimension);
-            player.sendSystemMessage(Component.translatable("message.bodycam.dimension_selected", dimension).withStyle(ChatFormatting.GREEN));
+        if (target.isEmpty() || ItemDurabilityHelper.isEmpty(target)) {
+            return;
         }
+        if (!dimension.isEmpty()) {
+            ResourceLocation id = ResourceLocation.tryParse(dimension);
+            if (id == null || player.server == null
+                    || player.server.getLevel(ResourceKey.create(Registries.DIMENSION, id)) == null) {
+                return;
+            }
+        }
+        ItemNbtAccess.putString(target, "SelectedDimension", dimension);
+        player.sendSystemMessage(Component.translatable("message.bodycam.dimension_selected", dimension).withStyle(ChatFormatting.GREEN));
     }
 
     @Override

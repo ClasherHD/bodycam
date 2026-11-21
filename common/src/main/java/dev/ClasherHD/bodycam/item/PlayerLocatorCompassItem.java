@@ -108,6 +108,9 @@ public class PlayerLocatorCompassItem extends Item {
             compass.resetToIdle(stack);
             return;
         }
+        if (ItemDurabilityHelper.isEmpty(stack)) {
+            return;
+        }
         ServerPlayer targetPlayer = player.server.getPlayerList().getPlayer(targetUuid);
         if (targetPlayer == null || EnchantmentLevels.isHiddenFromSelection(targetPlayer)) {
             compass.resetToIdle(stack);

@@ -1,7 +1,7 @@
 package dev.ClasherHD.bodycam.client.cache;
 
-import net.minecraft.ResourceLocationException;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -11,7 +11,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SuppressWarnings("null")
 class ClientLocatorCacheTest {
@@ -34,19 +33,26 @@ class ClientLocatorCacheTest {
         ResourceKey<Level> expectedKey = ResourceKey.create(Registries.DIMENSION, ResourceLocation.fromNamespaceAndPath("bodycam", "scrambled"));
         assertThat(ClientLocatorCache.structureTarget).isEqualTo(targetPos);
         assertThat(ClientLocatorCache.structureTargetDimension).isEqualTo(expectedKey);
+        assertThat(ClientLocatorCache.structureGlobalPos).isEqualTo(GlobalPos.of(expectedKey, targetPos));
 
         ClientLocatorCache.updateStructure(targetPos, null);
         assertThat(ClientLocatorCache.structureTarget).isEqualTo(targetPos);
         assertThat(ClientLocatorCache.structureTargetDimension).isNull();
+        assertThat(ClientLocatorCache.structureGlobalPos).isNull();
 
         ClientLocatorCache.clear();
         assertThat(ClientLocatorCache.structureTarget).isNull();
         assertThat(ClientLocatorCache.structureTargetDimension).isNull();
+        assertThat(ClientLocatorCache.structureGlobalPos).isNull();
     }
 
     @Test
-    void updateStructure_withInvalidDimension_throwsResourceLocationException() {
-        assertThatThrownBy(() -> ClientLocatorCache.updateStructure(BlockPos.ZERO, "Invalid Dimension"))
-                .isInstanceOf(ResourceLocationException.class);
+    void updateStructure_withInvalidDimension_clearsWithoutThrowing() {
+        ClientLocatorCache.updateStructure(new BlockPos(10, 64, 10), "minecraft:overworld");
+        ClientLocatorCache.updateStructure(BlockPos.ZERO, "Invalid Dimension");
+
+        assertThat(ClientLocatorCache.structureTarget).isNull();
+        assertThat(ClientLocatorCache.structureTargetDimension).isNull();
+        assertThat(ClientLocatorCache.structureGlobalPos).isNull();
     }
 }

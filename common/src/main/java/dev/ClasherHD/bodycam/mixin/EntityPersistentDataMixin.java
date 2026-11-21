@@ -34,6 +34,8 @@ public abstract class EntityPersistentDataMixin implements BodycamPersistentData
     private void bodycam$loadPersistentData(CompoundTag compound, CallbackInfo ci) {
         if (compound.contains("BodycamPersistentData", 10)) {
             this.bodycam$persistentData = compound.getCompound("BodycamPersistentData").copy();
+        } else {
+            this.bodycam$persistentData = null;
         }
     }
 }
