@@ -83,7 +83,7 @@ class ModServerConfigTest {
 
         assertThat(ModServerConfig.PORTAL_SEARCH_CHUNK_RADIUS.getDefault()).isEqualTo(8);
         assertThat(ModServerConfig.LOCATOR_SCAN_INTERVAL_TICKS.getDefault()).isEqualTo(50);
-        assertThat(ModServerConfig.PODEST_SPHERE_CHECK_INTERVAL_TICKS.getDefault()).isEqualTo(1);
+        assertThat(ModServerConfig.PODEST_SPHERE_CHECK_INTERVAL_TICKS.getDefault()).isEqualTo(10);
         assertThat(ModServerConfig.JAMMER_NORMAL_INTERVAL_TICKS.getDefault()).isEqualTo(20);
         assertThat(ModServerConfig.JAMMER_LIMITED_INTERVAL_TICKS.getDefault()).isEqualTo(40);
         assertThat(ModServerConfig.ANONYMIZER_INTERVAL_TICKS.getDefault()).isEqualTo(20);

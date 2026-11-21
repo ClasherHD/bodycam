@@ -27,6 +27,7 @@ import dev.ClasherHD.bodycam.registry.ModEnchantments;
 import dev.ClasherHD.bodycam.registry.ModItems;
 import dev.ClasherHD.bodycam.util.ModAdvancements;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -206,18 +207,21 @@ public class ServerEvents {
 
                 if (player.getPersistentData().contains("bodycam_orig_dim")) {
                     String dimStr = player.getPersistentData().getString("bodycam_orig_dim");
-                    ResourceKey<Level> dimKey = ResourceKey.create(
-                            Registries.DIMENSION,
-                            ResourceLocation.tryParse(dimStr)
-                    );
-                    ServerLevel origLvl = player.server.getLevel(dimKey);
-                    if (origLvl != null) {
-                        double ox = player.getPersistentData().getDouble("bodycam_orig_x");
-                        double oy = player.getPersistentData().getDouble("bodycam_orig_y");
-                        double oz = player.getPersistentData().getDouble("bodycam_orig_z");
-                        float oyrot = player.getPersistentData().getFloat("bodycam_orig_yrot");
-                        float oxrot = player.getPersistentData().getFloat("bodycam_orig_xrot");
-                        player.teleportTo(origLvl, ox, oy, oz, oyrot, oxrot);
+                    ResourceLocation dimRl = ResourceLocation.tryParse(dimStr);
+                    if (dimRl != null) {
+                        ResourceKey<Level> dimKey = ResourceKey.create(Registries.DIMENSION, dimRl);
+                        ServerLevel origLvl = player.server.getLevel(dimKey);
+                        if (origLvl != null) {
+                            double ox = player.getPersistentData().getDouble("bodycam_orig_x");
+                            double oy = player.getPersistentData().getDouble("bodycam_orig_y");
+                            double oz = player.getPersistentData().getDouble("bodycam_orig_z");
+                            float oyrot = player.getPersistentData().getFloat("bodycam_orig_yrot");
+                            float oxrot = player.getPersistentData().getFloat("bodycam_orig_xrot");
+                            if (Double.isFinite(ox) && Double.isFinite(oy) && Double.isFinite(oz)
+                                    && Float.isFinite(oyrot) && Float.isFinite(oxrot)) {
+                                player.teleportTo(origLvl, ox, oy, oz, oyrot, oxrot);
+                            }
+                        }
                     }
                 }
 
@@ -262,6 +266,7 @@ public class ServerEvents {
         if (!event.getEntity().level().isClientSide()
                 && event.getEntity() instanceof ServerPlayer player) {
             dev.ClasherHD.bodycam.network.locator.PlayerLocatorSelectC2SPacket.clearCooldown(player.getUUID());
+            LogBookItem.clearPlayerCooldown(player.getUUID());
             POSITION_LOCKS.remove(player.getUUID());
             BodycamSetCameraPacket.ORIGINAL_GAMEMODE.remove(player.getUUID());
             BodycamSetCameraPacket.ORIGINAL_DIM.remove(player.getUUID());
@@ -491,7 +496,10 @@ public class ServerEvents {
                 double fx = observer.getPersistentData().getDouble("bodycam_fog_x");
                 double fy = observer.getPersistentData().getDouble("bodycam_fog_y");
                 double fz = observer.getPersistentData().getDouble("bodycam_fog_z");
-                fogLevel.sendParticles(ParticleTypes.END_ROD, fx, fy + 1.0D, fz, 25, 0.85D, 0.85D, 0.85D, 0.03D);
+                if (Double.isFinite(fx) && Double.isFinite(fy) && Double.isFinite(fz)
+                        && fogLevel.isLoaded(BlockPos.containing(fx, fy, fz))) {
+                    fogLevel.sendParticles(ParticleTypes.END_ROD, fx, fy + 1.0D, fz, 25, 0.85D, 0.85D, 0.85D, 0.03D);
+                }
             }
 
             int cdFogTicks = observer.getPersistentData().getInt("bodycam_creeping_death_fog_ticks");
@@ -511,9 +519,12 @@ public class ServerEvents {
                 double fx = observer.getPersistentData().getDouble("bodycam_cd_fog_x");
                 double fy = observer.getPersistentData().getDouble("bodycam_cd_fog_y");
                 double fz = observer.getPersistentData().getDouble("bodycam_cd_fog_z");
-                fogLevel.sendParticles(ParticleTypes.LARGE_SMOKE, fx, fy + 1.0D, fz, 18, 0.75D, 0.85D, 0.75D, 0.02D);
-                fogLevel.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, fx, fy + 1.0D, fz, 8, 0.65D, 0.75D, 0.65D, 0.01D);
-                fogLevel.sendParticles(ParticleTypes.SCULK_SOUL, fx, fy + 1.0D, fz, 12, 0.75D, 0.85D, 0.75D, 0.03D);
+                if (Double.isFinite(fx) && Double.isFinite(fy) && Double.isFinite(fz)
+                        && fogLevel.isLoaded(BlockPos.containing(fx, fy, fz))) {
+                    fogLevel.sendParticles(ParticleTypes.LARGE_SMOKE, fx, fy + 1.0D, fz, 18, 0.75D, 0.85D, 0.75D, 0.02D);
+                    fogLevel.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, fx, fy + 1.0D, fz, 8, 0.65D, 0.75D, 0.65D, 0.01D);
+                    fogLevel.sendParticles(ParticleTypes.SCULK_SOUL, fx, fy + 1.0D, fz, 12, 0.75D, 0.85D, 0.75D, 0.03D);
+                }
             }
 
             ItemStack carried = observer.containerMenu.getCarried();
@@ -634,10 +645,10 @@ public class ServerEvents {
                     dummyPosVal = BodycamDummyEntity.DUMMY_POS.get(observer.getUUID());
                     String dimStr = BodycamSetCameraPacket.ORIGINAL_DIM.get(observer.getUUID());
                     if (dimStr != null && !dimStr.isEmpty()) {
-                        dummyDim = ResourceKey.create(
-                                Registries.DIMENSION,
-                                new ResourceLocation(dimStr)
-                        );
+                        ResourceLocation rl = ResourceLocation.tryParse(dimStr);
+                        if (rl != null) {
+                            dummyDim = ResourceKey.create(Registries.DIMENSION, rl);
+                        }
                     }
                 }
 

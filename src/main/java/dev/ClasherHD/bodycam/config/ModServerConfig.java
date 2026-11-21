@@ -146,7 +146,7 @@ public class ModServerConfig {
         LOCATOR_SCAN_INTERVAL_TICKS = BUILDER.comment("Tick interval for Player Locator portal/structure scanning")
                 .defineInRange("locatorScanIntervalTicks", 50, 1, 1200);
         PODEST_SPHERE_CHECK_INTERVAL_TICKS = BUILDER.comment("Tick interval for Podest redstone/state synchronization")
-                .defineInRange("podestSphereCheckIntervalTicks", 1, 1, 200);
+                .defineInRange("podestSphereCheckIntervalTicks", 10, 1, 200);
         JAMMER_NORMAL_INTERVAL_TICKS = BUILDER.comment("Ticks between 1 durability consumption for held/inventory Jammer (On mode)")
                 .defineInRange("jammerNormalIntervalTicks", 20, 1, 72000);
         JAMMER_LIMITED_INTERVAL_TICKS = BUILDER.comment("Ticks between 1 durability consumption for held/inventory Jammer (Limited mode)")

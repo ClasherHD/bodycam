@@ -34,6 +34,12 @@ public class CreepingDeathRenderer extends MobRenderer<CreepingDeathEntity, Play
 
     private static final Map<UUID, GameProfile> RESOLVED_PROFILES = new ConcurrentHashMap<>();
     private static final Set<UUID> PENDING_PROFILES = ConcurrentHashMap.newKeySet();
+    private static final int MAX_RESOLVED_PROFILES = 256;
+
+    public static void clearProfileCache() {
+        RESOLVED_PROFILES.clear();
+        PENDING_PROFILES.clear();
+    }
 
     private final PlayerModel<CreepingDeathEntity> classicModel;
     private final PlayerModel<CreepingDeathEntity> slimModel;
@@ -130,12 +136,16 @@ public class CreepingDeathRenderer extends MobRenderer<CreepingDeathEntity, Play
             return mc.getSkinManager().getInsecureSkinLocation(resolved);
         }
         if (name != null && !name.isEmpty() && PENDING_PROFILES.add(uuid)) {
+            if (RESOLVED_PROFILES.size() >= MAX_RESOLVED_PROFILES) {
+                RESOLVED_PROFILES.clear();
+            }
+            GameProfile initial = new GameProfile(uuid, name);
             Util.backgroundExecutor().execute(() -> {
                 try {
-                    GameProfile initial = new GameProfile(uuid, name);
                     GameProfile filled = mc.getMinecraftSessionService().fillProfileProperties(initial, false);
                     RESOLVED_PROFILES.put(uuid, filled != null ? filled : initial);
-                } catch (Exception ignored) {
+                } catch (Exception e) {
+                    RESOLVED_PROFILES.put(uuid, initial);
                 } finally {
                     PENDING_PROFILES.remove(uuid);
                 }

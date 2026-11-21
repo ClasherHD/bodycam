@@ -29,11 +29,14 @@ public class BodycamClientEvents {
     public static void onClientLogout(net.minecraftforge.client.event.ClientPlayerNetworkEvent.LoggingOut event) {
         dev.ClasherHD.bodycam.client.gui.BodycamViewScreen.isMonitoring = false;
         dev.ClasherHD.bodycam.client.gui.BodycamViewScreen.targetUuid = null;
+        dev.ClasherHD.bodycam.client.gui.BodycamViewScreen.targetNameStatic = null;
+        dev.ClasherHD.bodycam.client.gui.BodycamViewScreen.lastIsOnHologram = false;
         dev.ClasherHD.bodycam.client.gui.BodycamViewScreen.lastIsWatchPoint = false;
         dev.ClasherHD.bodycam.client.gui.BodycamViewScreen.lastIsAllSeeingEye = false;
         dev.ClasherHD.bodycam.client.cache.ClientBodycamCache.clear();
         dev.ClasherHD.bodycam.client.cache.ClientLocatorCache.clear();
         dev.ClasherHD.bodycam.client.gui.PlayerSelectionScreen.observingMe.clear();
+        dev.ClasherHD.bodycam.client.render.CreepingDeathRenderer.clearProfileCache();
     }
 
     @SubscribeEvent

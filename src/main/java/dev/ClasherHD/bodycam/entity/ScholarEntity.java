@@ -1130,7 +1130,8 @@ public class ScholarEntity extends AbstractVillager {
 
         if (tag.contains("HomeX") && tag.contains("HomeY") && tag.contains("HomeZ")) {
             BlockPos home = new BlockPos(tag.getInt("HomeX"), tag.getInt("HomeY"), tag.getInt("HomeZ"));
-            int radius = Math.max(16, Math.round(tag.getFloat("HomeRadius")));
+            float rawRadius = tag.getFloat("HomeRadius");
+            int radius = Float.isFinite(rawRadius) ? Mth.clamp(Math.round(rawRadius), 16, 256) : 16;
             this.restrictTo(home, radius);
         }
 

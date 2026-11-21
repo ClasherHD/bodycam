@@ -169,6 +169,13 @@ public class PortableNetherPortalItem extends Item {
     @Override
     public ItemStack finishUsingItem(ItemStack stack, Level level, LivingEntity livingEntity) {
         if (!level.isClientSide() && livingEntity instanceof ServerPlayer player) {
+            ResourceKey<Level> currentDim = level.dimension();
+            if (!ModServerConfig.ENABLE_PORTABLE_NETHER_PORTAL.get()
+                    || (ModServerConfig.OP_ONLY_MODE.get() && !player.hasPermissions(2))
+                    || player.getPersistentData().getBoolean("bodycam_active")
+                    || (currentDim != Level.OVERWORLD && currentDim != Level.NETHER)) {
+                return stack;
+            }
             int charges = getCharges(stack);
             if (charges > 0 && performDimensionTeleport(player)) {
                 dev.ClasherHD.bodycam.util.ModAdvancements.award(player, dev.ClasherHD.bodycam.util.ModAdvancements.USE_PORTABLE_PORTAL);
@@ -422,7 +429,7 @@ public class PortableNetherPortalItem extends Item {
                 && belowState.getFluidState().isEmpty();
 
         if (!hasSolidFloor) {
-            if (belowState.getDestroySpeed(level, belowPos) >= 0.0F || belowState.isAir() || !belowState.getFluidState().isEmpty()) {
+            if (belowState.getDestroySpeed(level, belowPos) >= 0.0F && level.getBlockEntity(belowPos) == null) {
                 level.setBlock(belowPos, Blocks.OBSIDIAN.defaultBlockState(), 3);
             }
         }

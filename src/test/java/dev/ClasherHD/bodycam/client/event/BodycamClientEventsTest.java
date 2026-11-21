@@ -60,6 +60,8 @@ class BodycamClientEventsTest {
     void onClientLogout_cleansClientState() {
         BodycamViewScreen.isMonitoring = true;
         BodycamViewScreen.targetUuid = UUID.randomUUID();
+        BodycamViewScreen.targetNameStatic = "TargetPlayer";
+        BodycamViewScreen.lastIsOnHologram = true;
         BodycamViewScreen.lastIsWatchPoint = true;
         ClientBodycamCache.jammers.put(UUID.randomUUID(), 2);
         ClientLocatorCache.structureTargetDimension = net.minecraft.world.level.Level.NETHER;
@@ -70,6 +72,8 @@ class BodycamClientEventsTest {
 
         assertThat(BodycamViewScreen.isMonitoring).isFalse();
         assertThat(BodycamViewScreen.targetUuid).isNull();
+        assertThat(BodycamViewScreen.targetNameStatic).isNull();
+        assertThat(BodycamViewScreen.lastIsOnHologram).isFalse();
         assertThat(BodycamViewScreen.lastIsWatchPoint).isFalse();
         assertThat(ClientBodycamCache.jammers).isEmpty();
         assertThat(ClientLocatorCache.structureTargetDimension).isNull();

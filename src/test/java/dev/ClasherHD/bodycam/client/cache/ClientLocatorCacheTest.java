@@ -13,7 +13,6 @@ import org.junit.jupiter.api.Test;
 import dev.ClasherHD.bodycam.test.MinecraftTestEnvironment;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SuppressWarnings("null")
 class ClientLocatorCacheTest {
@@ -127,10 +126,15 @@ class ClientLocatorCacheTest {
     }
 
     @Test
-    @DisplayName("updateStructure with invalid dimension resource location should throw ResourceLocationException")
-    void updateStructure_withInvalidDimensionResourceLocation_throwsException() {
+    @DisplayName("updateStructure with invalid dimension resource location should set dimension to null without throwing")
+    void updateStructure_withInvalidDimensionResourceLocation_setsDimensionNullSafely() {
         BlockPos pos = new BlockPos(0, 64, 0);
-        assertThatThrownBy(() -> ClientLocatorCache.updateStructure(pos, "Invalid Resource Location with Spaces"))
-                .isInstanceOf(net.minecraft.ResourceLocationException.class);
+        ClientLocatorCache.updateStructure(pos, "minecraft:overworld");
+        assertThat(ClientLocatorCache.structureTargetDimension).isNotNull();
+
+        ClientLocatorCache.updateStructure(pos, "Invalid Resource Location with Spaces");
+
+        assertThat(ClientLocatorCache.structureTarget).isEqualTo(pos);
+        assertThat(ClientLocatorCache.structureTargetDimension).isNull();
     }
 }

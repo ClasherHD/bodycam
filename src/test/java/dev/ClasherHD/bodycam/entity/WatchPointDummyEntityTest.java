@@ -1,8 +1,11 @@
 package dev.ClasherHD.bodycam.entity;
 
+import dev.ClasherHD.bodycam.block.entity.WatchPointBlockEntity;
 import dev.ClasherHD.bodycam.test.MinecraftTestEnvironment;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.players.PlayerList;
+import net.minecraft.world.level.Level;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,7 +16,10 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class WatchPointDummyEntityTest {
@@ -80,6 +86,37 @@ class WatchPointDummyEntityTest {
         UUID ownerId = UUID.randomUUID();
         List<WatchPointDummyEntity> list = WatchPointDummyEntity.getActiveForOwner(server, ownerId);
         assertThat(list).isEmpty();
+    }
+
+    @Test
+    @DisplayName("kickObservingOwner does not access unloaded WatchPoint block entity and accesses it when loaded")
+    void unloadedChunk_skipsBlockEntityAccess() throws Exception {
+        BlockPos wpPos = new BlockPos(128, 64, -128);
+        Level level = mock(Level.class);
+        when(level.isClientSide()).thenReturn(false);
+        when(level.isLoaded(wpPos)).thenReturn(false);
+
+        WatchPointDummyEntity dummy = mock(WatchPointDummyEntity.class);
+        MinecraftServer server = mock(MinecraftServer.class);
+        PlayerList playerList = mock(PlayerList.class);
+        when(server.getPlayerList()).thenReturn(playerList);
+        when(dummy.getServer()).thenReturn(server);
+        when(dummy.level()).thenReturn(level);
+        when(dummy.getWatchPointPos()).thenReturn(wpPos);
+        when(dummy.getOwnerUUID()).thenReturn(UUID.randomUUID());
+
+        Method kick = WatchPointDummyEntity.class.getDeclaredMethod("kickObservingOwner", boolean.class);
+        kick.setAccessible(true);
+        kick.invoke(dummy, false);
+        verify(level).isLoaded(wpPos);
+        verify(level, never()).getBlockEntity(wpPos);
+
+        when(level.isLoaded(wpPos)).thenReturn(true);
+        WatchPointBlockEntity be = mock(WatchPointBlockEntity.class);
+        when(level.getBlockEntity(wpPos)).thenReturn(be);
+        MinecraftTestEnvironment.setField(dummy, "kickedObservingOwner", false);
+        kick.invoke(dummy, false);
+        verify(level).getBlockEntity(wpPos);
     }
 
     private static class TestWatchPointDummy extends WatchPointDummyEntity {

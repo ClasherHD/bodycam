@@ -10,6 +10,7 @@ import dev.ClasherHD.bodycam.entity.CreepingDeathEntity;
 import dev.ClasherHD.bodycam.network.PacketHandler;
 import dev.ClasherHD.bodycam.network.creepingdeath.OpenCreepingDeathScreenS2CPacket;
 import net.minecraft.ChatFormatting;
+import net.minecraft.Util;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
@@ -38,6 +39,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 @SuppressWarnings("null")
 public class CreepingDeathItem extends Item {
@@ -168,10 +171,14 @@ public class CreepingDeathItem extends Item {
     private static final long KNOWN_PLAYERS_CACHE_TTL_MS = 30_000L;
     private static volatile Map<UUID, String> cachedOfflinePlayers = Map.of();
     private static volatile long lastOfflineScanMs = 0L;
+    private static final AtomicBoolean SCAN_IN_PROGRESS = new AtomicBoolean(false);
+    private static final AtomicLong CACHE_GENERATION = new AtomicLong(0L);
 
     public static void invalidateKnownPlayersCache() {
+        CACHE_GENERATION.incrementAndGet();
         cachedOfflinePlayers = Map.of();
         lastOfflineScanMs = 0L;
+        SCAN_IN_PROGRESS.set(false);
     }
 
     public static List<OpenCreepingDeathScreenS2CPacket.PlayerEntryData> collectAllKnownPlayers(MinecraftServer server) {
@@ -182,9 +189,20 @@ public class CreepingDeathItem extends Item {
         }
 
         long nowMs = System.currentTimeMillis();
-        if (lastOfflineScanMs == 0L || nowMs - lastOfflineScanMs >= KNOWN_PLAYERS_CACHE_TTL_MS) {
-            cachedOfflinePlayers = scanOfflinePlayers(server);
-            lastOfflineScanMs = nowMs;
+        if ((lastOfflineScanMs == 0L || nowMs - lastOfflineScanMs >= KNOWN_PLAYERS_CACHE_TTL_MS)
+                && SCAN_IN_PROGRESS.compareAndSet(false, true)) {
+            long gen = CACHE_GENERATION.get();
+            Util.ioPool().execute(() -> {
+                try {
+                    Map<UUID, String> scanned = scanOfflinePlayers(server);
+                    if (CACHE_GENERATION.get() == gen && server.isRunning()) {
+                        cachedOfflinePlayers = scanned;
+                        lastOfflineScanMs = System.currentTimeMillis();
+                    }
+                } finally {
+                    SCAN_IN_PROGRESS.set(false);
+                }
+            });
         }
         cachedOfflinePlayers.forEach(known::putIfAbsent);
 

@@ -171,15 +171,6 @@ public class PlayerLocatorCompassItem extends Item {
             }
         }
 
-        if (currentState == 1) {
-            if (currentTick % 20 == 0) {
-                PacketHandler.INSTANCE.send(
-                        PacketDistributor.PLAYER.with(() -> owner),
-                        new PlayerLocatorTargetUpdateS2CPacket(targetUUID, getTargetPosition(targetPlayer), getTargetDimension(targetPlayer))
-                );
-            }
-        }
-
         int reachLevel = EnchantmentLevels.reach(stack);
         long lastCheck = tag.getLong("LocatorLastCheckTick");
         String lastTargetDim = tag.getString("LocatorLastTargetDim");
@@ -192,12 +183,20 @@ public class PlayerLocatorCompassItem extends Item {
         boolean dimChanged = !currentTargetDim.equals(lastTargetDim) || !currentMyDim.equals(myLastDim);
         boolean periodic = (currentTick - lastCheck >= scanInterval);
 
+        boolean sentUpdate = false;
         if (dimChanged || periodic || !tag.contains("LocatorState")) {
-            calculateState(stack, owner, targetPlayer, reachLevel, currentTick);
+            sentUpdate = calculateState(stack, owner, targetPlayer, reachLevel, currentTick);
+        }
+
+        if (!sentUpdate && tag.getInt("LocatorState") == 1 && currentTick % 20 == 0) {
+            PacketHandler.INSTANCE.send(
+                    PacketDistributor.PLAYER.with(() -> owner),
+                    new PlayerLocatorTargetUpdateS2CPacket(targetUUID, getTargetPosition(targetPlayer), getTargetDimension(targetPlayer))
+            );
         }
     }
 
-    public void calculateState(ItemStack stack, ServerPlayer owner, ServerPlayer targetPlayer, int reachLevel, long currentTick) {
+    public boolean calculateState(ItemStack stack, ServerPlayer owner, ServerPlayer targetPlayer, int reachLevel, long currentTick) {
         CompoundTag tag = stack.getOrCreateTag();
         tag.putLong("LocatorLastCheckTick", currentTick);
 
@@ -256,8 +255,10 @@ public class PlayerLocatorCompassItem extends Item {
                         PacketDistributor.PLAYER.with(() -> owner),
                         new PlayerLocatorTargetUpdateS2CPacket(targetPlayer.getUUID(), getTargetPosition(targetPlayer), currentTargetDim)
                 );
+                return true;
             }
         }
+        return false;
     }
 
     private void updateCrossDimensionRouting(CompoundTag tag, ServerPlayer owner, ResourceKey<Level> targetDim,

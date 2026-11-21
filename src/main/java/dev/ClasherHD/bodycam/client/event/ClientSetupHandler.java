@@ -78,10 +78,13 @@ public class ClientSetupHandler {
                                 net.minecraft.core.BlockPos targetPos = dev.ClasherHD.bodycam.client.cache.ClientBodycamCache.positions.get(targetUUID);
                                 String targetDim = dev.ClasherHD.bodycam.client.cache.ClientBodycamCache.dimensions.get(targetUUID);
                                 if (targetPos != null && targetDim != null) {
-                                    return net.minecraft.core.GlobalPos.of(
-                                            net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, new ResourceLocation(targetDim)),
-                                            targetPos
-                                    );
+                                    ResourceLocation rl = ResourceLocation.tryParse(targetDim);
+                                    if (rl != null) {
+                                        return net.minecraft.core.GlobalPos.of(
+                                                net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, rl),
+                                                targetPos
+                                        );
+                                    }
                                 }
                             } else if (state == 3) {
                                 if (dev.ClasherHD.bodycam.client.cache.ClientLocatorCache.structureTarget != null && dev.ClasherHD.bodycam.client.cache.ClientLocatorCache.structureTargetDimension != null) {

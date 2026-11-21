@@ -3,15 +3,19 @@ package dev.ClasherHD.bodycam.event;
 import com.mojang.brigadier.CommandDispatcher;
 import dev.ClasherHD.bodycam.block.entity.PodestBlockEntity;
 import dev.ClasherHD.bodycam.entity.BodycamDummyEntity;
+import dev.ClasherHD.bodycam.item.LogBookItem;
 import dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket;
 import dev.ClasherHD.bodycam.registry.ModBlocks;
 import dev.ClasherHD.bodycam.registry.ModItems;
 import dev.ClasherHD.bodycam.test.MinecraftTestEnvironment;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
@@ -21,15 +25,24 @@ import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.server.ServerStoppedEvent;
+import net.minecraftforge.fml.ModList;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyDouble;
+import static org.mockito.ArgumentMatchers.anyFloat;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @SuppressWarnings("null")
@@ -150,11 +163,95 @@ class ServerEventsTest {
         when(player.getPersistentData()).thenReturn(persistentData);
 
         ServerEvents.POSITION_LOCKS.put(playerId, new ServerEvents.LockData(Level.OVERWORLD, 0, 0, 0, 0, 0));
+        LogBookItem.clearStaticState();
+        assertThat(LogBookItem.isOnCooldown(player)).isFalse();
+        assertThat(LogBookItem.isOnCooldown(player)).isTrue();
 
         PlayerEvent.PlayerLoggedOutEvent event = new PlayerEvent.PlayerLoggedOutEvent(player);
         ServerEvents.onPlayerLogout(event);
 
         assertThat(ServerEvents.POSITION_LOCKS).doesNotContainKey(playerId);
+        assertThat(LogBookItem.isOnCooldown(player)).isFalse();
+        LogBookItem.clearStaticState();
+    }
+
+    @Test
+    @DisplayName("onPlayerLogin safely handles invalid dimension string and non-finite recovery coordinates")
+    void onPlayerLogin_handlesInvalidDimensionAndNonFiniteCoords() {
+        ServerPlayer player = mock(ServerPlayer.class);
+        ServerLevel level = mock(ServerLevel.class);
+        net.minecraft.server.MinecraftServer server = mock(net.minecraft.server.MinecraftServer.class);
+        when(level.isClientSide()).thenReturn(false);
+        when(player.level()).thenReturn(level);
+        when(player.getUUID()).thenReturn(UUID.randomUUID());
+        MinecraftTestEnvironment.setField(player, "server", server);
+
+        CompoundTag persistent = new CompoundTag();
+        persistent.putBoolean("bodycam_active", true);
+        persistent.putString("bodycam_orig_dim", "Invalid Dimension String");
+        persistent.putDouble("bodycam_orig_x", Double.NaN);
+        persistent.putDouble("bodycam_orig_y", 64.0D);
+        persistent.putDouble("bodycam_orig_z", 0.0D);
+        when(player.getPersistentData()).thenReturn(persistent);
+
+        PlayerEvent.PlayerLoggedInEvent event = new PlayerEvent.PlayerLoggedInEvent(player);
+        assertThatCode(() -> ServerEvents.onPlayerLogin(event)).doesNotThrowAnyException();
+        verify(player, never()).teleportTo(any(), anyDouble(), anyDouble(), anyDouble(), anyFloat(), anyFloat());
+
+        CompoundTag nonFiniteTag = new CompoundTag();
+        nonFiniteTag.putBoolean("bodycam_active", true);
+        nonFiniteTag.putString("bodycam_orig_dim", "minecraft:overworld");
+        nonFiniteTag.putDouble("bodycam_orig_x", Double.POSITIVE_INFINITY);
+        nonFiniteTag.putDouble("bodycam_orig_y", 64.0D);
+        nonFiniteTag.putDouble("bodycam_orig_z", 0.0D);
+        when(player.getPersistentData()).thenReturn(nonFiniteTag);
+        when(server.getLevel(Level.OVERWORLD)).thenReturn(level);
+
+        assertThatCode(() -> ServerEvents.onPlayerLogin(event)).doesNotThrowAnyException();
+        verify(player, never()).teleportTo(any(), anyDouble(), anyDouble(), anyDouble(), anyFloat(), anyFloat());
+    }
+
+    @Test
+    @DisplayName("onPlayerTick skips fog particles when coordinates are non-finite or chunk is unloaded")
+    void onPlayerTick_guardsFogParticlesWithFiniteAndIsLoaded() {
+        ServerPlayer observer = mock(ServerPlayer.class);
+        ServerLevel level = mock(ServerLevel.class);
+        AbstractContainerMenu menu = mock(AbstractContainerMenu.class);
+        when(menu.getCarried()).thenReturn(ItemStack.EMPTY);
+        observer.containerMenu = menu;
+        when(level.isClientSide()).thenReturn(false);
+        when(observer.level()).thenReturn(level);
+        when(observer.serverLevel()).thenReturn(level);
+        when(observer.getUUID()).thenReturn(UUID.randomUUID());
+        observer.tickCount = 1;
+
+        CompoundTag persistent = new CompoundTag();
+        persistent.putInt("bodycam_all_seeing_fog_ticks", 2);
+        persistent.putDouble("bodycam_fog_x", Double.NaN);
+        persistent.putDouble("bodycam_fog_y", 64.0D);
+        persistent.putDouble("bodycam_fog_z", 0.0D);
+        when(observer.getPersistentData()).thenReturn(persistent);
+
+        try (MockedStatic<ModList> mockedModList = mockStatic(ModList.class)) {
+            ModList modList = mock(ModList.class);
+            when(modList.isLoaded("curios")).thenReturn(false);
+            mockedModList.when(ModList::get).thenReturn(modList);
+
+            TickEvent.PlayerTickEvent event = new TickEvent.PlayerTickEvent(TickEvent.Phase.END, observer);
+            ServerEvents.onPlayerTick(event);
+            verify(level, never()).sendParticles(any(), anyDouble(), anyDouble(), anyDouble(), anyInt(), anyDouble(), anyDouble(), anyDouble(), anyDouble());
+
+            persistent.putInt("bodycam_all_seeing_fog_ticks", 1);
+            persistent.putDouble("bodycam_fog_x", 10.0D);
+            when(level.isLoaded(BlockPos.containing(10.0D, 64.0D, 0.0D))).thenReturn(false);
+            ServerEvents.onPlayerTick(event);
+            verify(level, never()).sendParticles(any(), anyDouble(), anyDouble(), anyDouble(), anyInt(), anyDouble(), anyDouble(), anyDouble(), anyDouble());
+
+            persistent.putInt("bodycam_all_seeing_fog_ticks", 1);
+            when(level.isLoaded(BlockPos.containing(10.0D, 64.0D, 0.0D))).thenReturn(true);
+            ServerEvents.onPlayerTick(event);
+            verify(level).sendParticles(ParticleTypes.END_ROD, 10.0D, 65.0D, 0.0D, 25, 0.85D, 0.85D, 0.85D, 0.03D);
+        }
     }
 
     @Test

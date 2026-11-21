@@ -4,6 +4,7 @@ import dev.ClasherHD.bodycam.registry.ModItems;
 import dev.ClasherHD.bodycam.test.MinecraftTestEnvironment;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import org.junit.jupiter.api.BeforeAll;
@@ -14,8 +15,11 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @SuppressWarnings("null")
 class LogBookItemTest {
@@ -181,8 +185,27 @@ class LogBookItemTest {
     }
 
     @Test
-    @DisplayName("clearStaticState should clear cooldown tracking without error")
-    void clearStaticState_cleansUp() {
+    @DisplayName("clearStaticState and clearPlayerCooldown should manage monotonic cooldown tracking")
+    void cooldown_tracksAndClearsPerPlayer() {
+        LogBookItem.clearStaticState();
+        UUID p1 = UUID.randomUUID();
+        UUID p2 = UUID.randomUUID();
+        ServerPlayer player1 = mock(ServerPlayer.class);
+        ServerPlayer player2 = mock(ServerPlayer.class);
+        when(player1.getUUID()).thenReturn(p1);
+        when(player2.getUUID()).thenReturn(p2);
+
+        assertThat(LogBookItem.isOnCooldown(player1)).isFalse();
+        assertThat(LogBookItem.isOnCooldown(player1)).isTrue();
+        assertThat(LogBookItem.isOnCooldown(player2)).isFalse();
+
+        LogBookItem.clearPlayerCooldown(p1);
+        assertThat(LogBookItem.isOnCooldown(player1)).isFalse();
+        assertThat(LogBookItem.isOnCooldown(player2)).isTrue();
+
+        LogBookItem.clearPlayerCooldown(null);
+        LogBookItem.clearStaticState();
+        assertThat(LogBookItem.isOnCooldown(player2)).isFalse();
         LogBookItem.clearStaticState();
     }
 }

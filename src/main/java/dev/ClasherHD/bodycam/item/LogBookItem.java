@@ -36,6 +36,7 @@ public class LogBookItem extends Item {
     public static final int MAX_PAGES = 10;
     public static final int PIN_LENGTH = 4;
     public static final int ATTEMPT_COOLDOWN_TICKS = 20;
+    private static final long ATTEMPT_COOLDOWN_NANOS = ATTEMPT_COOLDOWN_TICKS * 50_000_000L;
 
     private static final Map<UUID, Long> LAST_ATTEMPT = new ConcurrentHashMap<>();
 
@@ -74,7 +75,7 @@ public class LogBookItem extends Item {
             }
             return builder.toString();
         } catch (Exception e) {
-            return pin;
+            throw new IllegalStateException("PIN hashing unavailable", e);
         }
     }
 
@@ -82,7 +83,12 @@ public class LogBookItem extends Item {
         if (!hasPin(stack)) {
             return true;
         }
-        return isValidPin(pin) && stack.getTag().getString(TAG_PIN).equals(hashPin(pin));
+        if (!isValidPin(pin)) {
+            return false;
+        }
+        byte[] expected = stack.getTag().getString(TAG_PIN).getBytes(StandardCharsets.UTF_8);
+        byte[] actual = hashPin(pin).getBytes(StandardCharsets.UTF_8);
+        return MessageDigest.isEqual(expected, actual);
     }
 
     public static boolean addPage(ItemStack book, CompoundTag pageData) {
@@ -123,10 +129,16 @@ public class LogBookItem extends Item {
         LAST_ATTEMPT.clear();
     }
 
+    public static void clearPlayerCooldown(UUID playerId) {
+        if (playerId != null) {
+            LAST_ATTEMPT.remove(playerId);
+        }
+    }
+
     public static boolean isOnCooldown(ServerPlayer player) {
-        long now = player.level().getGameTime();
+        long now = System.nanoTime();
         Long last = LAST_ATTEMPT.get(player.getUUID());
-        if (last != null && now - last < ATTEMPT_COOLDOWN_TICKS) {
+        if (last != null && (now - last) < ATTEMPT_COOLDOWN_NANOS) {
             return true;
         }
         LAST_ATTEMPT.put(player.getUUID(), now);

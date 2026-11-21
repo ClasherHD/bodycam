@@ -15,6 +15,8 @@ import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.nbt.CompoundTag;
@@ -24,12 +26,17 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @SuppressWarnings("null")
@@ -192,5 +199,79 @@ class PortableNetherPortalItemTest {
 
         InteractionResult result = item.useOn(context);
         assertThat(result).isEqualTo(InteractionResult.PASS);
+    }
+
+    @Test
+    @DisplayName("finishUsingItem re-verifies config, OP mode, bodycam_active, and dimension before teleporting")
+    void finishUsingItem_rechecksPreconditionsBeforeTeleport() {
+        com.electronwill.nightconfig.core.CommentedConfig cfg = com.electronwill.nightconfig.core.CommentedConfig.inMemory();
+        ModServerConfig.SPEC.acceptConfig(cfg);
+        try {
+            ServerPlayer player = mock(ServerPlayer.class);
+            net.minecraft.server.level.ServerLevel level = mock(net.minecraft.server.level.ServerLevel.class);
+            when(level.isClientSide()).thenReturn(false);
+            when(level.dimension()).thenReturn(Level.OVERWORLD);
+            when(player.hasPermissions(2)).thenReturn(true);
+
+            ItemStack stack = new ItemStack(item);
+            PortableNetherPortalItem.setCharges(stack, 2);
+
+            CompoundTag bodycamTag = new CompoundTag();
+            bodycamTag.putBoolean("bodycam_active", true);
+            when(player.getPersistentData()).thenReturn(bodycamTag);
+
+            ItemStack resBodycam = item.finishUsingItem(stack, level, player);
+            assertThat(PortableNetherPortalItem.getCharges(resBodycam)).isEqualTo(2);
+            verify(player, never()).getServer();
+
+            bodycamTag.putBoolean("bodycam_active", false);
+            when(level.dimension()).thenReturn(Level.END);
+            ItemStack resEnd = item.finishUsingItem(stack, level, player);
+            assertThat(PortableNetherPortalItem.getCharges(resEnd)).isEqualTo(2);
+
+            when(level.dimension()).thenReturn(Level.OVERWORLD);
+            cfg.set("general.enablePortableNetherPortal", false);
+            ModServerConfig.SPEC.acceptConfig(cfg);
+            ItemStack resDisabled = item.finishUsingItem(stack, level, player);
+            assertThat(PortableNetherPortalItem.getCharges(resDisabled)).isEqualTo(2);
+
+            cfg.set("general.enablePortableNetherPortal", true);
+            cfg.set("general.opOnlyMode", true);
+            ModServerConfig.SPEC.acceptConfig(cfg);
+            when(player.hasPermissions(2)).thenReturn(false);
+            ItemStack resNoOp = item.finishUsingItem(stack, level, player);
+            assertThat(PortableNetherPortalItem.getCharges(resNoOp)).isEqualTo(2);
+        } finally {
+            ModServerConfig.SPEC.acceptConfig(com.electronwill.nightconfig.core.CommentedConfig.inMemory());
+        }
+    }
+
+    @Test
+    @DisplayName("ensureSafeLanding protects block entities and unbreakable blocks while placing obsidian on air")
+    void ensureSafeLanding_protectsBlockEntitiesAndUnbreakableBlocks() throws Exception {
+        Method ensureSafeLanding = PortableNetherPortalItem.class.getDeclaredMethod(
+                "ensureSafeLanding", net.minecraft.server.level.ServerLevel.class, BlockPos.class);
+        ensureSafeLanding.setAccessible(true);
+
+        BlockPos feetPos = new BlockPos(0, 64, 0);
+        BlockPos headPos = feetPos.above();
+        BlockPos belowPos = feetPos.below();
+
+        net.minecraft.server.level.ServerLevel chestLevel = mock(net.minecraft.server.level.ServerLevel.class);
+        when(chestLevel.getBlockState(feetPos)).thenReturn(Blocks.AIR.defaultBlockState());
+        when(chestLevel.getBlockState(headPos)).thenReturn(Blocks.AIR.defaultBlockState());
+        BlockState chestState = Blocks.CHEST.defaultBlockState();
+        when(chestLevel.getBlockState(belowPos)).thenReturn(chestState);
+        when(chestLevel.getBlockEntity(belowPos)).thenReturn(mock(BlockEntity.class));
+        ensureSafeLanding.invoke(item, chestLevel, feetPos);
+        verify(chestLevel, never()).setBlock(eq(belowPos), any(BlockState.class), anyInt());
+
+        net.minecraft.server.level.ServerLevel airLevel = mock(net.minecraft.server.level.ServerLevel.class);
+        when(airLevel.getBlockState(feetPos)).thenReturn(Blocks.AIR.defaultBlockState());
+        when(airLevel.getBlockState(headPos)).thenReturn(Blocks.AIR.defaultBlockState());
+        when(airLevel.getBlockState(belowPos)).thenReturn(Blocks.AIR.defaultBlockState());
+        when(airLevel.getBlockEntity(belowPos)).thenReturn(null);
+        ensureSafeLanding.invoke(item, airLevel, feetPos);
+        verify(airLevel).setBlock(belowPos, Blocks.OBSIDIAN.defaultBlockState(), 3);
     }
 }

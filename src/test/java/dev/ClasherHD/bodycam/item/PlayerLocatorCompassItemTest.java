@@ -1,17 +1,36 @@
 package dev.ClasherHD.bodycam.item;
 
+import dev.ClasherHD.bodycam.block.entity.PodestBlockEntity;
+import dev.ClasherHD.bodycam.config.ModServerConfig;
 import dev.ClasherHD.bodycam.registry.ModItems;
 import dev.ClasherHD.bodycam.test.MinecraftTestEnvironment;
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.network.ServerGamePacketListenerImpl;
+import net.minecraft.server.players.PlayerList;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.fml.ModList;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @SuppressWarnings("null")
 class PlayerLocatorCompassItemTest {
@@ -113,5 +132,67 @@ class PlayerLocatorCompassItemTest {
         assertThat(item.shouldCauseReequipAnimation(stackA, stackB, false)).isFalse();
         assertThat(item.shouldCauseReequipAnimation(stackA, stackB, true)).isTrue();
         assertThat(item.shouldCauseReequipAnimation(stackA, other, false)).isTrue();
+    }
+
+    @Test
+    @DisplayName("inventoryTick recalculates state before sending 20-tick target coordinate updates")
+    void inventoryTick_recalculatesBeforeSendingCoordinates() {
+        ModServerConfig.SPEC.acceptConfig(com.electronwill.nightconfig.core.CommentedConfig.inMemory());
+        PodestBlockEntity.LOADED_PODESTS.clear();
+        UUID targetId = UUID.randomUUID();
+        ServerLevel overworld = mock(ServerLevel.class);
+        when(overworld.isClientSide()).thenReturn(false);
+        when(overworld.dimension()).thenReturn(Level.OVERWORLD);
+        when(overworld.getGameTime()).thenReturn(100L);
+
+        ServerPlayer owner = mock(ServerPlayer.class);
+        ServerGamePacketListenerImpl connection = mock(ServerGamePacketListenerImpl.class);
+        owner.connection = connection;
+        ServerPlayer target = mock(ServerPlayer.class);
+        MinecraftServer server = mock(MinecraftServer.class);
+        PlayerList playerList = mock(PlayerList.class);
+
+        MinecraftTestEnvironment.setField(owner, "server", server);
+        when(server.getPlayerList()).thenReturn(playerList);
+        when(playerList.getPlayer(targetId)).thenReturn(target);
+
+        when(owner.level()).thenReturn(overworld);
+        when(owner.isCreative()).thenReturn(true);
+        when(owner.blockPosition()).thenReturn(BlockPos.ZERO);
+        when(owner.getPersistentData()).thenReturn(new CompoundTag());
+
+        Inventory targetInv = mock(Inventory.class);
+        when(targetInv.getContainerSize()).thenReturn(0);
+        when(target.getInventory()).thenReturn(targetInv);
+        when(target.getUUID()).thenReturn(targetId);
+        when(target.level()).thenReturn(overworld);
+        when(target.blockPosition()).thenReturn(new BlockPos(50, 64, 50));
+        when(target.position()).thenReturn(new Vec3(50, 64, 50));
+        when(target.getArmorSlots()).thenReturn(java.util.Collections.emptyList());
+
+        CompoundTag targetPersistent = new CompoundTag();
+        targetPersistent.putUUID("bodycam_active_jammer_id", UUID.randomUUID());
+        targetPersistent.putLong("bodycam_jammer_heartbeat", 100L);
+        targetPersistent.putInt("bodycam_jammer_mode", 1);
+        when(target.getPersistentData()).thenReturn(targetPersistent);
+
+        ItemStack stack = new ItemStack(item);
+        CompoundTag tag = stack.getOrCreateTag();
+        tag.putUUID("LocatorTargetUUID", targetId);
+        tag.putInt("LocatorState", 1);
+        tag.putLong("LocatorLastCheckTick", 0L);
+        tag.putString("LocatorLastTargetDim", "minecraft:overworld");
+        tag.putString("LocatorLastMyDim", "minecraft:overworld");
+
+        try (MockedStatic<ModList> mockedModList = mockStatic(ModList.class)) {
+            ModList modList = mock(ModList.class);
+            when(modList.isLoaded("curios")).thenReturn(false);
+            mockedModList.when(ModList::get).thenReturn(modList);
+
+            item.inventoryTick(stack, overworld, owner, 0, true);
+        }
+
+        assertThat(tag.getInt("LocatorState")).isEqualTo(4);
+        verify(connection, never()).send(any());
     }
 }

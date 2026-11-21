@@ -417,6 +417,7 @@ public class BodycamViewScreen extends Screen {
         }
         tesselator.end();
         com.mojang.blaze3d.systems.RenderSystem.enableCull();
+        com.mojang.blaze3d.systems.RenderSystem.disableBlend();
     }
 
     @Override

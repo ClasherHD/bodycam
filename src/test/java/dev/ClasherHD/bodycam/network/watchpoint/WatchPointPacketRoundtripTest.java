@@ -1,13 +1,28 @@
 package dev.ClasherHD.bodycam.network.watchpoint;
 
+import dev.ClasherHD.bodycam.entity.WatchPointDummyEntity;
+import dev.ClasherHD.bodycam.test.MinecraftTestEnvironment;
 import io.netty.buffer.Unpooled;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraftforge.network.NetworkEvent;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.UUID;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyFloat;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @SuppressWarnings("null")
 class WatchPointPacketRoundtripTest {
@@ -169,5 +184,57 @@ class WatchPointPacketRoundtripTest {
 
         assertThat(decodedExtreme.yRot).isEqualTo(-360.0F);
         assertThat(decodedExtreme.xRot).isEqualTo(360.0F);
+    }
+
+    @Test
+    @DisplayName("WatchPointLookC2SPacket.handle should reject NaN/Infinity and apply valid finite rotations")
+    void watchPointLookC2SPacket_handle_rejectsNonFiniteAndAppliesFinite() {
+        MinecraftTestEnvironment.ensureBootstrapped();
+        UUID ownerId = UUID.randomUUID();
+        UUID dummyId = UUID.randomUUID();
+
+        ServerPlayer player = mock(ServerPlayer.class);
+        MinecraftServer server = mock(MinecraftServer.class);
+        MinecraftTestEnvironment.setField(player, "server", server);
+        CompoundTag persistent = new CompoundTag();
+        persistent.putBoolean("bodycam_active", true);
+        persistent.putBoolean("bodycam_watching_watchpoint", true);
+        persistent.putUUID("bodycam_target_uuid", dummyId);
+        when(player.getPersistentData()).thenReturn(persistent);
+        when(player.getUUID()).thenReturn(ownerId);
+
+        WatchPointDummyEntity dummy = mock(WatchPointDummyEntity.class);
+        when(dummy.getUUID()).thenReturn(dummyId);
+        when(dummy.getOwnerUUID()).thenReturn(ownerId);
+        when(dummy.isAlive()).thenReturn(true);
+        when(dummy.isRemoved()).thenReturn(false);
+
+        WatchPointDummyEntity.ACTIVE_WATCH_POINTS.add(dummy);
+        try {
+            NetworkEvent.Context ctx = mock(NetworkEvent.Context.class);
+            when(ctx.getSender()).thenReturn(player);
+            doAnswer(inv -> {
+                ((Runnable) inv.getArgument(0)).run();
+                return null;
+            }).when(ctx).enqueueWork(any(Runnable.class));
+
+            WatchPointLookC2SPacket.handle(new WatchPointLookC2SPacket(Float.NaN, 10.0F), () -> ctx);
+            WatchPointLookC2SPacket.handle(new WatchPointLookC2SPacket(10.0F, Float.POSITIVE_INFINITY), () -> ctx);
+            WatchPointLookC2SPacket.handle(new WatchPointLookC2SPacket(Float.NEGATIVE_INFINITY, Float.NaN), () -> ctx);
+
+            verify(dummy, never()).setYRot(anyFloat());
+            verify(dummy, never()).setXRot(anyFloat());
+            verify(player, never()).setYRot(anyFloat());
+            verify(player, never()).setXRot(anyFloat());
+
+            WatchPointLookC2SPacket.handle(new WatchPointLookC2SPacket(45.0F, -120.0F), () -> ctx);
+
+            verify(dummy).setYRot(45.0F);
+            verify(dummy).setXRot(-90.0F);
+            verify(player).setYRot(45.0F);
+            verify(player).setXRot(-90.0F);
+        } finally {
+            WatchPointDummyEntity.ACTIVE_WATCH_POINTS.remove(dummy);
+        }
     }
 }
