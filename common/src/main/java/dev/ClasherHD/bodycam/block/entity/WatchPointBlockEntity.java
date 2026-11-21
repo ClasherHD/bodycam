@@ -98,7 +98,7 @@ public class WatchPointBlockEntity extends BlockEntity {
         if (this.ownerUUID == null) {
             setOwner(player.getUUID(), player.getName().getString());
         } else if (!this.ownerUUID.equals(player.getUUID())) {
-            player.displayClientMessage(Component.translatable("message.bodycam.watch_point.not_owner").withStyle(ChatFormatting.RED), true);
+            player.sendOverlayMessage(Component.translatable("message.bodycam.watch_point.not_owner").withStyle(ChatFormatting.RED));
             return;
         }
 
@@ -121,21 +121,21 @@ public class WatchPointBlockEntity extends BlockEntity {
             this.activeDummyUUID = null;
             setChanged();
             serverLevel.playSound(null, this.worldPosition, ModSounds.WATCH_POINT_DEACTIVATE.get(), SoundSource.BLOCKS, 0.5F, 1.4F);
-            player.displayClientMessage(Component.translatable("message.bodycam.watch_point.deactivated").withStyle(ChatFormatting.RED), true);
+            player.sendOverlayMessage(Component.translatable("message.bodycam.watch_point.deactivated").withStyle(ChatFormatting.RED));
             return;
         }
 
         int totalCount = WatchPointDummyEntity.getTotalActiveCount();
         int maxTotal = ModServerConfig.MAX_WATCH_POINTS_TOTAL.get();
         if (totalCount >= maxTotal) {
-            player.displayClientMessage(Component.translatable("message.bodycam.watch_point.server_limit", maxTotal).withStyle(ChatFormatting.RED), true);
+            player.sendOverlayMessage(Component.translatable("message.bodycam.watch_point.server_limit", maxTotal).withStyle(ChatFormatting.RED));
             return;
         }
 
         List<WatchPointDummyEntity> playerDummies = WatchPointDummyEntity.getActiveForOwner(((ServerLevel) player.level()).getServer(), player.getUUID());
         int maxPlayer = ModServerConfig.MAX_WATCH_POINTS_PER_PLAYER.get();
         if (playerDummies.size() >= maxPlayer) {
-            player.displayClientMessage(Component.translatable("message.bodycam.watch_point.player_limit", maxPlayer).withStyle(ChatFormatting.RED), true);
+            player.sendOverlayMessage(Component.translatable("message.bodycam.watch_point.player_limit", maxPlayer).withStyle(ChatFormatting.RED));
             return;
         }
 
@@ -180,7 +180,7 @@ public class WatchPointBlockEntity extends BlockEntity {
         setChanged();
 
         serverLevel.playSound(null, this.worldPosition, ModSounds.WATCH_POINT_ACTIVATE.get(), SoundSource.BLOCKS, 0.5F, 1.4F);
-        player.displayClientMessage(Component.translatable("message.bodycam.watch_point.activated").withStyle(ChatFormatting.GREEN), true);
+        player.sendOverlayMessage(Component.translatable("message.bodycam.watch_point.activated").withStyle(ChatFormatting.GREEN));
     }
 
     private WatchPointDummyEntity findActiveDummy(ServerLevel serverLevel) {

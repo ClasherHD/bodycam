@@ -157,9 +157,8 @@ public class AllSeeingEyeItem extends Item {
         ItemStack stack = player.getItemInHand(hand);
         if (!isActivated(stack)) {
             if (!level.isClientSide() && player instanceof ServerPlayer sPlayer) {
-                sPlayer.displayClientMessage(
-                        Component.translatable("message.bodycam.all_seeing_eye.deactivated").withStyle(ChatFormatting.RED),
-                        true);
+                sPlayer.sendOverlayMessage(
+                        Component.translatable("message.bodycam.all_seeing_eye.deactivated").withStyle(ChatFormatting.RED));
             }
             return InteractionResult.FAIL;
         }

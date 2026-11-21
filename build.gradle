@@ -1,6 +1,7 @@
 plugins {
-    id "architectury-plugin" version "3.4.164"
-    id "dev.architectury.loom" version "1.13-SNAPSHOT" apply false
+    id "architectury-plugin" version "3.5.170"
+    id "dev.architectury.loom-no-remap" version "1.17.493" apply false
+    id "com.gradleup.shadow" version "9.4.3" apply false
 }
 
 architectury {
@@ -27,21 +28,20 @@ allprojects {
 
     tasks.withType(JavaCompile).configureEach {
         options.encoding = "UTF-8"
-        options.release = 21
+        options.release = 25
     }
 
     java {
         withSourcesJar()
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
+        sourceCompatibility = JavaVersion.VERSION_25
+        targetCompatibility = JavaVersion.VERSION_25
     }
 }
 
 subprojects {
-    apply plugin: "dev.architectury.loom"
+    apply plugin: "dev.architectury.loom-no-remap"
 
     loom {
-        silentMojangMappingsLicense()
         if (project.path != ":common") {
             runs {
                 configureEach {
@@ -59,13 +59,14 @@ subprojects {
 
     dependencies {
         minecraft "com.mojang:minecraft:${rootProject.property('minecraft_version')}"
-        mappings loom.officialMojangMappings()
         testImplementation "org.junit.jupiter:junit-jupiter:5.10.2"
+        testRuntimeOnly "org.junit.platform:junit-platform-launcher:1.10.2"
         testImplementation "org.assertj:assertj-core:3.25.3"
-        testImplementation "org.mockito:mockito-core:5.11.0"
+        testImplementation "org.mockito:mockito-core:5.24.0"
     }
 
     tasks.withType(Test).configureEach {
         useJUnitPlatform()
+        jvmArgs("-XX:+EnableDynamicAgentLoading")
     }
 }

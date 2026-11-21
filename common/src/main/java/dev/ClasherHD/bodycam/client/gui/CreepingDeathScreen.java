@@ -6,7 +6,7 @@ import dev.ClasherHD.bodycam.network.PacketHandler;
 import dev.ClasherHD.bodycam.network.creepingdeath.CreepingDeathActionC2SPacket;
 import dev.ClasherHD.bodycam.network.creepingdeath.OpenCreepingDeathScreenS2CPacket;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.ObjectSelectionList;
 import net.minecraft.client.gui.screens.Screen;
@@ -82,23 +82,23 @@ public class CreepingDeathScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        super.renderBackground(graphics, mouseX, mouseY, partialTick);
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        super.extractBackground(graphics, mouseX, mouseY, partialTick);
         GuiRenderUtils.drawNineSlice(graphics, WINDOW_TEXTURE, this.guiX, this.guiY, this.guiWidth, this.guiHeight, 32, 32, 32, 32, 256, 256, 0xFF2E2E33);
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        super.render(graphics, mouseX, mouseY, partialTick);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
 
         if (this.listWidget != null) {
-            this.listWidget.render(graphics, mouseX, mouseY, partialTick);
+            this.listWidget.extractRenderState(graphics, mouseX, mouseY, partialTick);
         }
 
-        graphics.drawCenteredString(this.font, this.title, this.width / 2, this.guiY + 10, 0xFFFFFFFF);
+        graphics.centeredText(this.font, this.title, this.width / 2, this.guiY + 10, 0xFFFFFFFF);
 
         if ((this.entries == null || this.entries.isEmpty()) && this.mode == OpenCreepingDeathScreenS2CPacket.MODE_TARGET) {
-            graphics.drawCenteredString(
+            graphics.centeredText(
                     this.font,
                     Component.translatable("gui.bodycam.creeping_death.no_targets"),
                     this.width / 2,
@@ -123,11 +123,11 @@ public class CreepingDeathScreen extends Screen {
         }
 
         @Override
-        protected void renderListBackground(GuiGraphics graphics) {
+        protected void extractListBackground(GuiGraphicsExtractor graphics) {
         }
 
         @Override
-        protected void renderListSeparators(GuiGraphics graphics) {
+        protected void extractListSeparators(GuiGraphicsExtractor graphics) {
         }
 
         @Override
@@ -185,7 +185,7 @@ public class CreepingDeathScreen extends Screen {
         }
 
         @Override
-        public void renderContent(GuiGraphics graphics, int mouseX, int mouseY, boolean isMouseOver, float partialTick) {
+        public void extractContent(GuiGraphicsExtractor graphics, int mouseX, int mouseY, boolean isMouseOver, float partialTick) {
             int left = this.getContentX();
             int top = this.getContentY();
             int width = this.getContentWidth();
@@ -194,11 +194,11 @@ public class CreepingDeathScreen extends Screen {
             graphics.blit(RenderPipelines.GUI_TEXTURED, skin, left, top + 4, 8.0F, 8.0F, 32, 32, 8, 8, 64, 64);
             graphics.blit(RenderPipelines.GUI_TEXTURED, skin, left, top + 4, 40.0F, 8.0F, 32, 32, 8, 8, 64, 64);
 
-            graphics.drawString(CreepingDeathScreen.this.font, this.data.name(), left + 40, top + 16, 0xFFFFFFFF);
+            graphics.text(CreepingDeathScreen.this.font, this.data.name(), left + 40, top + 16, 0xFFFFFFFF);
 
             this.selectButton.setX(left + width - 85);
             this.selectButton.setY(top + 10);
-            this.selectButton.render(graphics, mouseX, mouseY, partialTick);
+            this.selectButton.extractRenderState(graphics, mouseX, mouseY, partialTick);
         }
 
         @Override

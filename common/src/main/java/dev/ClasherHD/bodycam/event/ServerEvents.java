@@ -9,7 +9,6 @@ import dev.ClasherHD.bodycam.entity.BodycamDummyEntity;
 import dev.ClasherHD.bodycam.entity.CreepingDeathEntity;
 import dev.ClasherHD.bodycam.entity.WatchPointDummyEntity;
 import dev.ClasherHD.bodycam.item.AnonymizerItem;
-import dev.ClasherHD.bodycam.item.CherryHouseExplorerMapItem;
 import dev.ClasherHD.bodycam.item.CreepingDeathItem;
 import dev.ClasherHD.bodycam.item.ItemDurabilityHelper;
 import dev.ClasherHD.bodycam.item.JammerItem;
@@ -37,11 +36,11 @@ import dev.architectury.event.events.common.LifecycleEvent;
 import dev.architectury.event.events.common.LootEvent;
 import dev.architectury.event.events.common.PlayerEvent;
 import dev.architectury.event.events.common.TickEvent;
-import dev.architectury.registry.level.entity.trade.TradeRegistry;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
@@ -53,7 +52,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.entity.npc.villager.VillagerProfession;
@@ -73,12 +71,12 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.storage.loot.LootPool;
+import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.entries.EmptyLootItem;
 import net.minecraft.world.level.storage.loot.entries.LootItem;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.minecraft.world.phys.Vec3;
 
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -213,49 +211,28 @@ public class ServerEvents {
                 }
             }
         });
-        LootEvent.MODIFY_LOOT_TABLE.register((id, context, builtin) -> {
-            if (id.identifier().equals(Identifier.withDefaultNamespace("chests/village/village_cartographer"))) {
-                context.addPool(LootPool.lootPool()
-                        .setRolls(ConstantValue.exactly(1.0F))
-                        .add(LootItem.lootTableItem(ModItems.CHERRY_HOUSE_EXPLORER_MAP.get()).setWeight(1))
-                        .add(EmptyLootItem.emptyItem().setWeight(6)));
+        LootEvent.MODIFY_LOOT_TABLE.register(new LootEvent.ModifyLootTable() {
+            @Override
+            @SuppressWarnings("removal")
+            public void modifyLootTable(ResourceKey<LootTable> id, LootEvent.LootTableModificationContext context, boolean builtin) {
+                modifyLootTable(null, id, context, builtin);
             }
-        });
-        TradeRegistry.registerVillagerTrade(VillagerProfession.CARTOGRAPHER, 3, (sLevel, trader, random) -> {
-            if (sLevel == null) {
-                return null;
+
+            @Override
+            public void modifyLootTable(HolderLookup.Provider registries, ResourceKey<LootTable> id, LootEvent.LootTableModificationContext context, boolean builtin) {
+                if (id.identifier().equals(Identifier.withDefaultNamespace("chests/village/village_cartographer"))) {
+                    context.addPool(LootPool.lootPool()
+                            .setRolls(ConstantValue.exactly(1.0F))
+                            .add(LootItem.lootTableItem(ModItems.CHERRY_HOUSE_EXPLORER_MAP.get()).setWeight(1))
+                            .add(EmptyLootItem.emptyItem().setWeight(6)));
+                }
             }
-            ItemStack map = CherryHouseExplorerMapItem.createExplorerMap(sLevel, trader.blockPosition());
-            if (map.isEmpty()) {
-                return null;
-            }
-            return new MerchantOffer(
-                    new ItemCost(Items.EMERALD, 14),
-                    Optional.of(new ItemCost(Items.COMPASS, 1)),
-                    map,
-                    0, 12, 10, 0.2F
-            );
-        });
-        TradeRegistry.registerTradeForWanderingTrader(TradeRegistry.WandererTradeType.RARE_TRADES, (sLevel, trader, random) -> {
-            if (sLevel == null) {
-                return null;
-            }
-            ItemStack map = CherryHouseExplorerMapItem.createExplorerMap(sLevel, trader.blockPosition());
-            if (map.isEmpty()) {
-                return null;
-            }
-            return new MerchantOffer(
-                    new ItemCost(Items.EMERALD, 16),
-                    Optional.of(new ItemCost(Items.COMPASS, 1)),
-                    map,
-                    0, 2, 10, 0.05F
-            );
         });
     }
 
-    private static InteractionResult onRightClickBlock(Player player, InteractionHand hand, BlockPos pos, Direction face) {
+    private static EventResult onRightClickBlock(Player player, InteractionHand hand, BlockPos pos, Direction face) {
         if (hand != InteractionHand.MAIN_HAND) {
-            return InteractionResult.PASS;
+            return EventResult.pass();
         }
         Level level = player.level();
         if (level.getBlockState(pos).is(Blocks.CARTOGRAPHY_TABLE)) {
@@ -277,7 +254,7 @@ public class ServerEvents {
                 if (!level.isClientSide() && player instanceof ServerPlayer sp) {
                     LogBookItem.handleCartographyInteraction(sp, book, other);
                 }
-                return InteractionResult.SUCCESS;
+                return EventResult.interruptTrue();
             }
         }
         if (!level.isClientSide() && player instanceof ServerPlayer sp && !sp.isSpectator()) {
@@ -296,7 +273,7 @@ public class ServerEvents {
                 }
             }
         }
-        return InteractionResult.PASS;
+        return EventResult.pass();
     }
 
     private static void clampLibrarianEnchantmentOffers(Villager villager) {

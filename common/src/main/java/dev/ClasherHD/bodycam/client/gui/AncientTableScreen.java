@@ -3,7 +3,7 @@ package dev.ClasherHD.bodycam.client.gui;
 import dev.ClasherHD.bodycam.block.entity.AncientTableBlockEntity;
 import dev.ClasherHD.bodycam.bodycam;
 import dev.ClasherHD.bodycam.menu.AncientTableMenu;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -32,9 +32,7 @@ public class AncientTableScreen extends AbstractContainerScreen<AncientTableMenu
     private static final int FUEL_BAR_HEIGHT = 4;
 
     public AncientTableScreen(AncientTableMenu menu, Inventory inventory, Component title) {
-        super(menu, inventory, title);
-        this.imageWidth = 176;
-        this.imageHeight = 166;
+        super(menu, inventory, title, 176, 166);
         this.titleLabelX = 100;
         this.titleLabelY = 30;
     }
@@ -50,14 +48,15 @@ public class AncientTableScreen extends AbstractContainerScreen<AncientTableMenu
     }
 
     @Override
-    protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
+    protected void extractLabels(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         int textWidth = font.width(title);
         int centeredX = 104 - textWidth / 2;
-        graphics.drawString(font, title, centeredX, titleLabelY, 0xFF404040, false);
+        graphics.text(font, title, centeredX, titleLabelY, 0xFF404040, false);
     }
 
     @Override
-    protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        super.extractBackground(graphics, mouseX, mouseY, partialTick);
         graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, leftPos, topPos, 0.0F, 0.0F, imageWidth, imageHeight, 256, 256);
 
         int fuel = menu.getFuel();
@@ -79,11 +78,5 @@ public class AncientTableScreen extends AbstractContainerScreen<AncientTableMenu
                         (float) PROGRESS_ARROW_U, (float) PROGRESS_ARROW_V, progressWidth, PROGRESS_ARROW_HEIGHT, 256, 256);
             }
         }
-    }
-
-    @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        super.render(graphics, mouseX, mouseY, partialTick);
-        renderTooltip(graphics, mouseX, mouseY);
     }
 }

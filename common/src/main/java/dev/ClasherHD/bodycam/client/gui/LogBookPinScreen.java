@@ -3,7 +3,8 @@ package dev.ClasherHD.bodycam.client.gui;
 import dev.ClasherHD.bodycam.network.PacketHandler;
 import dev.ClasherHD.bodycam.network.logbook.LogBookActionC2SPacket;
 import dev.ClasherHD.bodycam.network.logbook.OpenLogBookPinScreenS2CPacket;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -34,9 +35,8 @@ public class LogBookPinScreen extends Screen {
     }
 
     private EditBox createPinBox(int x, int y) {
-        EditBox box = new EditBox(this.font, x, y, 100, 20, Component.empty());
+        EditBox box = new PinEditBox(this.font, x, y, 100, 20, Component.empty());
         box.setMaxLength(4);
-        box.setFilter(text -> text.chars().allMatch(Character::isDigit));
         box.addFormatter((text, index) -> FormattedCharSequence.forward("*".repeat(text.length()), Style.EMPTY));
         box.setResponder(text -> this.updateConfirm());
         this.addRenderableWidget(box);
@@ -109,25 +109,62 @@ public class LogBookPinScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        super.render(graphics, mouseX, mouseY, partialTick);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
         int cx = this.width / 2;
         int top = this.height / 2 - 50;
-        graphics.drawCenteredString(this.font, this.title, cx, top - 12, 0xFFFFFFFF);
+        graphics.centeredText(this.font, this.title, cx, top - 12, 0xFFFFFFFF);
 
         Component primaryLabel = Component.translatable(this.mode == OpenLogBookPinScreenS2CPacket.MODE_SET
                 ? "gui.bodycam.logbook.new_pin" : "gui.bodycam.logbook.current_pin");
         if (this.mode == OpenLogBookPinScreenS2CPacket.MODE_UNLOCK) {
             primaryLabel = Component.translatable("gui.bodycam.logbook.pin");
         }
-        graphics.drawCenteredString(this.font, primaryLabel, cx, top + 8, 0xFFA0A0A0);
+        graphics.centeredText(this.font, primaryLabel, cx, top + 8, 0xFFA0A0A0);
         if (this.secondaryBox != null) {
-            graphics.drawCenteredString(this.font, Component.translatable("gui.bodycam.logbook.new_pin"), cx, top + 48, 0xFFA0A0A0);
+            graphics.centeredText(this.font, Component.translatable("gui.bodycam.logbook.new_pin"), cx, top + 48, 0xFFA0A0A0);
         }
     }
 
     @Override
     public boolean isPauseScreen() {
         return false;
+    }
+
+    private static class PinEditBox extends EditBox {
+        PinEditBox(Font font, int x, int y, int width, int height, Component message) {
+            super(font, x, y, width, height, message);
+        }
+
+        @Override
+        public void insertText(String text) {
+            if (text == null) {
+                return;
+            }
+            if (text.isEmpty()) {
+                super.insertText("");
+                return;
+            }
+            String digits = filterDigits(text);
+            if (!digits.isEmpty()) {
+                super.insertText(digits);
+            }
+        }
+
+        @Override
+        public void setValue(String value) {
+            super.setValue(value == null ? "" : filterDigits(value));
+        }
+
+        private static String filterDigits(String text) {
+            StringBuilder sb = new StringBuilder(text.length());
+            for (int i = 0; i < text.length(); i++) {
+                char c = text.charAt(i);
+                if (Character.isDigit(c)) {
+                    sb.append(c);
+                }
+            }
+            return sb.toString();
+        }
     }
 }

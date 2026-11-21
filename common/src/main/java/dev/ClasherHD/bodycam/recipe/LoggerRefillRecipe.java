@@ -1,12 +1,13 @@
 package dev.ClasherHD.bodycam.recipe;
 
+import com.mojang.serialization.MapCodec;
 import dev.ClasherHD.bodycam.item.LoggerItem;
 import dev.ClasherHD.bodycam.registry.ModItems;
 import dev.ClasherHD.bodycam.registry.ModRecipes;
-import net.minecraft.core.HolderLookup;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.crafting.CraftingBookCategory;
 import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.CustomRecipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
@@ -14,8 +15,13 @@ import net.minecraft.world.level.Level;
 
 @SuppressWarnings("null")
 public class LoggerRefillRecipe extends CustomRecipe {
-    public LoggerRefillRecipe(CraftingBookCategory category) {
-        super(category);
+    public static final LoggerRefillRecipe INSTANCE = new LoggerRefillRecipe();
+    public static final MapCodec<LoggerRefillRecipe> MAP_CODEC = MapCodec.unit(INSTANCE);
+    public static final StreamCodec<RegistryFriendlyByteBuf, LoggerRefillRecipe> STREAM_CODEC = StreamCodec.unit(INSTANCE);
+    public static final RecipeSerializer<LoggerRefillRecipe> SERIALIZER = new RecipeSerializer<>(MAP_CODEC, STREAM_CODEC);
+
+    public LoggerRefillRecipe() {
+        super();
     }
 
     @Override
@@ -42,7 +48,7 @@ public class LoggerRefillRecipe extends CustomRecipe {
     }
 
     @Override
-    public ItemStack assemble(CraftingInput input, HolderLookup.Provider registries) {
+    public ItemStack assemble(CraftingInput input) {
         ItemStack logger = ItemStack.EMPTY;
         int paperCount = 0;
         for (int i = 0; i < input.size(); i++) {
@@ -67,5 +73,15 @@ public class LoggerRefillRecipe extends CustomRecipe {
     @Override
     public RecipeSerializer<LoggerRefillRecipe> getSerializer() {
         return ModRecipes.LOGGER_REFILL_SERIALIZER.get();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof LoggerRefillRecipe;
+    }
+
+    @Override
+    public int hashCode() {
+        return LoggerRefillRecipe.class.hashCode();
     }
 }

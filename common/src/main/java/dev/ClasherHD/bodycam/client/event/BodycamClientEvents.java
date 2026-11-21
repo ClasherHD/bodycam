@@ -8,12 +8,12 @@ import dev.ClasherHD.bodycam.client.gui.PlayerSelectionScreen;
 import dev.ClasherHD.bodycam.network.PacketHandler;
 import dev.ClasherHD.bodycam.network.bodycam.SyncBodycamRequestC2SPacket;
 import dev.ClasherHD.bodycam.registry.ModBlocks;
+import dev.architectury.event.EventResult;
 import dev.architectury.event.events.client.ClientPlayerEvent;
 import dev.architectury.event.events.client.ClientTickEvent;
 import dev.architectury.event.events.common.InteractionEvent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 
 @SuppressWarnings("null")
@@ -36,19 +36,19 @@ public final class BodycamClientEvents {
             CameraSnapState.clearAll();
         });
         InteractionEvent.RIGHT_CLICK_ITEM.register((player, hand) ->
-                handleHologramInteraction(player, hand) ? InteractionResult.SUCCESS : InteractionResult.PASS
+                handleHologramInteraction(player, hand) ? EventResult.interruptTrue() : EventResult.pass()
         );
         InteractionEvent.CLIENT_RIGHT_CLICK_AIR.register(BodycamClientEvents::handleHologramInteraction);
         InteractionEvent.RIGHT_CLICK_BLOCK.register((player, hand, pos, face) ->
-                handleHologramInteraction(player, hand) ? InteractionResult.SUCCESS : InteractionResult.PASS
+                handleHologramInteraction(player, hand) ? EventResult.interruptTrue() : EventResult.pass()
         );
     }
 
     private static void onClientTick(Minecraft mc) {
         if (mc.player != null) {
             CameraSnapState.tickFrameGuard(mc.player);
-            if (BodycamViewScreen.isMonitoring && mc.screen == null && BodycamViewScreen.targetUuid != null) {
-                mc.setScreen(new BodycamViewScreen(
+            if (BodycamViewScreen.isMonitoring && mc.gui.screen() == null && BodycamViewScreen.targetUuid != null) {
+                mc.gui.setScreen(new BodycamViewScreen(
                         BodycamViewScreen.targetUuid,
                         BodycamViewScreen.targetNameStatic != null ? BodycamViewScreen.targetNameStatic : "",
                         BodycamViewScreen.lastIsOnHologram,
@@ -69,7 +69,7 @@ public final class BodycamClientEvents {
             return false;
         }
         if (player.level().isClientSide()) {
-            if (Minecraft.getInstance().screen == null) {
+            if (Minecraft.getInstance().gui.screen() == null) {
                 PacketHandler.sendToServer(new SyncBodycamRequestC2SPacket(true));
             }
         }

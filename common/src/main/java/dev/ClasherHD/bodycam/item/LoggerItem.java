@@ -124,16 +124,16 @@ public class LoggerItem extends Item {
             if (isActive(stack)) {
                 resetSession(stack);
                 level.playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.LOGGER_CANCEL.get(), SoundSource.PLAYERS, 0.6F, 0.6F);
-                sPlayer.displayClientMessage(Component.translatable("message.bodycam.logger.cancelled").withStyle(ChatFormatting.RED), true);
+                sPlayer.sendOverlayMessage(Component.translatable("message.bodycam.logger.cancelled").withStyle(ChatFormatting.RED));
             } else {
-                sPlayer.displayClientMessage(Component.translatable("message.bodycam.logger.not_active").withStyle(ChatFormatting.GRAY), true);
+                sPlayer.sendOverlayMessage(Component.translatable("message.bodycam.logger.not_active").withStyle(ChatFormatting.GRAY));
             }
             return InteractionResult.SUCCESS;
         }
 
         if (!isActive(stack)) {
             if (ItemDurabilityHelper.isEmpty(stack)) {
-                sPlayer.displayClientMessage(Component.translatable("message.bodycam.logger.empty").withStyle(ChatFormatting.RED), true);
+                sPlayer.sendOverlayMessage(Component.translatable("message.bodycam.logger.empty").withStyle(ChatFormatting.RED));
                 return InteractionResult.FAIL;
             }
             ItemNbtAccess.updateTag(stack, tag -> {
@@ -141,7 +141,7 @@ public class LoggerItem extends Item {
                 tag.put(TAG_ENTRIES, new ListTag());
             });
             level.playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.LOGGER_START.get(), SoundSource.PLAYERS, 0.6F, 1.2F);
-            sPlayer.displayClientMessage(Component.translatable("message.bodycam.logger.started").withStyle(ChatFormatting.GREEN), true);
+            sPlayer.sendOverlayMessage(Component.translatable("message.bodycam.logger.started").withStyle(ChatFormatting.GREEN));
             return InteractionResult.SUCCESS;
         }
 
@@ -166,7 +166,7 @@ public class LoggerItem extends Item {
             ModAdvancements.award(sPlayer, ModAdvancements.CAUGHT_ON_LOGGER);
         }
         level.playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.LOGGER_STOP.get(), SoundSource.PLAYERS, 0.8F, 1.0F);
-        sPlayer.displayClientMessage(Component.translatable("message.bodycam.logger.stopped", recorded).withStyle(ChatFormatting.AQUA), true);
+        sPlayer.sendOverlayMessage(Component.translatable("message.bodycam.logger.stopped", recorded).withStyle(ChatFormatting.AQUA));
         return InteractionResult.SUCCESS;
     }
 

@@ -113,11 +113,11 @@ public class AnonymizerItem extends Item {
             if (newState) {
                 level.playSound(null, sp.getX(), sp.getY(), sp.getZ(),
                         ModSounds.ANONYMIZER_USED2.get(), SoundSource.PLAYERS, 0.25F, 0.25F);
-                sp.displayClientMessage(Component.translatable("message.bodycam.anonymizer_on").withStyle(ChatFormatting.GREEN), true);
+                sp.sendOverlayMessage(Component.translatable("message.bodycam.anonymizer_on").withStyle(ChatFormatting.GREEN));
             } else {
                 level.playSound(null, sp.getX(), sp.getY(), sp.getZ(),
                         ModSounds.ANONYMIZER_USED1.get(), SoundSource.PLAYERS, 0.25F, 0.75F);
-                sp.displayClientMessage(Component.translatable("message.bodycam.anonymizer_off").withStyle(ChatFormatting.RED), true);
+                sp.sendOverlayMessage(Component.translatable("message.bodycam.anonymizer_off").withStyle(ChatFormatting.RED));
             }
         }
         return InteractionResult.SUCCESS;
@@ -182,7 +182,7 @@ public class AnonymizerItem extends Item {
                             pData.remove("bodycam_active_anonymizer_id");
                             level.playSound(null, player.getX(), player.getY(), player.getZ(),
                                     ModSounds.ANONYMIZER_USED1.get(), SoundSource.PLAYERS, 0.25F, 0.75F);
-                            player.displayClientMessage(Component.translatable("message.bodycam.anonymizer_off").withStyle(ChatFormatting.RED), true);
+                            player.sendOverlayMessage(Component.translatable("message.bodycam.anonymizer_off").withStyle(ChatFormatting.RED));
                         }
                         return;
                     }

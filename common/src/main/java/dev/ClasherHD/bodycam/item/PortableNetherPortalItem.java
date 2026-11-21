@@ -89,14 +89,14 @@ public class PortableNetherPortalItem extends Item {
 
         if (ModServerConfig.OP_ONLY_MODE.get() && !player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
             if (!level.isClientSide()) {
-                player.displayClientMessage(Component.translatable("message.bodycam.op_only").withStyle(ChatFormatting.RED), false);
+                player.sendSystemMessage(Component.translatable("message.bodycam.op_only").withStyle(ChatFormatting.RED));
             }
             return InteractionResult.FAIL;
         }
 
         if (!ModServerConfig.ENABLE_PORTABLE_NETHER_PORTAL.get()) {
             if (!level.isClientSide()) {
-                player.displayClientMessage(Component.translatable("message.bodycam.portable_portal_disabled").withStyle(ChatFormatting.RED), true);
+                player.sendOverlayMessage(Component.translatable("message.bodycam.portable_portal_disabled").withStyle(ChatFormatting.RED));
             }
             return InteractionResult.FAIL;
         }
@@ -112,7 +112,7 @@ public class PortableNetherPortalItem extends Item {
         int charges = getCharges(stack);
         if (charges <= 0) {
             if (!level.isClientSide()) {
-                player.displayClientMessage(Component.translatable("message.bodycam.portable_portal.not_charged").withStyle(ChatFormatting.RED), true);
+                player.sendOverlayMessage(Component.translatable("message.bodycam.portable_portal.not_charged").withStyle(ChatFormatting.RED));
             }
             return InteractionResult.FAIL;
         }
@@ -120,7 +120,7 @@ public class PortableNetherPortalItem extends Item {
         ResourceKey<Level> currentDim = level.dimension();
         if (currentDim != Level.OVERWORLD && currentDim != Level.NETHER) {
             if (!level.isClientSide()) {
-                player.displayClientMessage(Component.translatable("message.bodycam.portable_portal.invalid_dimension").withStyle(ChatFormatting.RED), true);
+                player.sendOverlayMessage(Component.translatable("message.bodycam.portable_portal.invalid_dimension").withStyle(ChatFormatting.RED));
             }
             return InteractionResult.FAIL;
         }
@@ -136,7 +136,7 @@ public class PortableNetherPortalItem extends Item {
     private InteractionResult tryBindPortal(Level level, Player player, ItemStack stack, BlockPos pos) {
         if (player != null && ModServerConfig.OP_ONLY_MODE.get() && !player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
             if (!level.isClientSide()) {
-                player.displayClientMessage(Component.translatable("message.bodycam.op_only").withStyle(ChatFormatting.RED), false);
+                player.sendSystemMessage(Component.translatable("message.bodycam.op_only").withStyle(ChatFormatting.RED));
             }
             return InteractionResult.FAIL;
         }
@@ -149,7 +149,7 @@ public class PortableNetherPortalItem extends Item {
             setCharges(stack, MAX_CHARGES);
             level.playSound(null, pos, SoundEvents.RESPAWN_ANCHOR_CHARGE, SoundSource.PLAYERS, 1.0F, 1.0F);
             if (player != null) {
-                player.displayClientMessage(Component.translatable("message.bodycam.portable_portal.charged").withStyle(ChatFormatting.LIGHT_PURPLE), true);
+                player.sendOverlayMessage(Component.translatable("message.bodycam.portable_portal.charged").withStyle(ChatFormatting.LIGHT_PURPLE));
             }
         }
         return InteractionResult.SUCCESS;
@@ -199,7 +199,7 @@ public class PortableNetherPortalItem extends Item {
             return;
         }
         if (!ModServerConfig.ENABLE_PORTABLE_NETHER_PORTAL.get()) {
-            player.displayClientMessage(Component.translatable("message.bodycam.portable_portal_disabled").withStyle(ChatFormatting.RED), true);
+            player.sendOverlayMessage(Component.translatable("message.bodycam.portable_portal_disabled").withStyle(ChatFormatting.RED));
             return;
         }
         if (PersistentDataAccess.get(player).getBooleanOr("bodycam_active", false)) {
@@ -215,12 +215,12 @@ public class PortableNetherPortalItem extends Item {
         PortableNetherPortalItem portalItem = (PortableNetherPortalItem) stack.getItem();
         int charges = getCharges(stack);
         if (charges <= 0) {
-            player.displayClientMessage(Component.translatable("message.bodycam.portable_portal.not_charged").withStyle(ChatFormatting.RED), true);
+            player.sendOverlayMessage(Component.translatable("message.bodycam.portable_portal.not_charged").withStyle(ChatFormatting.RED));
             return;
         }
         ResourceKey<Level> currentDim = player.level().dimension();
         if (currentDim != Level.OVERWORLD && currentDim != Level.NETHER) {
-            player.displayClientMessage(Component.translatable("message.bodycam.portable_portal.invalid_dimension").withStyle(ChatFormatting.RED), true);
+            player.sendOverlayMessage(Component.translatable("message.bodycam.portable_portal.invalid_dimension").withStyle(ChatFormatting.RED));
             return;
         }
         if (portalItem.performDimensionTeleport(player)) {

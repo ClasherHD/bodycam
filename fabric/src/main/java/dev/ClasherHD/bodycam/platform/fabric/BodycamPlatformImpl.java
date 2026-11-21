@@ -5,7 +5,6 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.util.Tuple;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -24,6 +23,7 @@ public final class BodycamPlatformImpl {
     private static volatile boolean trinketsChecked = false;
     private static volatile Method getTrinketComponentMethod = null;
     private static volatile Method getAllEquippedMethod = null;
+    private static volatile Method tupleGetBMethod = null;
 
     private BodycamPlatformImpl() {
     }
@@ -74,7 +74,15 @@ public final class BodycamPlatformImpl {
             }
             List<ItemStack> result = null;
             for (Object entry : list) {
-                if (entry instanceof Tuple<?, ?> tuple && tuple.getB() instanceof ItemStack stack && !stack.isEmpty() && stack.is(item)) {
+                if (entry == null) {
+                    continue;
+                }
+                Method getB = tupleGetBMethod;
+                if (getB == null || !getB.getDeclaringClass().isInstance(entry)) {
+                    getB = entry.getClass().getMethod("getB");
+                    tupleGetBMethod = getB;
+                }
+                if (getB.invoke(entry) instanceof ItemStack stack && !stack.isEmpty() && stack.is(item)) {
                     if (result == null) {
                         result = new ArrayList<>(2);
                     }

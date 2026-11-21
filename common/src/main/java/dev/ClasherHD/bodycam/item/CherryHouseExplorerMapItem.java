@@ -123,10 +123,9 @@ public class CherryHouseExplorerMapItem extends MapItem {
         if (!level.isClientSide() && level instanceof ServerLevel sLevel && player instanceof ServerPlayer sp) {
             if (!stack.has(DataComponents.MAP_ID)) {
                 if (!bindToNearestCherryHouse(stack, sLevel, sp.blockPosition())) {
-                    sp.displayClientMessage(
+                    sp.sendOverlayMessage(
                             Component.translatable("message.bodycam.cherry_house_explorer_map.not_found")
-                                    .withStyle(ChatFormatting.RED),
-                            true);
+                                    .withStyle(ChatFormatting.RED));
                     return InteractionResult.FAIL;
                 }
             }

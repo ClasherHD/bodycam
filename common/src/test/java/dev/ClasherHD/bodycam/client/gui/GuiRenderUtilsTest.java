@@ -1,6 +1,6 @@
 package dev.ClasherHD.bodycam.client.gui;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -23,7 +23,7 @@ class GuiRenderUtilsTest {
 
     @Test
     void drawBorder_ignoresNonPositiveDimensionsAndDrawsFourEdges() {
-        GuiGraphics graphics = mock(GuiGraphics.class);
+        GuiGraphicsExtractor graphics = mock(GuiGraphicsExtractor.class);
         GuiRenderUtils.drawBorder(graphics, 10, 20, 0, 10, 0xFFFFFFFF);
         GuiRenderUtils.drawBorder(graphics, 10, 20, 10, -5, 0xFFFFFFFF);
         verifyNoInteractions(graphics);

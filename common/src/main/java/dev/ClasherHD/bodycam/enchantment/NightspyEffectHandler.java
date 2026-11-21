@@ -100,7 +100,7 @@ public final class NightspyEffectHandler {
         if (level.dimensionType().hasFixedTime() || !level.dimensionType().hasSkyLight()) {
             return true;
         }
-        long time = level.getDayTime() % 24000L;
+        long time = level.getDefaultClockTime() % 24000L;
         return time >= NIGHT_START && time < NIGHT_END;
     }
 

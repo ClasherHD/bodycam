@@ -2,7 +2,7 @@ package dev.ClasherHD.bodycam.client.render;
 
 import dev.ClasherHD.bodycam.item.PortableNetherPortalItem;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.util.ARGB;
@@ -18,9 +18,9 @@ public final class PortalChannelOverlay {
     private PortalChannelOverlay() {
     }
 
-    public static void render(GuiGraphics graphics, float partialTick) {
+    public static void render(GuiGraphicsExtractor graphics, float partialTick) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.options.hideGui) {
+        if (mc.player == null || mc.gui.hud.isHidden()) {
             lastAlpha = 0.0F;
             return;
         }
@@ -56,10 +56,11 @@ public final class PortalChannelOverlay {
         drawNetherPortalOverlay(mc, graphics, alpha);
     }
 
-    private static void drawNetherPortalOverlay(Minecraft mc, GuiGraphics graphics, float alpha) {
-        TextureAtlasSprite sprite = mc.getBlockRenderer()
-                .getBlockModelShaper()
-                .getParticleIcon(Blocks.NETHER_PORTAL.defaultBlockState());
+    private static void drawNetherPortalOverlay(Minecraft mc, GuiGraphicsExtractor graphics, float alpha) {
+        TextureAtlasSprite sprite = mc.getModelManager()
+                .getBlockStateModelSet()
+                .getParticleMaterial(Blocks.NETHER_PORTAL.defaultBlockState())
+                .sprite();
         graphics.blitSprite(
                 RenderPipelines.GUI_TEXTURED,
                 sprite,

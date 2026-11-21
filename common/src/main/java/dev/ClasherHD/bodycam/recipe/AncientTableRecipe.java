@@ -14,6 +14,7 @@ import net.minecraft.core.NonNullList;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.PlacementInfo;
 import net.minecraft.world.item.crafting.Recipe;
@@ -91,7 +92,7 @@ public class AncientTableRecipe implements Recipe<RecipeInput> {
         }
     }
 
-    private record ResultSpec(ItemStack stack, Boolean explicitStartEmpty) {
+    private record ResultSpec(ItemStackTemplate template, Boolean explicitStartEmpty) {
         private static final Codec<ResultSpec> CODEC = Codec.PASSTHROUGH.flatXmap(
                 ResultSpec::decodeDynamic,
                 spec -> DataResult.error(() -> "Encoding ResultSpec is unsupported")
@@ -104,14 +105,14 @@ public class AncientTableRecipe implements Recipe<RecipeInput> {
             if (itemVal.isPresent() && stackDyn.get("id").result().isEmpty()) {
                 stackDyn = stackDyn.set("id", itemVal.get()).remove("item");
             }
-            return ItemStack.STRICT_CODEC.parse(stackDyn).map(stack -> new ResultSpec(stack, explicitStartEmpty));
+            return ItemStackTemplate.CODEC.parse(stackDyn).map(template -> new ResultSpec(template, explicitStartEmpty));
         }
     }
 
     private final CountedIngredient req0;
     private final CountedIngredient req1;
     private final CountedIngredient req2;
-    private final ItemStack outputTemplate;
+    private final ItemStackTemplate outputTemplate;
     private final boolean startEmpty;
     private final int crystalsRequired;
     private final int customDurationTicks;
@@ -120,7 +121,7 @@ public class AncientTableRecipe implements Recipe<RecipeInput> {
             CountedIngredient req0,
             CountedIngredient req1,
             CountedIngredient req2,
-            ItemStack outputTemplate,
+            ItemStackTemplate outputTemplate,
             boolean startEmpty,
             int crystalsRequired,
             int customDurationTicks
@@ -128,7 +129,7 @@ public class AncientTableRecipe implements Recipe<RecipeInput> {
         this.req0 = req0 != null ? req0 : CountedIngredient.EMPTY;
         this.req1 = req1 != null ? req1 : CountedIngredient.EMPTY;
         this.req2 = req2 != null ? req2 : CountedIngredient.EMPTY;
-        this.outputTemplate = outputTemplate != null ? outputTemplate : ItemStack.EMPTY;
+        this.outputTemplate = outputTemplate;
         this.startEmpty = startEmpty;
         this.crystalsRequired = Math.max(1, crystalsRequired);
         this.customDurationTicks = Math.max(0, customDurationTicks);
@@ -147,6 +148,10 @@ public class AncientTableRecipe implements Recipe<RecipeInput> {
     }
 
     public ItemStack getOutputTemplate() {
+        return outputTemplate != null ? outputTemplate.create() : ItemStack.EMPTY;
+    }
+
+    public ItemStackTemplate getOutputStackTemplate() {
         return outputTemplate;
     }
 
@@ -172,7 +177,10 @@ public class AncientTableRecipe implements Recipe<RecipeInput> {
     }
 
     public ItemStack createOutputStack() {
-        ItemStack result = outputTemplate.copy();
+        if (outputTemplate == null) {
+            return ItemStack.EMPTY;
+        }
+        ItemStack result = outputTemplate.create();
         if (startEmpty) {
             ItemDurabilityHelper.setEmpty(result);
         }
@@ -195,8 +203,18 @@ public class AncientTableRecipe implements Recipe<RecipeInput> {
     }
 
     @Override
-    public ItemStack assemble(RecipeInput input, HolderLookup.Provider registries) {
+    public ItemStack assemble(RecipeInput input) {
         return createOutputStack();
+    }
+
+    @Override
+    public String group() {
+        return "";
+    }
+
+    @Override
+    public boolean showNotification() {
+        return false;
     }
 
     public boolean canCraftInDimensions(int width, int height) {
@@ -246,12 +264,10 @@ public class AncientTableRecipe implements Recipe<RecipeInput> {
         return true;
     }
 
-    public static class Serializer implements RecipeSerializer<AncientTableRecipe> {
-        public static final Serializer INSTANCE = new Serializer();
-
+    public static final class Serializer {
         private static final MapCodec<AncientTableRecipe> CODEC = RecordCodecBuilder.<AncientTableRecipe>mapCodec(instance -> instance.group(
                 CountedIngredient.CODEC.listOf(1, 3).fieldOf("ingredients").forGetter(Serializer::collectCountedIngredients),
-                ResultSpec.CODEC.optionalFieldOf("result").forGetter(r -> Optional.of(new ResultSpec(r.outputTemplate, r.startEmpty))),
+                ResultSpec.CODEC.optionalFieldOf("result").forGetter(r -> r.outputTemplate != null ? Optional.of(new ResultSpec(r.outputTemplate, r.startEmpty)) : Optional.empty()),
                 ResultSpec.CODEC.optionalFieldOf("output").forGetter(r -> Optional.empty()),
                 Codec.BOOL.optionalFieldOf("start_empty").forGetter(r -> Optional.of(r.startEmpty)),
                 Codec.INT.optionalFieldOf("crystals").forGetter(r -> Optional.of(r.crystalsRequired)),
@@ -262,18 +278,26 @@ public class AncientTableRecipe implements Recipe<RecipeInput> {
             CountedIngredient r0 = !ingredients.isEmpty() ? ingredients.get(0) : CountedIngredient.EMPTY;
             CountedIngredient r1 = ingredients.size() > 1 ? ingredients.get(1) : CountedIngredient.EMPTY;
             CountedIngredient r2 = ingredients.size() > 2 ? ingredients.get(2) : CountedIngredient.EMPTY;
-            ResultSpec res = resultOpt.or(() -> outputOpt).orElse(new ResultSpec(ItemStack.EMPTY, null));
-            boolean defaultStartEmpty = ItemDurabilityHelper.isRepairableModItem(res.stack());
+            ResultSpec res = resultOpt.or(() -> outputOpt).orElse(new ResultSpec(null, null));
+            boolean defaultStartEmpty = res.template() != null
+                    && res.template().item().isBound()
+                    && ItemDurabilityHelper.isRepairableModItem(res.template().item().value());
             boolean startEmpty = res.explicitStartEmpty() != null
                     ? res.explicitStartEmpty()
                     : topStartEmpty.orElse(defaultStartEmpty);
             int crystals = crystalsOpt.or(() -> fuelCostOpt).orElse(1);
             int duration = durationOpt.or(() -> craftTimeOpt).orElse(0);
-            return new AncientTableRecipe(r0, r1, r2, res.stack(), startEmpty, crystals, duration);
+            return new AncientTableRecipe(r0, r1, r2, res.template(), startEmpty, crystals, duration);
         }));
 
         private static final StreamCodec<RegistryFriendlyByteBuf, AncientTableRecipe> STREAM_CODEC =
                 StreamCodec.of(Serializer::encode, Serializer::decode);
+
+        public static final RecipeSerializer<AncientTableRecipe> INSTANCE =
+                new RecipeSerializer<>(CODEC, STREAM_CODEC);
+
+        private Serializer() {
+        }
 
         private static List<CountedIngredient> collectCountedIngredients(AncientTableRecipe recipe) {
             List<CountedIngredient> list = new ArrayList<>();
@@ -296,7 +320,12 @@ public class AncientTableRecipe implements Recipe<RecipeInput> {
             writeCountedIngredient(buf, recipe.req0);
             writeCountedIngredient(buf, recipe.req1);
             writeCountedIngredient(buf, recipe.req2);
-            ItemStack.OPTIONAL_STREAM_CODEC.encode(buf, recipe.outputTemplate);
+            if (recipe.outputTemplate != null) {
+                buf.writeBoolean(true);
+                ItemStackTemplate.STREAM_CODEC.encode(buf, recipe.outputTemplate);
+            } else {
+                buf.writeBoolean(false);
+            }
             buf.writeBoolean(recipe.startEmpty);
             buf.writeVarInt(recipe.crystalsRequired);
             buf.writeVarInt(recipe.customDurationTicks);
@@ -306,7 +335,7 @@ public class AncientTableRecipe implements Recipe<RecipeInput> {
             CountedIngredient r0 = readCountedIngredient(buf);
             CountedIngredient r1 = readCountedIngredient(buf);
             CountedIngredient r2 = readCountedIngredient(buf);
-            ItemStack output = ItemStack.OPTIONAL_STREAM_CODEC.decode(buf);
+            ItemStackTemplate output = buf.readBoolean() ? ItemStackTemplate.STREAM_CODEC.decode(buf) : null;
             boolean startEmpty = buf.readBoolean();
             int crystals = buf.readVarInt();
             int customDurationTicks = buf.readVarInt();
@@ -329,17 +358,6 @@ public class AncientTableRecipe implements Recipe<RecipeInput> {
             }
             Ingredient ing = Ingredient.CONTENTS_STREAM_CODEC.decode(buf);
             return new CountedIngredient(ing, count);
-        }
-
-        @Override
-        public MapCodec<AncientTableRecipe> codec() {
-            return CODEC;
-        }
-
-        @Override
-        @SuppressWarnings("deprecation")
-        public StreamCodec<RegistryFriendlyByteBuf, AncientTableRecipe> streamCodec() {
-            return STREAM_CODEC;
         }
     }
 }

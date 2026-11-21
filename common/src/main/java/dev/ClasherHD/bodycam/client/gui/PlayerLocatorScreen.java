@@ -5,7 +5,7 @@ import dev.ClasherHD.bodycam.config.ModServerConfig;
 import dev.ClasherHD.bodycam.network.PacketHandler;
 import dev.ClasherHD.bodycam.network.locator.PlayerLocatorSelectC2SPacket;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.ObjectSelectionList;
 import net.minecraft.client.gui.screens.Screen;
@@ -81,20 +81,20 @@ public class PlayerLocatorScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        super.renderBackground(graphics, mouseX, mouseY, partialTick);
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        super.extractBackground(graphics, mouseX, mouseY, partialTick);
         GuiRenderUtils.drawNineSlice(graphics, WINDOW_TEXTURE, this.guiX, this.guiY, this.guiWidth, this.guiHeight, 32, 32, 32, 32, 256, 256);
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        super.render(graphics, mouseX, mouseY, partialTick);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
 
         if (this.listWidget != null) {
-            this.listWidget.render(graphics, mouseX, mouseY, partialTick);
+            this.listWidget.extractRenderState(graphics, mouseX, mouseY, partialTick);
         }
 
-        graphics.drawCenteredString(this.font, this.title, this.width / 2, this.guiY + 10, 0xFFFFFFFF);
+        graphics.centeredText(this.font, this.title, this.width / 2, this.guiY + 10, 0xFFFFFFFF);
     }
 
     @Override
@@ -112,11 +112,11 @@ public class PlayerLocatorScreen extends Screen {
         }
 
         @Override
-        protected void renderListBackground(GuiGraphics graphics) {
+        protected void extractListBackground(GuiGraphicsExtractor graphics) {
         }
 
         @Override
-        protected void renderListSeparators(GuiGraphics graphics) {
+        protected void extractListSeparators(GuiGraphicsExtractor graphics) {
         }
 
         @Override
@@ -154,14 +154,14 @@ public class PlayerLocatorScreen extends Screen {
                             PacketHandler.sendToServer(new PlayerLocatorSelectC2SPacket(this.playerInfo.getProfile().id(), false));
                         }
                         if (PlayerLocatorScreen.this.minecraft != null) {
-                            PlayerLocatorScreen.this.minecraft.setScreen(null);
+                            PlayerLocatorScreen.this.minecraft.gui.setScreen(null);
                         }
                     }
             ).bounds(0, 0, 80, 20).build();
         }
 
         @Override
-        public void renderContent(GuiGraphics graphics, int mouseX, int mouseY, boolean isMouseOver, float partialTick) {
+        public void extractContent(GuiGraphicsExtractor graphics, int mouseX, int mouseY, boolean isMouseOver, float partialTick) {
             int left = this.getContentX();
             int top = this.getContentY();
             int width = this.getContentWidth();
@@ -213,11 +213,11 @@ public class PlayerLocatorScreen extends Screen {
             graphics.blit(RenderPipelines.GUI_TEXTURED, skin, left + 4, top + 2, 8.0F, 8.0F, 32, 32, 8, 8, 64, 64);
             graphics.blit(RenderPipelines.GUI_TEXTURED, skin, left + 4, top + 2, 40.0F, 8.0F, 32, 32, 8, 8, 64, 64);
 
-            graphics.drawString(PlayerLocatorScreen.this.font, this.displayName, left + 44, top + 14, nameColor);
+            graphics.text(PlayerLocatorScreen.this.font, this.displayName, left + 44, top + 14, nameColor);
 
             this.selectButton.setX(left + width - 85);
             this.selectButton.setY(top + 8);
-            this.selectButton.render(graphics, mouseX, mouseY, partialTick);
+            this.selectButton.extractRenderState(graphics, mouseX, mouseY, partialTick);
         }
 
         @Override

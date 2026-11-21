@@ -3,7 +3,7 @@ package dev.ClasherHD.bodycam.fabric;
 import dev.ClasherHD.bodycam.client.event.ClientSetupHandler;
 import dev.ClasherHD.bodycam.client.render.GlowingArmorTrimLayer;
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.rendering.v1.LivingEntityFeatureRendererRegistrationCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.LivingEntityRenderLayerRegistrationCallback;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.player.AvatarRenderer;
@@ -14,7 +14,7 @@ public final class BodycamFabricClient implements ClientModInitializer {
     @SuppressWarnings({"unchecked", "rawtypes"})
     public void onInitializeClient() {
         ClientSetupHandler.registerMenusAndRenderers();
-        LivingEntityFeatureRendererRegistrationCallback.EVENT.register((entityType, entityRenderer, registrationHelper, context) -> {
+        LivingEntityRenderLayerRegistrationCallback.EVENT.register((entityType, entityRenderer, registrationHelper, context) -> {
             if (entityRenderer instanceof AvatarRenderer<?>) {
                 registrationHelper.register(new GlowingArmorTrimLayer<>((RenderLayerParent) entityRenderer, context.getModelSet()));
                 return;

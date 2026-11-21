@@ -9,7 +9,7 @@ import dev.ClasherHD.bodycam.network.bodycam.BodycamResetCameraPacket;
 import dev.ClasherHD.bodycam.registry.ModSounds;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.ObjectSelectionList;
 import net.minecraft.client.gui.screens.Screen;
@@ -176,25 +176,25 @@ public class PlayerSelectionScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        super.renderBackground(graphics, mouseX, mouseY, partialTick);
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        super.extractBackground(graphics, mouseX, mouseY, partialTick);
         int windowTint = this.isAllSeeingEye ? 0xFFFFD94D : 0xFFFFFFFF;
         GuiRenderUtils.drawNineSlice(graphics, WINDOW_TEXTURE, this.guiX, this.guiY, this.guiWidth, this.guiHeight, 32, 32, 32, 32, 256, 256, windowTint);
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        super.render(graphics, mouseX, mouseY, partialTick);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
 
         if (this.listWidget != null) {
-            this.listWidget.render(graphics, mouseX, mouseY, partialTick);
+            this.listWidget.extractRenderState(graphics, mouseX, mouseY, partialTick);
         }
 
         Component headerTitle = Component.translatable(this.showingWatchPoints ? "gui.bodycam.select_watch_point" : "gui.bodycam.select_player");
         if (this.isAllSeeingEye) {
             headerTitle = Component.literal("\u25c9 ").append(headerTitle).append(Component.literal(" \u25c9"));
         }
-        graphics.drawCenteredString(this.font, headerTitle, this.width / 2, this.guiY + 10, 0xFFFFFFFF);
+        graphics.centeredText(this.font, headerTitle, this.width / 2, this.guiY + 10, 0xFFFFFFFF);
     }
 
     @Override
@@ -212,11 +212,11 @@ public class PlayerSelectionScreen extends Screen {
         }
 
         @Override
-        protected void renderListBackground(GuiGraphics graphics) {
+        protected void extractListBackground(GuiGraphicsExtractor graphics) {
         }
 
         @Override
-        protected void renderListSeparators(GuiGraphics graphics) {
+        protected void extractListSeparators(GuiGraphicsExtractor graphics) {
         }
 
         @Override
@@ -238,9 +238,9 @@ public class PlayerSelectionScreen extends Screen {
         }
 
         @Override
-        public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        public void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
             graphics.enableScissor(this.getX(), this.getY(), this.getX() + this.width, this.getBottom());
-            super.renderWidget(graphics, mouseX, mouseY, partialTick);
+            super.extractWidgetRenderState(graphics, mouseX, mouseY, partialTick);
             graphics.disableScissor();
         }
 
@@ -270,8 +270,8 @@ public class PlayerSelectionScreen extends Screen {
                     (btn) -> {
                         PlayerSelectionScreen.this.listWidget.setSelected(this);
                         if (PlayerSelectionScreen.this.minecraft.level != null && PlayerSelectionScreen.this.isBeyondReach(this.targetId)) {
-                            PlayerSelectionScreen.this.minecraft.player.displayClientMessage(Component.translatable("message.bodycam.signal_weak").withStyle(ChatFormatting.RED), false);
-                            PlayerSelectionScreen.this.minecraft.setScreen(null);
+                            PlayerSelectionScreen.this.minecraft.player.sendSystemMessage(Component.translatable("message.bodycam.signal_weak").withStyle(ChatFormatting.RED));
+                            PlayerSelectionScreen.this.minecraft.gui.setScreen(null);
                             return;
                         }
                         try {
@@ -281,7 +281,7 @@ public class PlayerSelectionScreen extends Screen {
                             PlayerSelectionScreen.this.minecraft.getSoundManager().playDelayed(SimpleSoundInstance.forUI(ModSounds.MONITOR_SELECT_RESONATE4.get(), 2.0F, 0.06F), 30);
                             PlayerSelectionScreen.this.minecraft.getSoundManager().play(SimpleSoundInstance.forUI(ModSounds.MONITOR_SELECT_SHIMMER.get(), 2.0F, 0.25F));
                             PlayerSelectionScreen.this.targetSelected = true;
-                            PlayerSelectionScreen.this.minecraft.setScreen(new BodycamViewScreen(
+                            PlayerSelectionScreen.this.minecraft.gui.setScreen(new BodycamViewScreen(
                                     this.targetId, this.displayName, PlayerSelectionScreen.this.isOnHologram, this.isWatchPoint, PlayerSelectionScreen.this.isAllSeeingEye));
                         } catch (Exception e) {
                         }
@@ -315,7 +315,7 @@ public class PlayerSelectionScreen extends Screen {
         }
 
         @Override
-        public void renderContent(GuiGraphics graphics, int mouseX, int mouseY, boolean isMouseOver, float partialTick) {
+        public void extractContent(GuiGraphicsExtractor graphics, int mouseX, int mouseY, boolean isMouseOver, float partialTick) {
             int left = this.getContentX();
             int top = this.getContentY();
             int width = this.getContentWidth();
@@ -351,11 +351,11 @@ public class PlayerSelectionScreen extends Screen {
                 nameColor = PlayerSelectionScreen.this.colorStandard;
             }
 
-            graphics.drawString(PlayerSelectionScreen.this.font, this.displayName, left + 40, top + 16, nameColor);
+            graphics.text(PlayerSelectionScreen.this.font, this.displayName, left + 40, top + 16, nameColor);
 
             this.selectButton.setX(left + width - 85);
             this.selectButton.setY(top + 10);
-            this.selectButton.render(graphics, mouseX, mouseY, partialTick);
+            this.selectButton.extractRenderState(graphics, mouseX, mouseY, partialTick);
         }
 
         @Override

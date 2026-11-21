@@ -2,7 +2,7 @@ package dev.ClasherHD.bodycam.client.gui;
 
 import dev.ClasherHD.bodycam.bodycam;
 import dev.ClasherHD.bodycam.item.LogPaperItem;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.PageButton;
@@ -78,20 +78,20 @@ public class LogBookScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        super.renderBackground(graphics, mouseX, mouseY, partialTick);
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        super.extractBackground(graphics, mouseX, mouseY, partialTick);
         int left = (this.width - 192) / 2;
         graphics.blit(RenderPipelines.GUI_TEXTURED, BOOK_TEXTURE, left, 2, 0.0F, 0.0F, 192, 192, 256, 256);
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        super.render(graphics, mouseX, mouseY, partialTick);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
         int left = (this.width - 192) / 2;
 
         int total = Math.max(1, this.pages.size());
         Component indicator = Component.translatable("book.pageIndicator", this.currentPage + 1, total);
-        graphics.drawString(this.font, indicator, left - this.font.width(indicator) + 192 - 44, 18, 0xFF4A4A4A, false);
+        graphics.text(this.font, indicator, left - this.font.width(indicator) + 192 - 44, 18, 0xFF4A4A4A, false);
 
         graphics.pose().pushMatrix();
         graphics.pose().translate((float) (left + 36), 30.0F);
@@ -100,12 +100,12 @@ public class LogBookScreen extends Screen {
         graphics.pose().popMatrix();
     }
 
-    private void renderPage(GuiGraphics graphics) {
+    private void renderPage(GuiGraphicsExtractor graphics) {
         int line = 0;
         if (this.pages.isEmpty()) {
-            graphics.drawString(this.font, Component.translatable("gui.bodycam.logbook.title_empty"), 0, line * LINE_STEP, TITLE_COLOR, false);
+            graphics.text(this.font, Component.translatable("gui.bodycam.logbook.title_empty"), 0, line * LINE_STEP, TITLE_COLOR, false);
             line += 2;
-            graphics.drawString(this.font, Component.translatable("gui.bodycam.logbook.no_data"), 0, line * LINE_STEP, TEXT_COLOR, false);
+            graphics.text(this.font, Component.translatable("gui.bodycam.logbook.no_data"), 0, line * LINE_STEP, TEXT_COLOR, false);
             return;
         }
 
@@ -116,11 +116,11 @@ public class LogBookScreen extends Screen {
             author = "???";
         }
 
-        graphics.drawString(this.font, Component.translatable("gui.bodycam.logbook.sheet", this.currentPage + 1, this.pages.size()), 0, line++ * LINE_STEP, TITLE_COLOR, false);
-        graphics.drawString(this.font, "- - - - - - - - - - - - - - - - - -", 0, line++ * LINE_STEP, MUTED_COLOR, false);
+        graphics.text(this.font, Component.translatable("gui.bodycam.logbook.sheet", this.currentPage + 1, this.pages.size()), 0, line++ * LINE_STEP, TITLE_COLOR, false);
+        graphics.text(this.font, "- - - - - - - - - - - - - - - - - -", 0, line++ * LINE_STEP, MUTED_COLOR, false);
 
         if (entries.isEmpty()) {
-            graphics.drawString(this.font, Component.translatable("gui.bodycam.logbook.no_observers"), 0, line++ * LINE_STEP, TEXT_COLOR, false);
+            graphics.text(this.font, Component.translatable("gui.bodycam.logbook.no_observers"), 0, line++ * LINE_STEP, TEXT_COLOR, false);
         }
 
         String sameDim = Component.translatable("gui.bodycam.logbook.same_dim").getString();
@@ -131,16 +131,16 @@ public class LogBookScreen extends Screen {
         for (int i = 0; i < entries.size() && i < 5; i++) {
             CompoundTag entry = entries.getCompoundOrEmpty(i);
             String name = this.font.plainSubstrByWidth(entry.getStringOr(LogPaperItem.ENTRY_NAME, ""), 180);
-            graphics.drawString(this.font, (i + 1) + ". " + name, 0, line++ * LINE_STEP, TITLE_COLOR, false);
+            graphics.text(this.font, (i + 1) + ". " + name, 0, line++ * LINE_STEP, TITLE_COLOR, false);
             String time = TIME_FORMAT.format(Instant.ofEpochMilli(entry.getLongOr(LogPaperItem.ENTRY_TIME, 0L)));
             String detail = "   " + time + " | " + (entry.getBooleanOr(LogPaperItem.ENTRY_FAR, false) ? far : near)
                     + " | " + (entry.getBooleanOr(LogPaperItem.ENTRY_SAME_DIM, false) ? sameDim : otherDim);
-            graphics.drawString(this.font, detail, 0, line++ * LINE_STEP, TEXT_COLOR, false);
+            graphics.text(this.font, detail, 0, line++ * LINE_STEP, TEXT_COLOR, false);
         }
 
         int footerLine = Math.max(line, 14);
-        graphics.drawString(this.font, "- - - - - - - - - - - - - - - - - -", 0, footerLine * LINE_STEP, MUTED_COLOR, false);
-        graphics.drawString(this.font, Component.translatable("gui.bodycam.logbook.logged_by", author), 0, (footerLine + 1) * LINE_STEP, TITLE_COLOR, false);
+        graphics.text(this.font, "- - - - - - - - - - - - - - - - - -", 0, footerLine * LINE_STEP, MUTED_COLOR, false);
+        graphics.text(this.font, Component.translatable("gui.bodycam.logbook.logged_by", author), 0, (footerLine + 1) * LINE_STEP, TITLE_COLOR, false);
     }
 
     @Override
@@ -157,7 +157,7 @@ public class LogBookScreen extends Screen {
         }
 
         @Override
-        public void renderContents(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        public void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
             int u = 0;
             int v = 192;
             if (this.isHoveredOrFocused()) {

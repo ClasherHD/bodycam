@@ -12,21 +12,19 @@ import dev.ClasherHD.bodycam.client.render.item.BodycamItemModelProperties;
 import dev.ClasherHD.bodycam.config.ModClientConfig;
 import dev.ClasherHD.bodycam.mixin.LivingEntityRendererAccessor;
 import dev.ClasherHD.bodycam.registry.ModBlockEntities;
-import dev.ClasherHD.bodycam.registry.ModBlocks;
 import dev.ClasherHD.bodycam.registry.ModEntityTypes;
 import dev.ClasherHD.bodycam.registry.ModMenus;
 import dev.architectury.event.events.client.ClientGuiEvent;
 import dev.architectury.registry.client.gui.MenuScreenRegistry;
 import dev.architectury.registry.client.level.entity.EntityRendererRegistry;
 import dev.architectury.registry.client.rendering.BlockEntityRendererRegistry;
-import dev.architectury.registry.client.rendering.RenderTypeRegistry;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.EntityModelSet;
-import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 
 import java.util.List;
 import java.util.Set;
@@ -35,18 +33,18 @@ import java.util.Set;
 public final class ClientSetupHandler {
 
     public static final Set<EntityType<?>> HUMANOID_TRIM_ENTITY_TYPES = Set.of(
-            EntityType.ZOMBIE,
-            EntityType.HUSK,
-            EntityType.DROWNED,
-            EntityType.ZOMBIE_VILLAGER,
-            EntityType.SKELETON,
-            EntityType.STRAY,
-            EntityType.WITHER_SKELETON,
-            EntityType.BOGGED,
-            EntityType.PIGLIN,
-            EntityType.PIGLIN_BRUTE,
-            EntityType.ZOMBIFIED_PIGLIN,
-            EntityType.ARMOR_STAND
+            EntityTypes.ZOMBIE,
+            EntityTypes.HUSK,
+            EntityTypes.DROWNED,
+            EntityTypes.ZOMBIE_VILLAGER,
+            EntityTypes.SKELETON,
+            EntityTypes.STRAY,
+            EntityTypes.WITHER_SKELETON,
+            EntityTypes.BOGGED,
+            EntityTypes.PIGLIN,
+            EntityTypes.PIGLIN_BRUTE,
+            EntityTypes.ZOMBIFIED_PIGLIN,
+            EntityTypes.ARMOR_STAND
     );
 
     private ClientSetupHandler() {
@@ -80,16 +78,6 @@ public final class ClientSetupHandler {
     public static void initClient() {
         ModClientConfig.load();
         BodycamClientEvents.register();
-        RenderTypeRegistry.register(
-                ChunkSectionLayer.CUTOUT,
-                ModBlocks.WATCH_POINT.get(),
-                ModBlocks.PODEST.get(),
-                ModBlocks.ANCIENT_TABLE.get()
-        );
-        RenderTypeRegistry.register(
-                ChunkSectionLayer.TRANSLUCENT,
-                ModBlocks.HOLOGRAM_BLOCK.get()
-        );
         ClientGuiEvent.RENDER_HUD.register((guiGraphics, deltaTracker) ->
                 PortalChannelOverlay.render(guiGraphics, deltaTracker.getGameTimeDeltaPartialTick(false)));
     }

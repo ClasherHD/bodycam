@@ -135,7 +135,7 @@ public class JammerItem extends Item {
 
             String key = nextMode == 0 ? "message.bodycam.jammer.off" : (nextMode == 1 ? "message.bodycam.jammer.on" : "message.bodycam.jammer.limited");
             ChatFormatting color = nextMode == 0 ? ChatFormatting.RED : (nextMode == 1 ? ChatFormatting.GREEN : ChatFormatting.BLUE);
-            sp.displayClientMessage(Component.translatable(key).withStyle(color), true);
+            sp.sendOverlayMessage(Component.translatable(key).withStyle(color));
         }
         return InteractionResult.SUCCESS;
     }
@@ -202,7 +202,7 @@ public class JammerItem extends Item {
                             if (!hasAnyChargedActiveJammer(player)) {
                                 pData.remove("bodycam_active_jammer_id");
                                 pData.remove("bodycam_jammer_mode");
-                                player.displayClientMessage(Component.translatable("message.bodycam.jammer.off").withStyle(ChatFormatting.RED), true);
+                                player.sendOverlayMessage(Component.translatable("message.bodycam.jammer.off").withStyle(ChatFormatting.RED));
                             }
                             return;
                         }

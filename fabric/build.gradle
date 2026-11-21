@@ -1,5 +1,5 @@
 plugins {
-    id "com.github.johnrengelman.shadow" version "8.1.1"
+    id "com.gradleup.shadow"
 }
 
 architectury {
@@ -8,7 +8,8 @@ architectury {
 }
 
 loom {
-    accessWidenerPath = project(":common").file("src/main/resources/bodycam.accesswidener")
+    accessWidenerPath = project(":common").loom.accessWidenerPath
+    injectAccessWidener(tasks.named("jar"))
 }
 
 configurations {
@@ -20,11 +21,11 @@ configurations {
 }
 
 dependencies {
-    modImplementation "net.fabricmc:fabric-loader:${rootProject.property('fabric_loader_version')}"
-    modApi "net.fabricmc.fabric-api:fabric-api:${rootProject.property('fabric_api_version')}"
-    modApi "dev.architectury:architectury-fabric:${rootProject.property('architectury_version')}"
+    implementation "net.fabricmc:fabric-loader:${rootProject.property('fabric_loader_version')}"
+    api "net.fabricmc.fabric-api:fabric-api:${rootProject.property('fabric_api_version')}"
+    api "dev.architectury:architectury-fabric:${rootProject.property('architectury_version')}"
 
-    common(project(path: ":common", configuration: "namedElements")) { transitive false }
+    common(project(path: ":common")) { transitive false }
     shadowCommon(project(path: ":common", configuration: "transformProductionFabric")) { transitive false }
 }
 
@@ -36,23 +37,21 @@ processResources {
     }
 }
 
-shadowJar {
-    exclude "architectury.common.json"
-    configurations = [project.configurations.shadowCommon]
-    archiveClassifier = "dev-shadow"
+jar {
+    archiveClassifier = "raw"
 }
 
-remapJar {
-    injectAccessWidener = true
-    inputFile.set shadowJar.archiveFile
-    dependsOn shadowJar
+shadowJar {
+    dependsOn jar
+    mainSpec.sourcePaths.clear()
+    from(zipTree(jar.archiveFile))
+    exclude "architectury.common.json"
+    configurations = [project.configurations.shadowCommon]
     archiveClassifier = null
     archiveFileName = "bodycam-fabric-${rootProject.minecraft_version}-${rootProject.mod_version}.jar".toLowerCase()
 }
 
-jar {
-    archiveClassifier = "dev"
-}
+assemble.dependsOn shadowJar
 
 sourcesJar {
     def commonSources = project(":common").sourcesJar

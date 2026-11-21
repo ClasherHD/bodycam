@@ -3,7 +3,7 @@ package dev.ClasherHD.bodycam.client.gui;
 import dev.ClasherHD.bodycam.bodycam;
 import dev.ClasherHD.bodycam.config.ModClientConfig;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -291,15 +291,15 @@ public class ClientConfigScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        super.renderBackground(graphics, mouseX, mouseY, partialTick);
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        super.extractBackground(graphics, mouseX, mouseY, partialTick);
         GuiRenderUtils.drawNineSlice(graphics, WINDOW_TEXTURE, this.guiX, this.guiY, this.guiWidth, this.guiHeight, 32, 32, 32, 32, 256, 256, 0xFF525259);
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        super.render(graphics, mouseX, mouseY, partialTick);
-        graphics.drawCenteredString(this.font, this.title, this.width / 2, this.guiY + 10, 0xFFFFFFFF);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
+        graphics.centeredText(this.font, this.title, this.width / 2, this.guiY + 10, 0xFFFFFFFF);
     }
 
     @Override
@@ -311,7 +311,7 @@ public class ClientConfigScreen extends Screen {
     public void onClose() {
         super.onClose();
         if (this.minecraft != null) {
-            this.minecraft.setScreen(this.previous);
+            this.minecraft.gui.setScreen(this.previous);
         }
     }
 }

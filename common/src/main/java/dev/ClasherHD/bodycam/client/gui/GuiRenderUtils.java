@@ -1,6 +1,6 @@
 package dev.ClasherHD.bodycam.client.gui;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
 
@@ -8,12 +8,12 @@ public final class GuiRenderUtils {
     private GuiRenderUtils() {
     }
 
-    public static void drawNineSlice(GuiGraphics graphics, Identifier texture, int x, int y, int width, int height,
+    public static void drawNineSlice(GuiGraphicsExtractor graphics, Identifier texture, int x, int y, int width, int height,
                                      int rCW, int rCH, int uvCW, int uvCH, int texW, int texH) {
         drawNineSlice(graphics, texture, x, y, width, height, rCW, rCH, uvCW, uvCH, texW, texH, 0xFFFFFFFF);
     }
 
-    public static void drawNineSlice(GuiGraphics graphics, Identifier texture, int x, int y, int width, int height,
+    public static void drawNineSlice(GuiGraphicsExtractor graphics, Identifier texture, int x, int y, int width, int height,
                                      int rCW, int rCH, int uvCW, int uvCH, int texW, int texH, int color) {
         int cW = Math.min(rCW, width / 2);
         int cH = Math.min(rCH, height / 2);
@@ -28,7 +28,7 @@ public final class GuiRenderUtils {
         graphics.blit(RenderPipelines.GUI_TEXTURED, texture, x + cW, y + cH, (float) uvCW, (float) uvCH, width - 2 * cW, height - 2 * cH, texW - 2 * uvCW, texH - 2 * uvCH, texW, texH, color);
     }
 
-    public static void drawBorder(GuiGraphics graphics, int x, int y, int width, int height, int color) {
+    public static void drawBorder(GuiGraphicsExtractor graphics, int x, int y, int width, int height, int color) {
         if (width <= 0 || height <= 0) {
             return;
         }

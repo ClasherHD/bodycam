@@ -1,7 +1,7 @@
 package dev.ClasherHD.bodycam.mixin;
 
 import dev.ClasherHD.bodycam.bodycam;
-import net.minecraft.client.renderer.item.BlockModelWrapper;
+import net.minecraft.client.renderer.item.CuboidItemModelWrapper;
 import net.minecraft.client.renderer.item.SelectItemModel;
 import net.minecraft.client.renderer.item.properties.select.SelectItemModelProperty;
 import net.minecraft.client.renderer.item.properties.select.TrimMaterialProperty;
@@ -63,14 +63,14 @@ public abstract class SelectItemModelUnbakedSwitchMixin<P extends SelectItemMode
         if (!(this.property instanceof TrimMaterialProperty)) {
             return this.cases;
         }
-        BlockModelWrapper.Unbaked template = null;
+        CuboidItemModelWrapper.Unbaked template = null;
         for (SelectItemModel.SwitchCase<T> entry : this.cases) {
             for (T value : entry.values()) {
                 if (BODYCAM_OBSERVATION_CRYSTAL.equals(value)) {
                     return this.cases;
                 }
                 if (TrimMaterials.AMETHYST.equals(value)
-                        && entry.model() instanceof BlockModelWrapper.Unbaked wrapped) {
+                        && entry.model() instanceof CuboidItemModelWrapper.Unbaked wrapped) {
                     template = wrapped;
                 }
             }
@@ -90,7 +90,11 @@ public abstract class SelectItemModelUnbakedSwitchMixin<P extends SelectItemMode
             return this.cases;
         }
         Identifier observationModel = bodycam.id("item/trims/" + armorName + "_observation_crystal_trim");
-        BlockModelWrapper.Unbaked wrappedObservation = new BlockModelWrapper.Unbaked(observationModel, template.tints());
+        CuboidItemModelWrapper.Unbaked wrappedObservation = new CuboidItemModelWrapper.Unbaked(
+                observationModel,
+                template.transformation(),
+                template.tints()
+        );
         List<SelectItemModel.SwitchCase<T>> extended = new ArrayList<>(this.cases.size() + 1);
         extended.addAll(this.cases);
         extended.add(new SelectItemModel.SwitchCase<>((List<T>) List.of(BODYCAM_OBSERVATION_CRYSTAL), wrappedObservation));

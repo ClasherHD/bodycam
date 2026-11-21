@@ -69,12 +69,80 @@ class AdvancementDataRegressionTest {
     }
 
     @Test
-    void packMcmeta_usesPackFormat75() throws Exception {
+    void packMcmeta_usesMc262PackFormats() throws Exception {
         Path resourcesRoot = resolveResourcesRoot();
         JsonObject root = readJson(resourcesRoot.resolve("pack.mcmeta"));
         assertThat(root.has("pack")).isTrue();
         JsonObject pack = root.getAsJsonObject("pack");
-        assertThat(pack.get("pack_format").getAsInt()).isEqualTo(75);
+        assertThat(pack.get("pack_format").getAsInt()).isEqualTo(88);
+        assertThat(pack.get("min_format").getAsInt()).isEqualTo(88);
+        JsonArray maxFormat = pack.getAsJsonArray("max_format");
+        assertThat(maxFormat.size()).isEqualTo(2);
+        assertThat(maxFormat.get(0).getAsInt()).isEqualTo(107);
+        assertThat(maxFormat.get(1).getAsInt()).isEqualTo(1);
+    }
+
+    @Test
+    void villagerTradeDatapackEntriesAndTags_matchMc262Schema() throws Exception {
+        Path resourcesRoot = resolveResourcesRoot();
+
+        JsonObject cartographerTrade = readJson(resourcesRoot.resolve(
+                "data/bodycam/villager_trade/cartographer/3/cherry_house_explorer_map.json"));
+        assertThat(cartographerTrade.getAsJsonObject("wants").get("id").getAsString()).isEqualTo("minecraft:emerald");
+        assertThat(cartographerTrade.getAsJsonObject("wants").get("count").getAsDouble()).isEqualTo(14.0);
+        assertThat(cartographerTrade.getAsJsonObject("additional_wants").get("id").getAsString()).isEqualTo("minecraft:compass");
+        assertThat(cartographerTrade.getAsJsonObject("gives").get("id").getAsString()).isEqualTo("bodycam:cherry_house_explorer_map");
+        assertThat(cartographerTrade.get("max_uses").getAsDouble()).isEqualTo(12.0);
+        assertThat(cartographerTrade.get("xp").getAsDouble()).isEqualTo(10.0);
+        assertThat(cartographerTrade.get("reputation_discount").getAsDouble()).isEqualTo(0.2);
+
+        JsonObject cartographerTag = readJson(resourcesRoot.resolve(
+                "data/minecraft/tags/villager_trade/cartographer/level_3.json"));
+        assertThat(cartographerTag.get("replace").getAsBoolean()).isFalse();
+        assertThat(cartographerTag.getAsJsonArray("values")).hasSize(1);
+        assertThat(cartographerTag.getAsJsonArray("values").get(0).getAsString())
+                .isEqualTo("bodycam:cartographer/3/cherry_house_explorer_map");
+
+        JsonObject wanderingTrade = readJson(resourcesRoot.resolve(
+                "data/bodycam/villager_trade/wandering_trader/cherry_house_explorer_map.json"));
+        assertThat(wanderingTrade.getAsJsonObject("wants").get("id").getAsString()).isEqualTo("minecraft:emerald");
+        assertThat(wanderingTrade.getAsJsonObject("wants").get("count").getAsDouble()).isEqualTo(16.0);
+        assertThat(wanderingTrade.getAsJsonObject("additional_wants").get("id").getAsString()).isEqualTo("minecraft:compass");
+        assertThat(wanderingTrade.getAsJsonObject("gives").get("id").getAsString()).isEqualTo("bodycam:cherry_house_explorer_map");
+        assertThat(wanderingTrade.get("max_uses").getAsDouble()).isEqualTo(2.0);
+        assertThat(wanderingTrade.get("xp").getAsDouble()).isEqualTo(10.0);
+        assertThat(wanderingTrade.get("reputation_discount").getAsDouble()).isEqualTo(0.05);
+
+        JsonObject wanderingTag = readJson(resourcesRoot.resolve(
+                "data/minecraft/tags/villager_trade/wandering_trader/uncommon.json"));
+        assertThat(wanderingTag.get("replace").getAsBoolean()).isFalse();
+        assertThat(wanderingTag.getAsJsonArray("values")).hasSize(1);
+        assertThat(wanderingTag.getAsJsonArray("values").get(0).getAsString())
+                .isEqualTo("bodycam:wandering_trader/cherry_house_explorer_map");
+    }
+
+    @Test
+    void translucentBlockModelsAndCustomRecipe_useMc262Syntax() throws Exception {
+        Path resourcesRoot = resolveResourcesRoot();
+
+        for (String modelPath : List.of(
+                "assets/bodycam/models/block/hologram_block.json",
+                "assets/bodycam/models/block/watch_point.json"
+        )) {
+            JsonObject model = readJson(resourcesRoot.resolve(modelPath));
+            assertThat(model.has("render_type")).isFalse();
+            JsonObject textures = model.getAsJsonObject("textures");
+            assertThat(textures.size()).isGreaterThan(0);
+            for (Map.Entry<String, JsonElement> entry : textures.entrySet()) {
+                JsonObject slot = entry.getValue().getAsJsonObject();
+                assertThat(slot.get("force_translucent").getAsBoolean()).isTrue();
+                assertThat(slot.get("sprite").getAsString()).startsWith("bodycam:block/");
+            }
+        }
+
+        JsonObject loggerRefill = readJson(resourcesRoot.resolve("data/bodycam/recipe/logger_refill.json"));
+        assertThat(loggerRefill.get("type").getAsString()).isEqualTo("bodycam:logger_refill");
+        assertThat(loggerRefill.has("category")).isFalse();
     }
 
     @Test

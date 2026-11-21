@@ -67,8 +67,8 @@ public class ModBlocks {
     }
 
     private static int getAncientTableLightLevel(BlockState state) {
-        for (var entry : state.getValues().entrySet()) {
-            if ("fuel_level".equals(entry.getKey().getName()) && entry.getValue() instanceof Integer level) {
+        for (var entry : state.getValues().toList()) {
+            if ("fuel_level".equals(entry.property().getName()) && entry.value() instanceof Integer level) {
                 return level * 2;
             }
         }
@@ -78,10 +78,10 @@ public class ModBlocks {
     private static int getPodestLightLevel(BlockState state) {
         boolean powered = false;
         int charges = 0;
-        for (var entry : state.getValues().entrySet()) {
-            if ("powered".equals(entry.getKey().getName()) && entry.getValue() instanceof Boolean b) {
+        for (var entry : state.getValues().toList()) {
+            if ("powered".equals(entry.property().getName()) && entry.value() instanceof Boolean b) {
                 powered = b;
-            } else if ("charges".equals(entry.getKey().getName()) && entry.getValue() instanceof Integer c) {
+            } else if ("charges".equals(entry.property().getName()) && entry.value() instanceof Integer c) {
                 charges = c;
             }
         }

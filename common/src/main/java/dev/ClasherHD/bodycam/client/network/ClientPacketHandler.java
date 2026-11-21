@@ -49,8 +49,8 @@ public final class ClientPacketHandler {
         ClientBodycamCache.REACH_LEVEL = msg.reachLevel;
         ClientBodycamCache.IS_ON_HOLOGRAM = msg.isOnHologram;
         ClientBodycamCache.IS_ALL_SEEING_EYE = msg.isAllSeeingEye;
-        if (mc.player != null && !(mc.screen instanceof BodycamViewScreen)) {
-            mc.setScreen(new PlayerSelectionScreen(msg.reachLevel, msg.isOnHologram, msg.isAllSeeingEye));
+        if (mc.player != null && !(mc.gui.screen() instanceof BodycamViewScreen)) {
+            mc.gui.setScreen(new PlayerSelectionScreen(msg.reachLevel, msg.isOnHologram, msg.isAllSeeingEye));
         }
     }
 
@@ -60,8 +60,8 @@ public final class ClientPacketHandler {
         if (mc.player != null) {
             mc.setCameraEntity(mc.player);
         }
-        if (mc.screen instanceof BodycamViewScreen || mc.screen instanceof PlayerSelectionScreen) {
-            mc.setScreen(null);
+        if (mc.gui.screen() instanceof BodycamViewScreen || mc.gui.screen() instanceof PlayerSelectionScreen) {
+            mc.gui.setScreen(null);
         }
     }
 
@@ -122,15 +122,15 @@ public final class ClientPacketHandler {
                 msg.removedDummyEntityId()
         );
         mc.setCameraEntity(player);
-        if (mc.screen instanceof BodycamViewScreen || mc.screen instanceof PlayerSelectionScreen) {
-            mc.setScreen(null);
+        if (mc.gui.screen() instanceof BodycamViewScreen || mc.gui.screen() instanceof PlayerSelectionScreen) {
+            mc.gui.setScreen(null);
         }
     }
 
     public static void handleOpenWatchPointRename(WatchPointOpenRenameS2CPacket msg) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null) {
-            mc.setScreen(new WatchPointRenameScreen(msg.pos, msg.currentName));
+            mc.gui.setScreen(new WatchPointRenameScreen(msg.pos, msg.currentName));
         }
     }
 
@@ -141,7 +141,7 @@ public final class ClientPacketHandler {
         ClientBodycamCache.positions.putAll(msg.positions);
         ClientBodycamCache.dimensions.putAll(msg.dimensions);
         if (mc.player != null) {
-            mc.setScreen(new PlayerLocatorScreen(
+            mc.gui.setScreen(new PlayerLocatorScreen(
                     msg.jammers,
                     msg.dimensions,
                     msg.positions,
@@ -154,42 +154,42 @@ public final class ClientPacketHandler {
     public static void handleDimensionLocatorResponse(DimensionLocatorResponsePacket msg) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null) {
-            mc.setScreen(new DimensionLocatorScreen(msg.playerDimensions));
+            mc.gui.setScreen(new DimensionLocatorScreen(msg.playerDimensions));
         }
     }
 
     public static void handleOpenLogBookPinScreen(OpenLogBookPinScreenS2CPacket msg) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null) {
-            mc.setScreen(new LogBookPinScreen(msg.mode, msg.offHand));
+            mc.gui.setScreen(new LogBookPinScreen(msg.mode, msg.offHand));
         }
     }
 
     public static void handleOpenLogBookScreen(OpenLogBookScreenS2CPacket msg) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null) {
-            mc.setScreen(new LogBookScreen(msg.data));
+            mc.gui.setScreen(new LogBookScreen(msg.data));
         }
     }
 
     public static void handleOpenCreepingDeathScreen(OpenCreepingDeathScreenS2CPacket msg) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null) {
-            mc.setScreen(new CreepingDeathScreen(msg.mode, msg.offHand, msg.entries, msg.selectedSkinUUID));
+            mc.gui.setScreen(new CreepingDeathScreen(msg.mode, msg.offHand, msg.entries, msg.selectedSkinUUID));
         }
     }
 
     public static void handleOpenServerConfig(OpenServerConfigS2CPacket msg) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null) {
-            mc.setScreen(new ServerConfigScreen(mc.screen, msg.snapshot));
+            mc.gui.setScreen(new ServerConfigScreen(mc.gui.screen(), msg.snapshot));
         }
     }
 
     public static void handleOpenClientConfig() {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null) {
-            mc.setScreen(new ClientConfigScreen(mc.screen));
+            mc.gui.setScreen(new ClientConfigScreen(mc.gui.screen()));
         }
     }
 

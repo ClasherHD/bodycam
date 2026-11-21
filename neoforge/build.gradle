@@ -1,9 +1,6 @@
 plugins {
-    id "com.github.johnrengelman.shadow" version "8.1.1"
+    id "com.gradleup.shadow"
 }
-
-apply plugin: "architectury-plugin"
-apply plugin: "dev.architectury.loom"
 
 architectury {
     platformSetupLoomIde()
@@ -11,7 +8,10 @@ architectury {
 }
 
 loom {
-    accessWidenerPath = project(":common").file("src/main/resources/bodycam.accesswidener")
+    accessWidenerPath = project(":common").loom.accessWidenerPath
+    neoForge {
+        convertAccessWideners(tasks.named("shadowJar", Jar), "bodycam.accesswidener")
+    }
 }
 
 configurations {
@@ -24,9 +24,9 @@ configurations {
 
 dependencies {
     neoForge "net.neoforged:neoforge:${rootProject.property('neoforge_version')}"
-    modApi "dev.architectury:architectury-neoforge:${rootProject.property('architectury_version')}"
+    api "dev.architectury:architectury-neoforge:${rootProject.property('architectury_version')}"
 
-    common(project(path: ":common", configuration: "namedElements")) { transitive false }
+    common(project(path: ":common")) { transitive false }
     shadowCommon(project(path: ":common", configuration: "transformProductionNeoForge")) { transitive false }
 }
 
@@ -38,23 +38,22 @@ processResources {
     }
 }
 
+jar {
+    archiveClassifier = "raw"
+}
+
 shadowJar {
+    dependsOn jar
+    mainSpec.sourcePaths.clear()
+    from(zipTree(jar.archiveFile))
     exclude "fabric.mod.json"
     exclude "architectury.common.json"
     configurations = [project.configurations.shadowCommon]
-    archiveClassifier = "dev-shadow"
-}
-
-remapJar {
-    inputFile.set shadowJar.archiveFile
-    dependsOn shadowJar
     archiveClassifier = null
     archiveFileName = "bodycam-neoforge-${rootProject.minecraft_version}-${rootProject.mod_version}.jar".toLowerCase()
 }
 
-jar {
-    archiveClassifier = "dev"
-}
+assemble.dependsOn shadowJar
 
 sourcesJar {
     def commonSources = project(":common").sourcesJar

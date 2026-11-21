@@ -11,14 +11,14 @@ import dev.ClasherHD.bodycam.network.bodycam.BodycamSetCameraPacket;
 import dev.ClasherHD.bodycam.network.watchpoint.WatchPointLookC2SPacket;
 import dev.ClasherHD.bodycam.registry.ModSounds;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.gui.render.TextureSetup;
-import net.minecraft.client.gui.render.state.GuiElementRenderState;
 import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.state.gui.GuiElementRenderState;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
@@ -189,7 +189,7 @@ public class BodycamViewScreen extends Screen {
         }
         if (event.key() == GLFW.GLFW_KEY_ESCAPE) {
             if (this.minecraft != null) {
-                this.minecraft.setScreen(new PauseScreen(true));
+                this.minecraft.gui.setScreen(new PauseScreen(true));
             }
             return true;
         }
@@ -197,24 +197,24 @@ public class BodycamViewScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
     }
 
-    private void renderExitText(GuiGraphics graphics) {
+    private void renderExitText(GuiGraphicsExtractor graphics) {
         if (this.textTickTimer <= 0) {
             return;
         }
-        graphics.drawString(this.font, this.cachedExitText, this.width - this.font.width(this.cachedExitText) - 10, 10, 0xFFFFFFFF, true);
+        graphics.text(this.font, this.cachedExitText, this.width - this.font.width(this.cachedExitText) - 10, 10, 0xFFFFFFFF, true);
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        super.render(graphics, mouseX, mouseY, partialTick);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.level == null) {
             return;
         }
-        if (this.minecraft != null && this.minecraft.options.hideGui) {
+        if (this.minecraft != null && this.minecraft.gui.hud.isHidden()) {
             return;
         }
 
@@ -241,7 +241,7 @@ public class BodycamViewScreen extends Screen {
                 Component alert = Component.translatable(damageTier >= 4 ? "gui.bodycam.signal_critical" : "gui.bodycam.signal_weak");
                 int alertColor = damageTier >= 4 ? 0xFFFF3B3B : 0xFFFFAA22;
                 int textW = this.font.width(alert);
-                graphics.drawString(this.font, alert, (this.width - textW) / 2, 10, alertColor, true);
+                graphics.text(this.font, alert, (this.width - textW) / 2, 10, alertColor, true);
             }
 
             if (ModClientConfig.SHOW_NAME_OVERLAY.get()) {
@@ -250,9 +250,9 @@ public class BodycamViewScreen extends Screen {
                 int dotColor = this.isAllSeeingEye ? 0xFFFFAA00 : 0xFFFF0000;
                 int textColor = 0xFFFFFFFF;
                 if ((System.currentTimeMillis() % 1000L) >= 500L) {
-                    graphics.drawString(this.font, dotChar, 10, 10, dotColor, true);
+                    graphics.text(this.font, dotChar, 10, 10, dotColor, true);
                 }
-                graphics.drawString(this.font, recComp, 10 + this.font.width(dotChar + " "), 10, textColor, true);
+                graphics.text(this.font, recComp, 10 + this.font.width(dotChar + " "), 10, textColor, true);
             }
 
             if (ModClientConfig.SHOW_SHIFT_OVERLAY.get()) {
@@ -303,7 +303,7 @@ public class BodycamViewScreen extends Screen {
         }
     }
 
-    private int updateAndRenderDamageVignette(GuiGraphics graphics, Minecraft mc, int frameThickX, int frameThickY) {
+    private int updateAndRenderDamageVignette(GuiGraphicsExtractor graphics, Minecraft mc, int frameThickX, int frameThickY) {
         if (mc.player == null || !ModClientConfig.SHOW_DAMAGE_VIGNETTE.get()) {
             this.currentVignetteAlpha = 0.0F;
             this.currentHitFlash = 0.0F;
@@ -364,7 +364,7 @@ public class BodycamViewScreen extends Screen {
         return tier;
     }
 
-    private void drawRadialRedVignette(GuiGraphics graphics, float alpha, int frameThickX, int frameThickY) {
+    private void drawRadialRedVignette(GuiGraphicsExtractor graphics, float alpha, int frameThickX, int frameThickY) {
         int outerAlpha = Mth.clamp((int) (alpha * 255.0F), 0, 255);
         int midAlpha = Mth.clamp((int) (alpha * 145.0F), 0, 255);
         if (outerAlpha <= 0) {
@@ -385,7 +385,7 @@ public class BodycamViewScreen extends Screen {
         Matrix3x2f pose = new Matrix3x2f(graphics.pose());
         ScreenRectangle scissorArea = null;
         ScreenRectangle bounds = new ScreenRectangle(0, 0, this.width, this.height).transformMaxBounds(pose);
-        ((GuiGraphicsAccessor) graphics).bodycam$getGuiRenderState().submitGuiElement(new RadialVignetteElement(
+        ((GuiGraphicsAccessor) graphics).bodycam$getGuiRenderState().addGuiElement(new RadialVignetteElement(
                 pose, scissorArea, bounds, cx, cy, innerRx, innerRy, midRx, midRy, outerRx, outerRy, midAlpha, outerAlpha
         ));
     }

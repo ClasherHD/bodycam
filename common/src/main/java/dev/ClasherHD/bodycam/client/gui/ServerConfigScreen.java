@@ -5,7 +5,7 @@ import dev.ClasherHD.bodycam.config.ServerConfigSnapshot;
 import dev.ClasherHD.bodycam.network.PacketHandler;
 import dev.ClasherHD.bodycam.network.config.SaveServerConfigC2SPacket;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -367,15 +367,15 @@ public class ServerConfigScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        super.renderBackground(graphics, mouseX, mouseY, partialTick);
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        super.extractBackground(graphics, mouseX, mouseY, partialTick);
         GuiRenderUtils.drawNineSlice(graphics, WINDOW_TEXTURE, this.guiX, this.guiY, this.guiWidth, this.guiHeight, 32, 32, 32, 32, 256, 256, 0xFF525259);
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        super.render(graphics, mouseX, mouseY, partialTick);
-        graphics.drawCenteredString(this.font, this.title, this.width / 2, this.guiY + 10, 0xFFFFFFFF);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
+        graphics.centeredText(this.font, this.title, this.width / 2, this.guiY + 10, 0xFFFFFFFF);
 
         int colWidth = (this.guiWidth - 30) / 2;
         int leftColX = this.guiX + 12;
@@ -384,10 +384,10 @@ public class ServerConfigScreen extends Screen {
         int labelY = this.guiY + 23;
 
         if (this.currentPage == 1) {
-            graphics.drawString(this.font, Component.translatable("gui.bodycam.server_config.max_distance"), centerColX, labelY, 0xFFCCCCCC);
+            graphics.text(this.font, Component.translatable("gui.bodycam.server_config.max_distance"), centerColX, labelY, 0xFFCCCCCC);
         } else if (this.currentPage == 2) {
-            graphics.drawString(this.font, Component.translatable("gui.bodycam.server_config.max_wp_player"), leftColX, labelY, 0xFFCCCCCC);
-            graphics.drawString(this.font, Component.translatable("gui.bodycam.server_config.max_wp_total"), rightColX, labelY, 0xFFCCCCCC);
+            graphics.text(this.font, Component.translatable("gui.bodycam.server_config.max_wp_player"), leftColX, labelY, 0xFFCCCCCC);
+            graphics.text(this.font, Component.translatable("gui.bodycam.server_config.max_wp_total"), rightColX, labelY, 0xFFCCCCCC);
         }
     }
 
@@ -400,7 +400,7 @@ public class ServerConfigScreen extends Screen {
     public void onClose() {
         super.onClose();
         if (this.minecraft != null) {
-            this.minecraft.setScreen(this.previous);
+            this.minecraft.gui.setScreen(this.previous);
         }
     }
 }

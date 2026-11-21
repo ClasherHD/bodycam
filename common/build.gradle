@@ -7,6 +7,6 @@ loom {
 }
 
 dependencies {
-    modImplementation "net.fabricmc:fabric-loader:${rootProject.property('fabric_loader_version')}"
-    modApi "dev.architectury:architectury:${rootProject.property('architectury_version')}"
+    implementation "net.fabricmc:fabric-loader:${rootProject.property('fabric_loader_version')}"
+    api "dev.architectury:architectury:${rootProject.property('architectury_version')}"
 }

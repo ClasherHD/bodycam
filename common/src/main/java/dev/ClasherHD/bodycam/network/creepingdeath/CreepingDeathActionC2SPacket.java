@@ -99,14 +99,12 @@ public class CreepingDeathActionC2SPacket implements CustomPacketPayload {
             if (msg.mode == OpenCreepingDeathScreenS2CPacket.MODE_SKIN) {
                 if (msg.chosenUUID == null || msg.chosenName.isEmpty()) {
                     CreepingDeathItem.clearSkin(stack);
-                    sender.displayClientMessage(
-                            Component.translatable("message.bodycam.creeping_death.skin_reset").withStyle(ChatFormatting.GRAY),
-                            true);
+                    sender.sendOverlayMessage(
+                            Component.translatable("message.bodycam.creeping_death.skin_reset").withStyle(ChatFormatting.GRAY));
                 } else {
                     CreepingDeathItem.setSkin(stack, msg.chosenUUID, msg.chosenName);
-                    sender.displayClientMessage(
-                            Component.translatable("message.bodycam.creeping_death.skin_selected", msg.chosenName).withStyle(ChatFormatting.GRAY),
-                            true);
+                    sender.sendOverlayMessage(
+                            Component.translatable("message.bodycam.creeping_death.skin_selected", msg.chosenName).withStyle(ChatFormatting.GRAY));
                 }
                 return;
             }

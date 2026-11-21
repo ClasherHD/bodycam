@@ -169,15 +169,15 @@ public class PodestBlock extends BaseEntityBlock {
 
     private static boolean checkAccessAllowed(Level level, Player player) {
         if (ModServerConfig.OP_ONLY_MODE.get() && !player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
-            player.displayClientMessage(Component.translatable("message.bodycam.op_only").withStyle(ChatFormatting.RED), false);
+            player.sendSystemMessage(Component.translatable("message.bodycam.op_only").withStyle(ChatFormatting.RED));
             return false;
         }
         if (ModServerConfig.isDimensionBlacklisted(level)) {
-            player.displayClientMessage(Component.translatable("message.bodycam.dimension_blacklisted").withStyle(ChatFormatting.RED), false);
+            player.sendSystemMessage(Component.translatable("message.bodycam.dimension_blacklisted").withStyle(ChatFormatting.RED));
             return false;
         }
         if (!ModServerConfig.ENABLE_PODEST.get()) {
-            player.displayClientMessage(Component.translatable("message.bodycam.podest_disabled").withStyle(ChatFormatting.RED), false);
+            player.sendSystemMessage(Component.translatable("message.bodycam.podest_disabled").withStyle(ChatFormatting.RED));
             return false;
         }
         return true;
@@ -210,11 +210,11 @@ public class PodestBlock extends BaseEntityBlock {
                         held.shrink(1);
                     }
                     level.playSound(null, pos, ModSounds.PODEST_CHARGE.get(), SoundSource.BLOCKS, 1.0F, 0.8F + podest.getCharges() * 0.05F);
-                    player.displayClientMessage(Component.translatable("message.bodycam.podest.charged", podest.getCharges(), (int) podest.getSphericalRadius())
-                            .withStyle(ChatFormatting.AQUA), true);
+                    player.sendOverlayMessage(Component.translatable("message.bodycam.podest.charged", podest.getCharges(), (int) podest.getSphericalRadius())
+                            .withStyle(ChatFormatting.AQUA));
                 } else {
-                    player.displayClientMessage(Component.translatable("message.bodycam.podest.max_charged")
-                            .withStyle(ChatFormatting.GOLD), true);
+                    player.sendOverlayMessage(Component.translatable("message.bodycam.podest.max_charged")
+                            .withStyle(ChatFormatting.GOLD));
                 }
                 return InteractionResult.CONSUME;
             }

@@ -165,7 +165,7 @@ public class LogBookItem extends Item {
             sendBook(player, book);
         } else {
             player.level().playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.LOG_BOOK_WRONG_PIN.get(), SoundSource.PLAYERS, 0.8F, 1.0F);
-            player.displayClientMessage(Component.translatable("message.bodycam.logbook.wrong_pin").withStyle(ChatFormatting.RED), true);
+            player.sendOverlayMessage(Component.translatable("message.bodycam.logbook.wrong_pin").withStyle(ChatFormatting.RED));
         }
     }
 
@@ -175,30 +175,30 @@ public class LogBookItem extends Item {
         }
         boolean hadPin = hasPin(book);
         if (!hadPin && pageCount(book) == 0) {
-            player.displayClientMessage(Component.translatable("message.bodycam.logbook.empty_no_pin").withStyle(ChatFormatting.RED), true);
+            player.sendOverlayMessage(Component.translatable("message.bodycam.logbook.empty_no_pin").withStyle(ChatFormatting.RED));
             return;
         }
         if (hadPin && !checkPin(book, oldPin)) {
             player.level().playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.LOG_BOOK_WRONG_PIN.get(), SoundSource.PLAYERS, 0.8F, 1.0F);
-            player.displayClientMessage(Component.translatable("message.bodycam.logbook.wrong_pin").withStyle(ChatFormatting.RED), true);
+            player.sendOverlayMessage(Component.translatable("message.bodycam.logbook.wrong_pin").withStyle(ChatFormatting.RED));
             return;
         }
         if (newPin == null || newPin.isEmpty()) {
             if (hadPin) {
                 ItemNbtAccess.remove(book, TAG_PIN);
                 player.level().playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.LOG_BOOK_UNLOCK.get(), SoundSource.PLAYERS, 0.6F, 1.4F);
-                player.displayClientMessage(Component.translatable("message.bodycam.logbook.pin_removed").withStyle(ChatFormatting.YELLOW), true);
+                player.sendOverlayMessage(Component.translatable("message.bodycam.logbook.pin_removed").withStyle(ChatFormatting.YELLOW));
             }
             return;
         }
         if (!isValidPin(newPin)) {
-            player.displayClientMessage(Component.translatable("message.bodycam.logbook.pin_invalid").withStyle(ChatFormatting.RED), true);
+            player.sendOverlayMessage(Component.translatable("message.bodycam.logbook.pin_invalid").withStyle(ChatFormatting.RED));
             return;
         }
         ItemNbtAccess.putString(book, TAG_PIN, hashPin(newPin));
         ModAdvancements.award(player, ModAdvancements.LOG_BOOK_ENCRYPTED);
         player.level().playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.LOG_BOOK_LOCK.get(), SoundSource.PLAYERS, 0.6F, 1.4F);
-        player.displayClientMessage(Component.translatable(hadPin ? "message.bodycam.logbook.pin_changed" : "message.bodycam.logbook.pin_set").withStyle(ChatFormatting.GREEN), true);
+        player.sendOverlayMessage(Component.translatable(hadPin ? "message.bodycam.logbook.pin_changed" : "message.bodycam.logbook.pin_set").withStyle(ChatFormatting.GREEN));
     }
 
     public static ItemStack createPaperFromPage(CompoundTag page) {
@@ -209,12 +209,12 @@ public class LogBookItem extends Item {
 
     public static void handleCartographyInteraction(ServerPlayer player, ItemStack book, ItemStack other) {
         if (hasPin(book)) {
-            player.displayClientMessage(Component.translatable("message.bodycam.logbook.locked").withStyle(ChatFormatting.RED), true);
+            player.sendOverlayMessage(Component.translatable("message.bodycam.logbook.locked").withStyle(ChatFormatting.RED));
             return;
         }
         if (other.getItem() instanceof LogPaperItem) {
             if (pageCount(book) >= MAX_PAGES) {
-                player.displayClientMessage(Component.translatable("message.bodycam.logbook.full").withStyle(ChatFormatting.RED), true);
+                player.sendOverlayMessage(Component.translatable("message.bodycam.logbook.full").withStyle(ChatFormatting.RED));
                 return;
             }
             CompoundTag readOther = ItemNbtAccess.getReadOnlyTag(other);
@@ -224,11 +224,11 @@ public class LogBookItem extends Item {
                 other.shrink(1);
             }
             player.level().playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.UI_CARTOGRAPHY_TABLE_TAKE_RESULT, SoundSource.PLAYERS, 1.0F, 1.0F);
-            player.displayClientMessage(Component.translatable("message.bodycam.logbook.page_added", pageCount(book), MAX_PAGES).withStyle(ChatFormatting.GREEN), true);
+            player.sendOverlayMessage(Component.translatable("message.bodycam.logbook.page_added", pageCount(book), MAX_PAGES).withStyle(ChatFormatting.GREEN));
         } else {
             CompoundTag removed = removeLastPage(book);
             if (removed == null) {
-                player.displayClientMessage(Component.translatable("message.bodycam.logbook.no_pages").withStyle(ChatFormatting.RED), true);
+                player.sendOverlayMessage(Component.translatable("message.bodycam.logbook.no_pages").withStyle(ChatFormatting.RED));
                 return;
             }
             ItemStack paper = createPaperFromPage(removed);
@@ -236,7 +236,7 @@ public class LogBookItem extends Item {
                 player.drop(paper, false);
             }
             player.level().playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.UI_CARTOGRAPHY_TABLE_TAKE_RESULT, SoundSource.PLAYERS, 1.0F, 0.8F);
-            player.displayClientMessage(Component.translatable("message.bodycam.logbook.page_removed", pageCount(book), MAX_PAGES).withStyle(ChatFormatting.YELLOW), true);
+            player.sendOverlayMessage(Component.translatable("message.bodycam.logbook.page_removed", pageCount(book), MAX_PAGES).withStyle(ChatFormatting.YELLOW));
         }
     }
 
@@ -250,7 +250,7 @@ public class LogBookItem extends Item {
             boolean offHand = hand == InteractionHand.OFF_HAND;
             if (sPlayer.isShiftKeyDown()) {
                 if (!hasPin(stack) && pageCount(stack) == 0) {
-                    sPlayer.displayClientMessage(Component.translatable("message.bodycam.logbook.empty_no_pin").withStyle(ChatFormatting.RED), true);
+                    sPlayer.sendOverlayMessage(Component.translatable("message.bodycam.logbook.empty_no_pin").withStyle(ChatFormatting.RED));
                     return InteractionResult.SUCCESS;
                 }
                 PacketHandler.sendToPlayer(sPlayer,

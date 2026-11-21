@@ -121,6 +121,14 @@ public final class ItemDurabilityHelper {
                 || item instanceof DimensionLocatorItem;
     }
 
+    public static boolean isRepairableModItem(Item item) {
+        return item instanceof PlayerLocatorCompassItem
+                || item instanceof AnonymizerItem
+                || item instanceof JammerItem
+                || item instanceof BodycamMonitorItem
+                || item instanceof DimensionLocatorItem;
+    }
+
     public static boolean isRepairableModItem(ItemStack stack) {
         return isPerTimeItem(stack) || isPerUseItem(stack);
     }
