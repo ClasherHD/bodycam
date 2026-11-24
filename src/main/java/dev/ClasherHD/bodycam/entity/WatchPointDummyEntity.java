@@ -85,7 +85,7 @@ public class WatchPointDummyEntity extends BodycamDummyEntity {
         }
         BlockPos pos = getWatchPointPos();
         if (pos != null) {
-            return "Watch Point (" + pos.getX() + ", " + pos.getY() + ", " + pos.getZ() + ")";
+            return pos.getX() + ", " + pos.getY() + ", " + pos.getZ();
         }
         return "Watch Point";
     }

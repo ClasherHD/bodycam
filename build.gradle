@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "dev.ClasherHD"
-version = "3.0"
+version = "3.0.1"
 base.archivesName = "bodycam-forge-1.20.1"
 
 java {
