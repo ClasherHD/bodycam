@@ -79,6 +79,7 @@ public class AnonymizerItem extends Item {
             boolean newState = !currentState;
 
             CompoundTag pData = PersistentDataAccess.get(sp);
+            pData.remove("bodycam_creative_carried_anonymizer_id");
             UUID activeId = null;
             if (newState) {
                 activeId = UUID.randomUUID();
@@ -157,6 +158,19 @@ public class AnonymizerItem extends Item {
 
             boolean itemActive = ItemNbtAccess.getBoolean(stack, "AnonymizerActive");
             UUID itemActiveId = ItemNbtAccess.getUUID(stack, "active_id");
+
+            if (!hasActivePlayerAnonymizer
+                    && player.isCreative()
+                    && itemActive
+                    && itemActiveId != null
+                    && PersistentDataAccess.hasUUID(pData, "bodycam_creative_carried_anonymizer_id")
+                    && itemActiveId.equals(PersistentDataAccess.getUUID(pData, "bodycam_creative_carried_anonymizer_id"))) {
+                PersistentDataAccess.putUUID(pData, "bodycam_active_anonymizer_id", itemActiveId);
+                pData.putLong("bodycam_anonymizer_heartbeat", level.getGameTime());
+                pData.remove("bodycam_creative_carried_anonymizer_id");
+                hasActivePlayerAnonymizer = true;
+                playerActiveId = itemActiveId;
+            }
 
             if (hasActivePlayerAnonymizer) {
                 final UUID finalPlayerActiveId = playerActiveId;

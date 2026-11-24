@@ -148,6 +148,16 @@ public class SyncBodycamRequestC2SPacket implements CustomPacketPayload {
             int mode = 0;
             boolean hasAnonymizer = false;
             if (!isAllSeeingEye) {
+                ItemStack carried = p.containerMenu != null ? p.containerMenu.getCarried() : ItemStack.EMPTY;
+                if (!carried.isEmpty() && !ItemDurabilityHelper.isEmpty(carried)) {
+                    CompoundTag carriedTag = ItemNbtAccess.getReadOnlyTag(carried);
+                    if (carried.getItem() instanceof JammerItem && carriedTag != null && carriedTag.contains("JammerMode")) {
+                        mode = PodestBlockEntity.combineJammerModes(mode, carriedTag.getIntOr("JammerMode", 0));
+                    }
+                    if (carried.getItem() instanceof AnonymizerItem && carriedTag != null && carriedTag.getBooleanOr("AnonymizerActive", false)) {
+                        hasAnonymizer = true;
+                    }
+                }
                 for (int i = 0; i < p.getInventory().getContainerSize(); i++) {
                     ItemStack stack = p.getInventory().getItem(i);
                     CompoundTag tag = ItemNbtAccess.getReadOnlyTag(stack);

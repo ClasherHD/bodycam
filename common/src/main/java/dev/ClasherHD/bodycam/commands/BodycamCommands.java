@@ -447,6 +447,13 @@ public class BodycamCommands {
 
         int personalJammer = 0;
         boolean personalAnonymizer = false;
+        ItemStack carried = target.containerMenu != null ? target.containerMenu.getCarried() : ItemStack.EMPTY;
+        if (carried.getItem() instanceof JammerItem && !ItemDurabilityHelper.isEmpty(carried)) {
+            personalJammer = PodestBlockEntity.combineJammerModes(personalJammer, ItemNbtAccess.getInt(carried, "JammerMode"));
+        }
+        if (carried.getItem() instanceof AnonymizerItem && !ItemDurabilityHelper.isEmpty(carried) && ItemNbtAccess.getBoolean(carried, "AnonymizerActive")) {
+            personalAnonymizer = true;
+        }
         for (int i = 0; i < target.getInventory().getContainerSize(); i++) {
             ItemStack s = target.getInventory().getItem(i);
             if (s.getItem() instanceof JammerItem && !ItemDurabilityHelper.isEmpty(s)) {

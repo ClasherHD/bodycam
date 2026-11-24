@@ -77,6 +77,7 @@ import net.minecraft.world.level.storage.loot.entries.LootItem;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -108,6 +109,22 @@ public class ServerEvents {
         LifecycleEvent.SERVER_STOPPED.register(ServerEvents::onServerStopped);
         PlayerEvent.PLAYER_JOIN.register(ServerEvents::onPlayerLogin);
         PlayerEvent.PLAYER_QUIT.register(ServerEvents::onPlayerLogout);
+        PlayerEvent.DROP_ITEM.register((player, itemEntity) -> {
+            if (player instanceof ServerPlayer serverPlayer && !player.level().isClientSide() && itemEntity != null) {
+                ItemStack dropped = itemEntity.getItem();
+                CompoundTag pData = PersistentDataAccess.get(serverPlayer);
+                long now = serverPlayer.level().getGameTime();
+                if (dropped.getItem() instanceof JammerItem) {
+                    pData.remove("bodycam_creative_carried_jammer_id");
+                    pData.remove("bodycam_creative_carried_jammer_mode");
+                    pData.putLong("bodycam_jammer_drop_tick", now);
+                } else if (dropped.getItem() instanceof AnonymizerItem) {
+                    pData.remove("bodycam_creative_carried_anonymizer_id");
+                    pData.putLong("bodycam_anonymizer_drop_tick", now);
+                }
+            }
+            return EventResult.pass();
+        });
         TickEvent.SERVER_POST.register(CreepingDeathEntity::tickServerQueues);
         TickEvent.SERVER_LEVEL_POST.register(serverLevel -> {
             if (!serverLevel.isClientSide() && serverLevel.getGameTime() % 40L == 0L) {
@@ -424,6 +441,9 @@ public class ServerEvents {
         PlatformCommonHelper.clearEntityChunks(player.level().getServer(), id);
         data.remove("bodycam_all_seeing_active");
         data.remove("bodycam_all_seeing_pending");
+        data.remove("bodycam_creative_carried_jammer_id");
+        data.remove("bodycam_creative_carried_jammer_mode");
+        data.remove("bodycam_creative_carried_anonymizer_id");
     }
 
     private static ServerLevel resolveFogLevel(ServerPlayer observer, String dimStr) {
@@ -439,12 +459,105 @@ public class ServerEvents {
         return observer.level();
     }
 
+    public static void syncPersonalDeviceState(
+            ServerPlayer observer,
+            CompoundTag data,
+            ItemStack carried,
+            List<ItemStack> jammerAccessories,
+            List<ItemStack> anonymizerAccessories
+    ) {
+        boolean inCreativeInventory = observer.isCreative() && observer.containerMenu == observer.inventoryMenu;
+        if (!inCreativeInventory) {
+            data.remove("bodycam_creative_carried_jammer_id");
+            data.remove("bodycam_creative_carried_jammer_mode");
+            data.remove("bodycam_creative_carried_anonymizer_id");
+        }
+
+        if (PersistentDataAccess.hasUUID(data, "bodycam_active_jammer_id")) {
+            boolean hasJammer = (carried.getItem() instanceof JammerItem && !ItemDurabilityHelper.isEmpty(carried));
+            if (!hasJammer) {
+                for (ItemStack accStack : jammerAccessories) {
+                    if (!ItemDurabilityHelper.isEmpty(accStack)) {
+                        hasJammer = true;
+                        break;
+                    }
+                }
+            }
+            if (!hasJammer) {
+                for (int i = 0; i < observer.getInventory().getContainerSize(); i++) {
+                    ItemStack invStack = observer.getInventory().getItem(i);
+                    if (invStack.getItem() instanceof JammerItem && !ItemDurabilityHelper.isEmpty(invStack)) {
+                        hasJammer = true;
+                        break;
+                    }
+                }
+            }
+            if (hasJammer) {
+                data.putInt("bodycam_jammer_missing_ticks", 0);
+            } else {
+                if (inCreativeInventory && data.getLongOr("bodycam_jammer_drop_tick", Long.MIN_VALUE) != observer.level().getGameTime()) {
+                    UUID activeId = PersistentDataAccess.getUUID(data, "bodycam_active_jammer_id");
+                    if (activeId != null) {
+                        PersistentDataAccess.putUUID(data, "bodycam_creative_carried_jammer_id", activeId);
+                        data.putInt("bodycam_creative_carried_jammer_mode", data.getIntOr("bodycam_jammer_mode", 0));
+                    }
+                }
+                data.remove("bodycam_active_jammer_id");
+                data.remove("bodycam_jammer_mode");
+                data.remove("bodycam_jammer_missing_ticks");
+            }
+        }
+
+        if (PersistentDataAccess.hasUUID(data, "bodycam_active_anonymizer_id")) {
+            boolean hasAnonymizer = (carried.getItem() instanceof AnonymizerItem && !ItemDurabilityHelper.isEmpty(carried));
+            if (!hasAnonymizer) {
+                for (ItemStack accStack : anonymizerAccessories) {
+                    if (!ItemDurabilityHelper.isEmpty(accStack)) {
+                        hasAnonymizer = true;
+                        break;
+                    }
+                }
+            }
+            if (!hasAnonymizer) {
+                for (int i = 0; i < observer.getInventory().getContainerSize(); i++) {
+                    ItemStack invStack = observer.getInventory().getItem(i);
+                    if (invStack.getItem() instanceof AnonymizerItem && !ItemDurabilityHelper.isEmpty(invStack)) {
+                        hasAnonymizer = true;
+                        break;
+                    }
+                }
+            }
+            if (hasAnonymizer) {
+                data.putInt("bodycam_anonymizer_missing_ticks", 0);
+            } else {
+                if (inCreativeInventory && data.getLongOr("bodycam_anonymizer_drop_tick", Long.MIN_VALUE) != observer.level().getGameTime()) {
+                    UUID activeId = PersistentDataAccess.getUUID(data, "bodycam_active_anonymizer_id");
+                    if (activeId != null) {
+                        PersistentDataAccess.putUUID(data, "bodycam_creative_carried_anonymizer_id", activeId);
+                    }
+                }
+                data.remove("bodycam_active_anonymizer_id");
+                data.remove("bodycam_anonymizer_missing_ticks");
+            }
+        }
+
+        if (!carried.isEmpty() && (carried.getItem() instanceof JammerItem || carried.getItem() instanceof AnonymizerItem)) {
+            carried.getItem().inventoryTick(carried, observer.level(), observer, null);
+        }
+        for (ItemStack accStack : jammerAccessories) {
+            accStack.getItem().inventoryTick(accStack, observer.level(), observer, null);
+        }
+        for (ItemStack accStack : anonymizerAccessories) {
+            accStack.getItem().inventoryTick(accStack, observer.level(), observer, null);
+        }
+    }
+
     public static void onServerPlayerTick(ServerPlayer observer) {
         if (observer.tickCount % 20 == 0 && ItemDurabilityHelper.hasFullObservationCrystalTrimSet(observer)) {
             ModAdvancements.award(observer, ModAdvancements.CRYSTAL_TRIM_SET);
         }
 
-        ItemStack carried = observer.containerMenu.getCarried();
+        ItemStack carried = observer.containerMenu != null ? observer.containerMenu.getCarried() : ItemStack.EMPTY;
         CompoundTag data = PersistentDataAccess.get(observer);
 
         int allSeeingFogTicks = data.getIntOr("bodycam_all_seeing_fog_ticks", 0);
@@ -469,70 +582,9 @@ public class ServerEvents {
             fogLevel.sendParticles(ParticleTypes.SCULK_SOUL, fx, fy + 1.0D, fz, 12, 0.75D, 0.85D, 0.75D, 0.03D);
         }
 
-        if (PersistentDataAccess.hasUUID(data, "bodycam_active_jammer_id")) {
-            boolean hasJammer = (carried.getItem() instanceof JammerItem && !ItemDurabilityHelper.isEmpty(carried));
-            if (!hasJammer) {
-                for (ItemStack accStack : BodycamPlatform.getEquippedAccessoryItems(observer, ModItems.JAMMER.get())) {
-                    if (!ItemDurabilityHelper.isEmpty(accStack)) {
-                        hasJammer = true;
-                        break;
-                    }
-                }
-            }
-            if (!hasJammer) {
-                for (int i = 0; i < observer.getInventory().getContainerSize(); i++) {
-                    ItemStack invStack = observer.getInventory().getItem(i);
-                    if (invStack.getItem() instanceof JammerItem && !ItemDurabilityHelper.isEmpty(invStack)) {
-                        hasJammer = true;
-                        break;
-                    }
-                }
-            }
-            if (hasJammer) {
-                data.putInt("bodycam_jammer_missing_ticks", 0);
-            } else {
-                data.remove("bodycam_active_jammer_id");
-                data.remove("bodycam_jammer_mode");
-                data.remove("bodycam_jammer_missing_ticks");
-            }
-        }
-
-        if (PersistentDataAccess.hasUUID(data, "bodycam_active_anonymizer_id")) {
-            boolean hasAnonymizer = (carried.getItem() instanceof AnonymizerItem && !ItemDurabilityHelper.isEmpty(carried));
-            if (!hasAnonymizer) {
-                for (ItemStack accStack : BodycamPlatform.getEquippedAccessoryItems(observer, ModItems.ANONYMIZER.get())) {
-                    if (!ItemDurabilityHelper.isEmpty(accStack)) {
-                        hasAnonymizer = true;
-                        break;
-                    }
-                }
-            }
-            if (!hasAnonymizer) {
-                for (int i = 0; i < observer.getInventory().getContainerSize(); i++) {
-                    ItemStack invStack = observer.getInventory().getItem(i);
-                    if (invStack.getItem() instanceof AnonymizerItem && !ItemDurabilityHelper.isEmpty(invStack)) {
-                        hasAnonymizer = true;
-                        break;
-                    }
-                }
-            }
-            if (hasAnonymizer) {
-                data.putInt("bodycam_anonymizer_missing_ticks", 0);
-            } else {
-                data.remove("bodycam_active_anonymizer_id");
-                data.remove("bodycam_anonymizer_missing_ticks");
-            }
-        }
-
-        if (!carried.isEmpty() && (carried.getItem() instanceof JammerItem || carried.getItem() instanceof AnonymizerItem)) {
-            carried.getItem().inventoryTick(carried, observer.level(), observer, null);
-        }
-        for (ItemStack accStack : BodycamPlatform.getEquippedAccessoryItems(observer, ModItems.JAMMER.get())) {
-            accStack.getItem().inventoryTick(accStack, observer.level(), observer, null);
-        }
-        for (ItemStack accStack : BodycamPlatform.getEquippedAccessoryItems(observer, ModItems.ANONYMIZER.get())) {
-            accStack.getItem().inventoryTick(accStack, observer.level(), observer, null);
-        }
+        List<ItemStack> jammerAccessories = BodycamPlatform.getEquippedAccessoryItems(observer, ModItems.JAMMER.get());
+        List<ItemStack> anonymizerAccessories = BodycamPlatform.getEquippedAccessoryItems(observer, ModItems.ANONYMIZER.get());
+        syncPersonalDeviceState(observer, data, carried, jammerAccessories, anonymizerAccessories);
 
         LockData lockData = POSITION_LOCKS.get(observer.getUUID());
         if (lockData != null) {

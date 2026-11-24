@@ -88,6 +88,12 @@ public final class EnchantmentLevels {
             return 0;
         }
         int highest = 0;
+        ItemStack carried = player.containerMenu != null ? player.containerMenu.getCarried() : ItemStack.EMPTY;
+        if (carried.getItem() instanceof AnonymizerItem
+                && !ItemDurabilityHelper.isEmpty(carried)
+                && ItemNbtAccess.getBoolean(carried, "AnonymizerActive")) {
+            highest = Math.max(highest, anonymity(carried));
+        }
         for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
             ItemStack stack = player.getInventory().getItem(i);
             if (stack.getItem() instanceof AnonymizerItem

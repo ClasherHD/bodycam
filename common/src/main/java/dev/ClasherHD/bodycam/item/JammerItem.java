@@ -92,6 +92,8 @@ public class JammerItem extends Item {
             int nextMode = (currentMode + 1) % 3;
 
             CompoundTag pData = PersistentDataAccess.get(sp);
+            pData.remove("bodycam_creative_carried_jammer_id");
+            pData.remove("bodycam_creative_carried_jammer_mode");
             UUID activeId = null;
             if (nextMode > 0) {
                 activeId = UUID.randomUUID();
@@ -171,6 +173,22 @@ public class JammerItem extends Item {
 
             int itemMode = getMode(stack);
             UUID itemActiveId = ItemNbtAccess.getUUID(stack, "active_id");
+
+            if (!hasActivePlayerJammer
+                    && player.isCreative()
+                    && itemMode > 0
+                    && itemActiveId != null
+                    && PersistentDataAccess.hasUUID(pData, "bodycam_creative_carried_jammer_id")
+                    && itemActiveId.equals(PersistentDataAccess.getUUID(pData, "bodycam_creative_carried_jammer_id"))) {
+                PersistentDataAccess.putUUID(pData, "bodycam_active_jammer_id", itemActiveId);
+                pData.putInt("bodycam_jammer_mode", itemMode);
+                pData.putLong("bodycam_jammer_heartbeat", level.getGameTime());
+                pData.remove("bodycam_creative_carried_jammer_id");
+                pData.remove("bodycam_creative_carried_jammer_mode");
+                hasActivePlayerJammer = true;
+                playerActiveId = itemActiveId;
+                playerActiveMode = itemMode;
+            }
 
             if (hasActivePlayerJammer) {
                 final UUID finalPlayerActiveId = playerActiveId;
