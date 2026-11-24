@@ -59,7 +59,7 @@ class WatchPointDummyEntityTest {
         assertThat(dummy.getSelectionDisplayName()).isEqualTo("Observation Post 1");
 
         dummy.custom = "";
-        assertThat(dummy.getSelectionDisplayName()).isEqualTo("Watch Point (100, 70, -300)");
+        assertThat(dummy.getSelectionDisplayName()).isEqualTo("100, 70, -300");
 
         dummy.custom = null;
         dummy.pos = null;
