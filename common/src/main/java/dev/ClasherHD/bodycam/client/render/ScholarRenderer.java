@@ -63,10 +63,10 @@ public class ScholarRenderer extends MobRenderer<ScholarEntity, AvatarRenderStat
             AvatarRenderState state,
             PoseStack poseStack,
             SubmitNodeCollector submitNodeCollector,
-            CameraRenderState cameraRenderState
-    ) {
+            CameraRenderState cameraRenderState) {
         PlayerModel previousModel = this.model;
-        this.model = state.skin != null && state.skin.model() == PlayerModelType.SLIM ? this.slimModel : this.classicModel;
+        this.model = state.skin != null && state.skin.model() == PlayerModelType.SLIM ? this.slimModel
+                : this.classicModel;
         try {
             super.submit(state, poseStack, submitNodeCollector, cameraRenderState);
         } finally {

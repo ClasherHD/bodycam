@@ -28,8 +28,8 @@ import java.util.UUID;
 
 public class CreepingDeathActionC2SPacket implements CustomPacketPayload {
     public static final Type<CreepingDeathActionC2SPacket> TYPE = new Type<>(bodycam.id("creeping_death_action"));
-    public static final StreamCodec<RegistryFriendlyByteBuf, CreepingDeathActionC2SPacket> STREAM_CODEC =
-            StreamCodec.of(CreepingDeathActionC2SPacket::encode, CreepingDeathActionC2SPacket::decode);
+    public static final StreamCodec<RegistryFriendlyByteBuf, CreepingDeathActionC2SPacket> STREAM_CODEC = StreamCodec
+            .of(CreepingDeathActionC2SPacket::encode, CreepingDeathActionC2SPacket::decode);
 
     public final int mode;
     public final boolean offHand;
@@ -75,10 +75,12 @@ public class CreepingDeathActionC2SPacket implements CustomPacketPayload {
             if (server == null) {
                 return;
             }
-            if (ModServerConfig.OP_ONLY_MODE.get() && !sender.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
+            if (ModServerConfig.OP_ONLY_MODE.get()
+                    && !sender.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
                 return;
             }
-            if (!ModServerConfig.ENABLE_CREEPING_DEATH.get() || ModServerConfig.isDimensionBlacklisted(sender.level())) {
+            if (!ModServerConfig.ENABLE_CREEPING_DEATH.get()
+                    || ModServerConfig.isDimensionBlacklisted(sender.level())) {
                 return;
             }
 
@@ -100,12 +102,14 @@ public class CreepingDeathActionC2SPacket implements CustomPacketPayload {
                 if (msg.chosenUUID == null || msg.chosenName.isEmpty()) {
                     CreepingDeathItem.clearSkin(stack);
                     sender.displayClientMessage(
-                            Component.translatable("message.bodycam.creeping_death.skin_reset").withStyle(ChatFormatting.GRAY),
+                            Component.translatable("message.bodycam.creeping_death.skin_reset")
+                                    .withStyle(ChatFormatting.GRAY),
                             true);
                 } else {
                     CreepingDeathItem.setSkin(stack, msg.chosenUUID, msg.chosenName);
                     sender.displayClientMessage(
-                            Component.translatable("message.bodycam.creeping_death.skin_selected", msg.chosenName).withStyle(ChatFormatting.GRAY),
+                            Component.translatable("message.bodycam.creeping_death.skin_selected", msg.chosenName)
+                                    .withStyle(ChatFormatting.GRAY),
                             true);
                 }
                 return;
@@ -122,12 +126,14 @@ public class CreepingDeathActionC2SPacket implements CustomPacketPayload {
                         || target.level().dimension() != sender.level().dimension()
                         || target.isCreative() || (target.isSpectator() && !targetInBodycam)) {
                     sender.sendSystemMessage(
-                            Component.translatable("message.bodycam.creeping_death.invalid_target").withStyle(ChatFormatting.RED));
+                            Component.translatable("message.bodycam.creeping_death.invalid_target")
+                                    .withStyle(ChatFormatting.RED));
                     return;
                 }
                 if (CreepingDeathEntity.isTargetAlreadyHunted(server, target.getUUID())) {
                     sender.sendSystemMessage(
-                            Component.translatable("message.bodycam.creeping_death.already_hunted").withStyle(ChatFormatting.RED));
+                            Component.translatable("message.bodycam.creeping_death.already_hunted")
+                                    .withStyle(ChatFormatting.RED));
                     return;
                 }
                 if (targetInBodycam || targetData.getBooleanOr("bodycam_all_seeing_pending", false)) {
@@ -154,20 +160,17 @@ public class CreepingDeathActionC2SPacket implements CustomPacketPayload {
                 sender.level().sendParticles(
                         ParticleTypes.LARGE_SMOKE,
                         sender.getX(), sender.getY() + 1.0D, sender.getZ(),
-                        35, 0.75D, 0.85D, 0.75D, 0.02D
-                );
+                        35, 0.75D, 0.85D, 0.75D, 0.02D);
                 sender.level().sendParticles(
                         ParticleTypes.SCULK_SOUL,
                         sender.getX(), sender.getY() + 1.0D, sender.getZ(),
-                        25, 0.75D, 0.85D, 0.75D, 0.03D
-                );
+                        25, 0.75D, 0.85D, 0.75D, 0.03D);
                 sender.level().playSound(
                         null,
                         sender.getX(), sender.getY(), sender.getZ(),
                         ModSounds.CREEPING_DEATH_USE.get(),
                         SoundSource.PLAYERS,
-                        1.2F, 0.6F
-                );
+                        1.2F, 0.6F);
 
                 target.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 220, 0, false, false, true));
                 target.level().playSound(
@@ -175,8 +178,7 @@ public class CreepingDeathActionC2SPacket implements CustomPacketPayload {
                         target.getX(), target.getY(), target.getZ(),
                         ModSounds.CREEPING_DEATH_HEARTBEAT.get(),
                         SoundSource.HOSTILE,
-                        2.0F, 0.9F
-                );
+                        2.0F, 0.9F);
 
                 CreepingDeathEntity.scheduleSpawn(target.getUUID(), skinUUID, skinName);
             }

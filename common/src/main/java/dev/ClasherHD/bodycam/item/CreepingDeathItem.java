@@ -107,16 +107,19 @@ public class CreepingDeathItem extends Item {
             return InteractionResult.PASS;
         }
 
-        if (ModServerConfig.OP_ONLY_MODE.get() && !sPlayer.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
+        if (ModServerConfig.OP_ONLY_MODE.get()
+                && !sPlayer.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
             sPlayer.sendSystemMessage(Component.translatable("message.bodycam.op_only").withStyle(ChatFormatting.RED));
             return InteractionResult.FAIL;
         }
         if (ModServerConfig.isDimensionBlacklisted(level)) {
-            sPlayer.sendSystemMessage(Component.translatable("message.bodycam.dimension_blacklisted").withStyle(ChatFormatting.RED));
+            sPlayer.sendSystemMessage(
+                    Component.translatable("message.bodycam.dimension_blacklisted").withStyle(ChatFormatting.RED));
             return InteractionResult.FAIL;
         }
         if (!ModServerConfig.ENABLE_CREEPING_DEATH.get()) {
-            sPlayer.sendSystemMessage(Component.translatable("message.bodycam.creeping_death_disabled").withStyle(ChatFormatting.RED));
+            sPlayer.sendSystemMessage(
+                    Component.translatable("message.bodycam.creeping_death_disabled").withStyle(ChatFormatting.RED));
             return InteractionResult.FAIL;
         }
 
@@ -128,8 +131,7 @@ public class CreepingDeathItem extends Item {
                     OpenCreepingDeathScreenS2CPacket.MODE_SKIN,
                     offHand,
                     skinEntries,
-                    getSkinUUID(stack)
-            ));
+                    getSkinUUID(stack)));
             return InteractionResult.SUCCESS;
         }
 
@@ -148,8 +150,7 @@ public class CreepingDeathItem extends Item {
             targetEntries.add(new OpenCreepingDeathScreenS2CPacket.PlayerEntryData(
                     other.getUUID(),
                     other.getGameProfile().name(),
-                    alreadyHunted
-            ));
+                    alreadyHunted));
         }
         targetEntries.sort(Comparator.comparing(e -> e.name().toLowerCase()));
 
@@ -157,8 +158,7 @@ public class CreepingDeathItem extends Item {
                 OpenCreepingDeathScreenS2CPacket.MODE_TARGET,
                 offHand,
                 targetEntries,
-                getSkinUUID(stack)
-        ));
+                getSkinUUID(stack)));
         return InteractionResult.SUCCESS;
     }
 
@@ -171,7 +171,8 @@ public class CreepingDeathItem extends Item {
         invalidateKnownPlayersCache();
     }
 
-    public static List<OpenCreepingDeathScreenS2CPacket.PlayerEntryData> collectAllKnownPlayers(MinecraftServer server) {
+    public static List<OpenCreepingDeathScreenS2CPacket.PlayerEntryData> collectAllKnownPlayers(
+            MinecraftServer server) {
         Map<UUID, String> known = new LinkedHashMap<>();
 
         for (ServerPlayer online : server.getPlayerList().getPlayers()) {
@@ -239,11 +240,14 @@ public class CreepingDeathItem extends Item {
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay tooltipDisplay,
             Consumer<Component> tooltipAdder, TooltipFlag flag) {
         super.appendHoverText(stack, context, tooltipDisplay, tooltipAdder, flag);
-        tooltipAdder.accept(Component.translatable("tooltip.bodycam.creeping_death.desc").withStyle(ChatFormatting.DARK_GRAY));
+        tooltipAdder.accept(
+                Component.translatable("tooltip.bodycam.creeping_death.desc").withStyle(ChatFormatting.DARK_GRAY));
         if (hasCustomSkin(stack)) {
-            tooltipAdder.accept(Component.translatable("tooltip.bodycam.creeping_death.skin", getSkinName(stack)).withStyle(ChatFormatting.GRAY));
+            tooltipAdder.accept(Component.translatable("tooltip.bodycam.creeping_death.skin", getSkinName(stack))
+                    .withStyle(ChatFormatting.GRAY));
         } else {
-            tooltipAdder.accept(Component.translatable("tooltip.bodycam.creeping_death.skin_default").withStyle(ChatFormatting.DARK_GRAY));
+            tooltipAdder.accept(Component.translatable("tooltip.bodycam.creeping_death.skin_default")
+                    .withStyle(ChatFormatting.DARK_GRAY));
         }
     }
 }

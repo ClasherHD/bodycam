@@ -43,7 +43,8 @@ public final class PlatformCommonHelper {
         }
         long chunkLong = ChunkPos.asLong(chunkX, chunkZ);
         if (add) {
-            Map<Long, Set<String>> dimMap = FORCED_CHUNK_OWNERS.computeIfAbsent(level.dimension(), k -> new ConcurrentHashMap<>());
+            Map<Long, Set<String>> dimMap = FORCED_CHUNK_OWNERS.computeIfAbsent(level.dimension(),
+                    k -> new ConcurrentHashMap<>());
             Set<String> owners = dimMap.computeIfAbsent(chunkLong, k -> ConcurrentHashMap.newKeySet());
             boolean wasEmpty = owners.isEmpty();
             owners.add(ownerKey);

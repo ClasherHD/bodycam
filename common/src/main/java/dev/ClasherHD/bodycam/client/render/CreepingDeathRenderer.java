@@ -32,9 +32,9 @@ public class CreepingDeathRenderer extends MobRenderer<CreepingDeathEntity, Avat
         this.slimModel = new PlayerModel(context.bakeLayer(ModelLayers.PLAYER_SLIM), true);
         this.addLayer(new HumanoidArmorLayer<>(
                 this,
-                ArmorModelSet.bake(ModelLayers.PLAYER_ARMOR, context.getModelSet(), part -> new PlayerModel(part, false)),
-                context.getEquipmentRenderer()
-        ));
+                ArmorModelSet.bake(ModelLayers.PLAYER_ARMOR, context.getModelSet(),
+                        part -> new PlayerModel(part, false)),
+                context.getEquipmentRenderer()));
         this.addLayer(new GlowingArmorTrimLayer<>(this, context.getModelSet()));
         this.addLayer(new WingsLayer<>(this, context.getModelSet(), context.getEquipmentRenderer()));
         this.addLayer(new BodycamItemInHandLayer<>(this));
@@ -54,8 +54,7 @@ public class CreepingDeathRenderer extends MobRenderer<CreepingDeathEntity, Avat
         if (scholarSkin != null && !scholarSkin.isEmpty()) {
             state.skin = HumanoidRenderHelper.createStaticSkin(
                     ScholarRenderer.getTextureForVariant(scholarSkin),
-                    entity.isSlimModel()
-            );
+                    entity.isSlimModel());
         } else {
             state.skin = HumanoidRenderHelper.resolvePlayerSkin(entity.getSkinUUID(), entity.getSkinName(), null);
         }
@@ -78,10 +77,10 @@ public class CreepingDeathRenderer extends MobRenderer<CreepingDeathEntity, Avat
             AvatarRenderState state,
             PoseStack poseStack,
             SubmitNodeCollector submitNodeCollector,
-            CameraRenderState cameraRenderState
-    ) {
+            CameraRenderState cameraRenderState) {
         PlayerModel previousModel = this.model;
-        this.model = state.skin != null && state.skin.model() == PlayerModelType.SLIM ? this.slimModel : this.classicModel;
+        this.model = state.skin != null && state.skin.model() == PlayerModelType.SLIM ? this.slimModel
+                : this.classicModel;
         try {
             super.submit(state, poseStack, submitNodeCollector, cameraRenderState);
         } finally {

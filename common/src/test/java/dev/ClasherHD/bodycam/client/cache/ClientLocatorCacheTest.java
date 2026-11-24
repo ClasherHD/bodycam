@@ -29,7 +29,8 @@ class ClientLocatorCacheTest {
         BlockPos targetPos = new BlockPos(128, 70, -256);
         ClientLocatorCache.updateStructure(targetPos, "bodycam:scrambled");
 
-        ResourceKey<Level> expectedKey = ResourceKey.create(Registries.DIMENSION, Identifier.fromNamespaceAndPath("bodycam", "scrambled"));
+        ResourceKey<Level> expectedKey = ResourceKey.create(Registries.DIMENSION,
+                Identifier.fromNamespaceAndPath("bodycam", "scrambled"));
         assertThat(ClientLocatorCache.structureTarget).isEqualTo(targetPos);
         assertThat(ClientLocatorCache.structureTargetDimension).isEqualTo(expectedKey);
 

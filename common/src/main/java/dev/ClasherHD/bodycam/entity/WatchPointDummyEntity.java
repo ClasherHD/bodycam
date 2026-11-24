@@ -204,12 +204,14 @@ public class WatchPointDummyEntity extends BodycamDummyEntity {
                 PacketHandler.sendToPlayer(owner, new BodycamForceClosePacket());
             }
             if (wasKilled) {
-                owner.sendSystemMessage(Component.translatable("message.bodycam.watch_point.destroyed", getSelectionDisplayName())
-                        .withStyle(ChatFormatting.RED));
+                owner.sendSystemMessage(
+                        Component.translatable("message.bodycam.watch_point.destroyed", getSelectionDisplayName())
+                                .withStyle(ChatFormatting.RED));
             }
         }
         BlockPos wpPos = getWatchPointPos();
-        if (wpPos != null && this.level().isLoaded(wpPos) && this.level().getBlockEntity(wpPos) instanceof WatchPointBlockEntity be) {
+        if (wpPos != null && this.level().isLoaded(wpPos)
+                && this.level().getBlockEntity(wpPos) instanceof WatchPointBlockEntity be) {
             be.clearActiveDummyIfMatches(this.getUUID());
         }
     }

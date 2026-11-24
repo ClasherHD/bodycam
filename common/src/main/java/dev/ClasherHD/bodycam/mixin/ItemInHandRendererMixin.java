@@ -22,9 +22,9 @@ public class ItemInHandRendererMixin {
             SubmitNodeCollector submitNodeCollector,
             LocalPlayer player,
             int packedLight,
-            CallbackInfo ci
-    ) {
-        if (BodycamViewScreen.isMonitoring && Minecraft.getInstance().getCameraEntity() != Minecraft.getInstance().player) {
+            CallbackInfo ci) {
+        if (BodycamViewScreen.isMonitoring
+                && Minecraft.getInstance().getCameraEntity() != Minecraft.getInstance().player) {
             ci.cancel();
         }
     }
@@ -35,8 +35,7 @@ public class ItemInHandRendererMixin {
             SubmitNodeCollector submitNodeCollector,
             int packedLight,
             ItemStack stack,
-            CallbackInfo ci
-    ) {
+            CallbackInfo ci) {
         CherryHouseMapRenderer.renderTargetIcon(poseStack, submitNodeCollector, packedLight, stack);
     }
 }

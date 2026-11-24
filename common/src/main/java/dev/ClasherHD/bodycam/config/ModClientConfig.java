@@ -39,16 +39,26 @@ public class ModClientConfig {
                 if (obj == null) {
                     return;
                 }
-                if (obj.has("showNameOverlay")) SHOW_NAME_OVERLAY.set(obj.get("showNameOverlay").getAsBoolean());
-                if (obj.has("showHealthOverlay")) SHOW_HEALTH_OVERLAY.set(obj.get("showHealthOverlay").getAsBoolean());
-                if (obj.has("showShiftOverlay")) SHOW_SHIFT_OVERLAY.set(obj.get("showShiftOverlay").getAsBoolean());
-                if (obj.has("showDamageVignette")) SHOW_DAMAGE_VIGNETTE.set(obj.get("showDamageVignette").getAsBoolean());
-                if (obj.has("colorStandard")) COLOR_STANDARD.set(obj.get("colorStandard").getAsString());
-                if (obj.has("colorBlocked")) COLOR_BLOCKED.set(obj.get("colorBlocked").getAsString());
-                if (obj.has("colorObserving")) COLOR_OBSERVING.set(obj.get("colorObserving").getAsString());
-                if (obj.has("colorDimension")) COLOR_DIMENSION.set(obj.get("colorDimension").getAsString());
-                if (obj.has("colorOutOfRange")) COLOR_OUT_OF_RANGE.set(obj.get("colorOutOfRange").getAsString());
-                if (obj.has("colorOtherDimension")) COLOR_OTHER_DIMENSION.set(obj.get("colorOtherDimension").getAsString());
+                if (obj.has("showNameOverlay"))
+                    SHOW_NAME_OVERLAY.set(obj.get("showNameOverlay").getAsBoolean());
+                if (obj.has("showHealthOverlay"))
+                    SHOW_HEALTH_OVERLAY.set(obj.get("showHealthOverlay").getAsBoolean());
+                if (obj.has("showShiftOverlay"))
+                    SHOW_SHIFT_OVERLAY.set(obj.get("showShiftOverlay").getAsBoolean());
+                if (obj.has("showDamageVignette"))
+                    SHOW_DAMAGE_VIGNETTE.set(obj.get("showDamageVignette").getAsBoolean());
+                if (obj.has("colorStandard"))
+                    COLOR_STANDARD.set(obj.get("colorStandard").getAsString());
+                if (obj.has("colorBlocked"))
+                    COLOR_BLOCKED.set(obj.get("colorBlocked").getAsString());
+                if (obj.has("colorObserving"))
+                    COLOR_OBSERVING.set(obj.get("colorObserving").getAsString());
+                if (obj.has("colorDimension"))
+                    COLOR_DIMENSION.set(obj.get("colorDimension").getAsString());
+                if (obj.has("colorOutOfRange"))
+                    COLOR_OUT_OF_RANGE.set(obj.get("colorOutOfRange").getAsString());
+                if (obj.has("colorOtherDimension"))
+                    COLOR_OTHER_DIMENSION.set(obj.get("colorOtherDimension").getAsString());
             }
         } catch (Exception ignored) {
         }

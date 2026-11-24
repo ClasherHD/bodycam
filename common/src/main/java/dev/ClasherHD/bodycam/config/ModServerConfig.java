@@ -123,40 +123,79 @@ public class ModServerConfig {
                     loaded = true;
                     return;
                 }
-                if (obj.has("opOnlyMode")) OP_ONLY_MODE.set(obj.get("opOnlyMode").getAsBoolean());
-                if (obj.has("maxMonitorDistance")) MAX_MONITOR_DISTANCE.set(clampInt(obj.get("maxMonitorDistance").getAsInt(), 1, 1000000));
-                if (obj.has("enableReachEnchantment")) ENABLE_REACH_ENCHANTMENT.set(obj.get("enableReachEnchantment").getAsBoolean());
-                if (obj.has("enableJammer")) ENABLE_JAMMER.set(obj.get("enableJammer").getAsBoolean());
-                if (obj.has("enableDimensionLocator")) ENABLE_DIMENSION_LOCATOR.set(obj.get("enableDimensionLocator").getAsBoolean());
-                if (obj.has("enableHologramBlock")) ENABLE_HOLOGRAM_BLOCK.set(obj.get("enableHologramBlock").getAsBoolean());
-                if (obj.has("enableAnonymizer")) ENABLE_ANONYMIZER.set(obj.get("enableAnonymizer").getAsBoolean());
-                if (obj.has("enablePlayerLocator")) ENABLE_PLAYER_LOCATOR.set(obj.get("enablePlayerLocator").getAsBoolean());
-                if (obj.has("enableWatchPoint")) ENABLE_WATCH_POINT.set(obj.get("enableWatchPoint").getAsBoolean());
-                if (obj.has("enablePodest")) ENABLE_PODEST.set(obj.get("enablePodest").getAsBoolean());
-                if (obj.has("enableLogger")) ENABLE_LOGGER.set(obj.get("enableLogger").getAsBoolean());
-                if (obj.has("enableAllSeeingEye")) ENABLE_ALL_SEEING_EYE.set(obj.get("enableAllSeeingEye").getAsBoolean());
-                if (obj.has("enableCreepingDeath")) ENABLE_CREEPING_DEATH.set(obj.get("enableCreepingDeath").getAsBoolean());
-                if (obj.has("enablePortableNetherPortal")) ENABLE_PORTABLE_NETHER_PORTAL.set(obj.get("enablePortableNetherPortal").getAsBoolean());
-                if (obj.has("enableScholarCurse")) ENABLE_SCHOLAR_CURSE.set(obj.get("enableScholarCurse").getAsBoolean());
-                if (obj.has("enableCreepingDeathNuke")) ENABLE_CREEPING_DEATH_NUKE.set(obj.get("enableCreepingDeathNuke").getAsBoolean());
+                if (obj.has("opOnlyMode"))
+                    OP_ONLY_MODE.set(obj.get("opOnlyMode").getAsBoolean());
+                if (obj.has("maxMonitorDistance"))
+                    MAX_MONITOR_DISTANCE.set(clampInt(obj.get("maxMonitorDistance").getAsInt(), 1, 1000000));
+                if (obj.has("enableReachEnchantment"))
+                    ENABLE_REACH_ENCHANTMENT.set(obj.get("enableReachEnchantment").getAsBoolean());
+                if (obj.has("enableJammer"))
+                    ENABLE_JAMMER.set(obj.get("enableJammer").getAsBoolean());
+                if (obj.has("enableDimensionLocator"))
+                    ENABLE_DIMENSION_LOCATOR.set(obj.get("enableDimensionLocator").getAsBoolean());
+                if (obj.has("enableHologramBlock"))
+                    ENABLE_HOLOGRAM_BLOCK.set(obj.get("enableHologramBlock").getAsBoolean());
+                if (obj.has("enableAnonymizer"))
+                    ENABLE_ANONYMIZER.set(obj.get("enableAnonymizer").getAsBoolean());
+                if (obj.has("enablePlayerLocator"))
+                    ENABLE_PLAYER_LOCATOR.set(obj.get("enablePlayerLocator").getAsBoolean());
+                if (obj.has("enableWatchPoint"))
+                    ENABLE_WATCH_POINT.set(obj.get("enableWatchPoint").getAsBoolean());
+                if (obj.has("enablePodest"))
+                    ENABLE_PODEST.set(obj.get("enablePodest").getAsBoolean());
+                if (obj.has("enableLogger"))
+                    ENABLE_LOGGER.set(obj.get("enableLogger").getAsBoolean());
+                if (obj.has("enableAllSeeingEye"))
+                    ENABLE_ALL_SEEING_EYE.set(obj.get("enableAllSeeingEye").getAsBoolean());
+                if (obj.has("enableCreepingDeath"))
+                    ENABLE_CREEPING_DEATH.set(obj.get("enableCreepingDeath").getAsBoolean());
+                if (obj.has("enablePortableNetherPortal"))
+                    ENABLE_PORTABLE_NETHER_PORTAL.set(obj.get("enablePortableNetherPortal").getAsBoolean());
+                if (obj.has("enableScholarCurse"))
+                    ENABLE_SCHOLAR_CURSE.set(obj.get("enableScholarCurse").getAsBoolean());
+                if (obj.has("enableCreepingDeathNuke"))
+                    ENABLE_CREEPING_DEATH_NUKE.set(obj.get("enableCreepingDeathNuke").getAsBoolean());
 
-                if (obj.has("spyglassDurability")) SPYGLASS_DURABILITY.set(clampInt(obj.get("spyglassDurability").getAsInt(), 1, 100000));
-                if (obj.has("dimensionLocatorDurability")) DIMENSION_LOCATOR_DURABILITY.set(clampInt(obj.get("dimensionLocatorDurability").getAsInt(), 1, 100000));
-                if (obj.has("playerLocatorDurability")) PLAYER_LOCATOR_DURABILITY.set(clampInt(obj.get("playerLocatorDurability").getAsInt(), 1, 100000));
-                if (obj.has("anonymizerDurability")) ANONYMIZER_DURABILITY.set(clampInt(obj.get("anonymizerDurability").getAsInt(), 1, 100000));
-                if (obj.has("jammerDurability")) JAMMER_DURABILITY.set(clampInt(obj.get("jammerDurability").getAsInt(), 1, 100000));
-                if (obj.has("loggerDurability")) LOGGER_DURABILITY.set(clampInt(obj.get("loggerDurability").getAsInt(), 1, 100000));
-                if (obj.has("ancientTableFuelPerCrystal")) ANCIENT_TABLE_FUEL_PER_CRYSTAL.set(clampInt(obj.get("ancientTableFuelPerCrystal").getAsInt(), 1, 100000));
-                if (obj.has("ancientTableRepairSecondsPerCrystal")) ANCIENT_TABLE_REPAIR_SECONDS_PER_CRYSTAL.set(clampInt(obj.get("ancientTableRepairSecondsPerCrystal").getAsInt(), 1, 3600));
-                if (obj.has("ancientTableCraftSecondsPerItem")) ANCIENT_TABLE_CRAFT_SECONDS_PER_ITEM.set(clampInt(obj.get("ancientTableCraftSecondsPerItem").getAsInt(), 1, 3600));
+                if (obj.has("spyglassDurability"))
+                    SPYGLASS_DURABILITY.set(clampInt(obj.get("spyglassDurability").getAsInt(), 1, 100000));
+                if (obj.has("dimensionLocatorDurability"))
+                    DIMENSION_LOCATOR_DURABILITY
+                            .set(clampInt(obj.get("dimensionLocatorDurability").getAsInt(), 1, 100000));
+                if (obj.has("playerLocatorDurability"))
+                    PLAYER_LOCATOR_DURABILITY.set(clampInt(obj.get("playerLocatorDurability").getAsInt(), 1, 100000));
+                if (obj.has("anonymizerDurability"))
+                    ANONYMIZER_DURABILITY.set(clampInt(obj.get("anonymizerDurability").getAsInt(), 1, 100000));
+                if (obj.has("jammerDurability"))
+                    JAMMER_DURABILITY.set(clampInt(obj.get("jammerDurability").getAsInt(), 1, 100000));
+                if (obj.has("loggerDurability"))
+                    LOGGER_DURABILITY.set(clampInt(obj.get("loggerDurability").getAsInt(), 1, 100000));
+                if (obj.has("ancientTableFuelPerCrystal"))
+                    ANCIENT_TABLE_FUEL_PER_CRYSTAL
+                            .set(clampInt(obj.get("ancientTableFuelPerCrystal").getAsInt(), 1, 100000));
+                if (obj.has("ancientTableRepairSecondsPerCrystal"))
+                    ANCIENT_TABLE_REPAIR_SECONDS_PER_CRYSTAL
+                            .set(clampInt(obj.get("ancientTableRepairSecondsPerCrystal").getAsInt(), 1, 3600));
+                if (obj.has("ancientTableCraftSecondsPerItem"))
+                    ANCIENT_TABLE_CRAFT_SECONDS_PER_ITEM
+                            .set(clampInt(obj.get("ancientTableCraftSecondsPerItem").getAsInt(), 1, 3600));
 
-                if (obj.has("maxWatchPointsPerPlayer")) MAX_WATCH_POINTS_PER_PLAYER.set(clampInt(obj.get("maxWatchPointsPerPlayer").getAsInt(), 1, 100));
-                if (obj.has("maxWatchPointsTotal")) MAX_WATCH_POINTS_TOTAL.set(clampInt(obj.get("maxWatchPointsTotal").getAsInt(), 1, 1000));
+                if (obj.has("maxWatchPointsPerPlayer"))
+                    MAX_WATCH_POINTS_PER_PLAYER.set(clampInt(obj.get("maxWatchPointsPerPlayer").getAsInt(), 1, 100));
+                if (obj.has("maxWatchPointsTotal"))
+                    MAX_WATCH_POINTS_TOTAL.set(clampInt(obj.get("maxWatchPointsTotal").getAsInt(), 1, 1000));
 
-                if (obj.has("podestBlocksPerCharge")) PODEST_BLOCKS_PER_CHARGE.set(clampDouble(obj.get("podestBlocksPerCharge").getAsDouble(), 1.0D, 1000.0D));
-                if (obj.has("podestJammerNormalIntervalTicks")) PODEST_JAMMER_NORMAL_INTERVAL_TICKS.set(clampInt(obj.get("podestJammerNormalIntervalTicks").getAsInt(), 1, 72000));
-                if (obj.has("podestJammerLimitedIntervalTicks")) PODEST_JAMMER_LIMITED_INTERVAL_TICKS.set(clampInt(obj.get("podestJammerLimitedIntervalTicks").getAsInt(), 1, 72000));
-                if (obj.has("podestAnonymizerIntervalTicks")) PODEST_ANONYMIZER_INTERVAL_TICKS.set(clampInt(obj.get("podestAnonymizerIntervalTicks").getAsInt(), 1, 72000));
+                if (obj.has("podestBlocksPerCharge"))
+                    PODEST_BLOCKS_PER_CHARGE
+                            .set(clampDouble(obj.get("podestBlocksPerCharge").getAsDouble(), 1.0D, 1000.0D));
+                if (obj.has("podestJammerNormalIntervalTicks"))
+                    PODEST_JAMMER_NORMAL_INTERVAL_TICKS
+                            .set(clampInt(obj.get("podestJammerNormalIntervalTicks").getAsInt(), 1, 72000));
+                if (obj.has("podestJammerLimitedIntervalTicks"))
+                    PODEST_JAMMER_LIMITED_INTERVAL_TICKS
+                            .set(clampInt(obj.get("podestJammerLimitedIntervalTicks").getAsInt(), 1, 72000));
+                if (obj.has("podestAnonymizerIntervalTicks"))
+                    PODEST_ANONYMIZER_INTERVAL_TICKS
+                            .set(clampInt(obj.get("podestAnonymizerIntervalTicks").getAsInt(), 1, 72000));
 
                 if (obj.has("blacklistedDimensions") && obj.get("blacklistedDimensions").isJsonArray()) {
                     List<String> dims = new ArrayList<>();
@@ -173,13 +212,24 @@ public class ModServerConfig {
                     BLACKLISTED_DIMENSIONS.set(new ArrayList<>());
                 }
 
-                if (obj.has("portalSearchChunkRadius")) PORTAL_SEARCH_CHUNK_RADIUS.set(clampInt(obj.get("portalSearchChunkRadius").getAsInt(), 1, 32));
-                if (obj.has("locatorScanIntervalTicks")) LOCATOR_SCAN_INTERVAL_TICKS.set(clampInt(obj.get("locatorScanIntervalTicks").getAsInt(), 1, 1200));
-                if (obj.has("podestSphereCheckIntervalTicks")) PODEST_SPHERE_CHECK_INTERVAL_TICKS.set(clampInt(obj.get("podestSphereCheckIntervalTicks").getAsInt(), 1, 200));
-                if (obj.has("jammerNormalIntervalTicks")) JAMMER_NORMAL_INTERVAL_TICKS.set(clampInt(obj.get("jammerNormalIntervalTicks").getAsInt(), 1, 72000));
-                if (obj.has("jammerLimitedIntervalTicks")) JAMMER_LIMITED_INTERVAL_TICKS.set(clampInt(obj.get("jammerLimitedIntervalTicks").getAsInt(), 1, 72000));
-                if (obj.has("anonymizerIntervalTicks")) ANONYMIZER_INTERVAL_TICKS.set(clampInt(obj.get("anonymizerIntervalTicks").getAsInt(), 1, 72000));
-                if (obj.has("playerLocatorDurabilityIntervalTicks")) PLAYER_LOCATOR_DURABILITY_INTERVAL_TICKS.set(clampInt(obj.get("playerLocatorDurabilityIntervalTicks").getAsInt(), 1, 72000));
+                if (obj.has("portalSearchChunkRadius"))
+                    PORTAL_SEARCH_CHUNK_RADIUS.set(clampInt(obj.get("portalSearchChunkRadius").getAsInt(), 1, 32));
+                if (obj.has("locatorScanIntervalTicks"))
+                    LOCATOR_SCAN_INTERVAL_TICKS.set(clampInt(obj.get("locatorScanIntervalTicks").getAsInt(), 1, 1200));
+                if (obj.has("podestSphereCheckIntervalTicks"))
+                    PODEST_SPHERE_CHECK_INTERVAL_TICKS
+                            .set(clampInt(obj.get("podestSphereCheckIntervalTicks").getAsInt(), 1, 200));
+                if (obj.has("jammerNormalIntervalTicks"))
+                    JAMMER_NORMAL_INTERVAL_TICKS
+                            .set(clampInt(obj.get("jammerNormalIntervalTicks").getAsInt(), 1, 72000));
+                if (obj.has("jammerLimitedIntervalTicks"))
+                    JAMMER_LIMITED_INTERVAL_TICKS
+                            .set(clampInt(obj.get("jammerLimitedIntervalTicks").getAsInt(), 1, 72000));
+                if (obj.has("anonymizerIntervalTicks"))
+                    ANONYMIZER_INTERVAL_TICKS.set(clampInt(obj.get("anonymizerIntervalTicks").getAsInt(), 1, 72000));
+                if (obj.has("playerLocatorDurabilityIntervalTicks"))
+                    PLAYER_LOCATOR_DURABILITY_INTERVAL_TICKS
+                            .set(clampInt(obj.get("playerLocatorDurabilityIntervalTicks").getAsInt(), 1, 72000));
             }
             loaded = true;
         } catch (Exception ignored) {
@@ -216,16 +266,21 @@ public class ModServerConfig {
             obj.addProperty("jammerDurability", clampInt(JAMMER_DURABILITY.get(), 1, 100000));
             obj.addProperty("loggerDurability", clampInt(LOGGER_DURABILITY.get(), 1, 100000));
             obj.addProperty("ancientTableFuelPerCrystal", clampInt(ANCIENT_TABLE_FUEL_PER_CRYSTAL.get(), 1, 100000));
-            obj.addProperty("ancientTableRepairSecondsPerCrystal", clampInt(ANCIENT_TABLE_REPAIR_SECONDS_PER_CRYSTAL.get(), 1, 3600));
-            obj.addProperty("ancientTableCraftSecondsPerItem", clampInt(ANCIENT_TABLE_CRAFT_SECONDS_PER_ITEM.get(), 1, 3600));
+            obj.addProperty("ancientTableRepairSecondsPerCrystal",
+                    clampInt(ANCIENT_TABLE_REPAIR_SECONDS_PER_CRYSTAL.get(), 1, 3600));
+            obj.addProperty("ancientTableCraftSecondsPerItem",
+                    clampInt(ANCIENT_TABLE_CRAFT_SECONDS_PER_ITEM.get(), 1, 3600));
 
             obj.addProperty("maxWatchPointsPerPlayer", clampInt(MAX_WATCH_POINTS_PER_PLAYER.get(), 1, 100));
             obj.addProperty("maxWatchPointsTotal", clampInt(MAX_WATCH_POINTS_TOTAL.get(), 1, 1000));
 
             obj.addProperty("podestBlocksPerCharge", clampDouble(PODEST_BLOCKS_PER_CHARGE.get(), 1.0D, 1000.0D));
-            obj.addProperty("podestJammerNormalIntervalTicks", clampInt(PODEST_JAMMER_NORMAL_INTERVAL_TICKS.get(), 1, 72000));
-            obj.addProperty("podestJammerLimitedIntervalTicks", clampInt(PODEST_JAMMER_LIMITED_INTERVAL_TICKS.get(), 1, 72000));
-            obj.addProperty("podestAnonymizerIntervalTicks", clampInt(PODEST_ANONYMIZER_INTERVAL_TICKS.get(), 1, 72000));
+            obj.addProperty("podestJammerNormalIntervalTicks",
+                    clampInt(PODEST_JAMMER_NORMAL_INTERVAL_TICKS.get(), 1, 72000));
+            obj.addProperty("podestJammerLimitedIntervalTicks",
+                    clampInt(PODEST_JAMMER_LIMITED_INTERVAL_TICKS.get(), 1, 72000));
+            obj.addProperty("podestAnonymizerIntervalTicks",
+                    clampInt(PODEST_ANONYMIZER_INTERVAL_TICKS.get(), 1, 72000));
 
             JsonArray dimsArray = new JsonArray();
             List<String> dims = BLACKLISTED_DIMENSIONS.get();
@@ -240,11 +295,13 @@ public class ModServerConfig {
 
             obj.addProperty("portalSearchChunkRadius", clampInt(PORTAL_SEARCH_CHUNK_RADIUS.get(), 1, 32));
             obj.addProperty("locatorScanIntervalTicks", clampInt(LOCATOR_SCAN_INTERVAL_TICKS.get(), 1, 1200));
-            obj.addProperty("podestSphereCheckIntervalTicks", clampInt(PODEST_SPHERE_CHECK_INTERVAL_TICKS.get(), 1, 200));
+            obj.addProperty("podestSphereCheckIntervalTicks",
+                    clampInt(PODEST_SPHERE_CHECK_INTERVAL_TICKS.get(), 1, 200));
             obj.addProperty("jammerNormalIntervalTicks", clampInt(JAMMER_NORMAL_INTERVAL_TICKS.get(), 1, 72000));
             obj.addProperty("jammerLimitedIntervalTicks", clampInt(JAMMER_LIMITED_INTERVAL_TICKS.get(), 1, 72000));
             obj.addProperty("anonymizerIntervalTicks", clampInt(ANONYMIZER_INTERVAL_TICKS.get(), 1, 72000));
-            obj.addProperty("playerLocatorDurabilityIntervalTicks", clampInt(PLAYER_LOCATOR_DURABILITY_INTERVAL_TICKS.get(), 1, 72000));
+            obj.addProperty("playerLocatorDurabilityIntervalTicks",
+                    clampInt(PLAYER_LOCATOR_DURABILITY_INTERVAL_TICKS.get(), 1, 72000));
 
             writeJsonAtomically(file, obj);
             loaded = true;

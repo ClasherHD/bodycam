@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "bodycam",
-  "version": "3.0",
+  "version": "3.0.1",
   "name": "Bodycam",
   "description": "Bodycam Security, Surveillance & Tacticals Mod (1.21.11 Architectury Port).",
   "authors": [

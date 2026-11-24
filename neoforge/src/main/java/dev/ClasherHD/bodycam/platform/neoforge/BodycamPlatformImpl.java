@@ -52,7 +52,8 @@ public final class BodycamPlatformImpl {
                 if (!curiosChecked) {
                     try {
                         Class<?> apiClass = Class.forName("top.theillusivec4.curios.api.CuriosApi");
-                        Class<?> handlerClass = Class.forName("top.theillusivec4.curios.api.type.capability.ICuriosItemHandler");
+                        Class<?> handlerClass = Class
+                                .forName("top.theillusivec4.curios.api.type.capability.ICuriosItemHandler");
                         Class<?> slotResultClass = Class.forName("top.theillusivec4.curios.api.SlotResult");
                         getCuriosInventoryMethod = apiClass.getMethod("getCuriosInventory", LivingEntity.class);
                         findCuriosMethod = handlerClass.getMethod("findCurios", Item.class);

@@ -38,9 +38,9 @@ public class BodycamDummyRenderer<T extends BodycamDummyEntity>
         this.slimModel = new PlayerModel(context.bakeLayer(ModelLayers.PLAYER_SLIM), true);
         this.addLayer(new HumanoidArmorLayer<>(
                 this,
-                ArmorModelSet.bake(ModelLayers.PLAYER_ARMOR, context.getModelSet(), part -> new PlayerModel(part, false)),
-                context.getEquipmentRenderer()
-        ));
+                ArmorModelSet.bake(ModelLayers.PLAYER_ARMOR, context.getModelSet(),
+                        part -> new PlayerModel(part, false)),
+                context.getEquipmentRenderer()));
         this.addLayer(new GlowingArmorTrimLayer<>(this, context.getModelSet()));
         this.addLayer(new BodycamItemInHandLayer<>(this));
         this.addLayer(new WingsLayer<>(this, context.getModelSet(), context.getEquipmentRenderer()));
@@ -81,8 +81,7 @@ public class BodycamDummyRenderer<T extends BodycamDummyEntity>
             AvatarRenderState state,
             boolean isVisible,
             boolean renderTranslucent,
-            boolean appearsGlowing
-    ) {
+            boolean appearsGlowing) {
         if (((BodycamHologramState) (Object) state).bodycam$isHologram()) {
             return RenderTypes.entityTranslucent(this.getTextureLocation(state));
         }
@@ -100,7 +99,8 @@ public class BodycamDummyRenderer<T extends BodycamDummyEntity>
         poseStack.scale(0.9375F, 0.9375F, 0.9375F);
         BodycamHologramState hologramState = (BodycamHologramState) (Object) state;
         if (hologramState.bodycam$isHologram()) {
-            float bob = (float) Math.sin((hologramState.bodycam$getGameTime() + hologramState.bodycam$getPartialTick()) * 0.1D) * 0.04F;
+            float bob = (float) Math
+                    .sin((hologramState.bodycam$getGameTime() + hologramState.bodycam$getPartialTick()) * 0.1D) * 0.04F;
             poseStack.translate(0.0F, bob, 0.0F);
         }
     }
@@ -116,10 +116,10 @@ public class BodycamDummyRenderer<T extends BodycamDummyEntity>
             AvatarRenderState state,
             PoseStack poseStack,
             SubmitNodeCollector submitNodeCollector,
-            CameraRenderState cameraRenderState
-    ) {
+            CameraRenderState cameraRenderState) {
         PlayerModel previousModel = this.model;
-        this.model = state.skin != null && state.skin.model() == PlayerModelType.SLIM ? this.slimModel : this.classicModel;
+        this.model = state.skin != null && state.skin.model() == PlayerModelType.SLIM ? this.slimModel
+                : this.classicModel;
         try {
             super.submit(state, poseStack, submitNodeCollector, cameraRenderState);
         } finally {

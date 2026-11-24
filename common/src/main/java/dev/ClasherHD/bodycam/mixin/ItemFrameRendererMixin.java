@@ -24,28 +24,20 @@ public abstract class ItemFrameRendererMixin<T extends ItemFrame> {
     }
 
     @Inject(method = "extractRenderState(Lnet/minecraft/world/entity/decoration/ItemFrame;Lnet/minecraft/client/renderer/entity/state/ItemFrameRenderState;F)V", at = @At("TAIL"))
-    private void bodycam$extractFramedItem(T entity, ItemFrameRenderState renderState, float partialTick, CallbackInfo ci) {
+    private void bodycam$extractFramedItem(T entity, ItemFrameRenderState renderState, float partialTick,
+            CallbackInfo ci) {
         ItemStack framed = entity.getItem();
         ((CherryHouseFrameStateAccess) renderState).bodycam$setFramedItem(
-                framed.getItem() instanceof CherryHouseExplorerMapItem ? framed.copy() : ItemStack.EMPTY
-        );
+                framed.getItem() instanceof CherryHouseExplorerMapItem ? framed.copy() : ItemStack.EMPTY);
     }
 
-    @Inject(
-            method = "submit(Lnet/minecraft/client/renderer/entity/state/ItemFrameRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/state/CameraRenderState;)V",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lnet/minecraft/client/renderer/MapRenderer;render(Lnet/minecraft/client/renderer/state/MapRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;ZI)V",
-                    shift = At.Shift.AFTER
-            )
-    )
+    @Inject(method = "submit(Lnet/minecraft/client/renderer/entity/state/ItemFrameRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/state/CameraRenderState;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/MapRenderer;render(Lnet/minecraft/client/renderer/state/MapRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;ZI)V", shift = At.Shift.AFTER))
     private void bodycam$renderFramedMapOverlay(
             ItemFrameRenderState renderState,
             PoseStack poseStack,
             SubmitNodeCollector submitNodeCollector,
             CameraRenderState cameraRenderState,
-            CallbackInfo ci
-    ) {
+            CallbackInfo ci) {
         ItemStack stack = ((CherryHouseFrameStateAccess) renderState).bodycam$getFramedItem();
         if (stack != null && !stack.isEmpty()) {
             int light = this.getLightCoords(renderState.isGlowFrame, 15728850, renderState.lightCoords);

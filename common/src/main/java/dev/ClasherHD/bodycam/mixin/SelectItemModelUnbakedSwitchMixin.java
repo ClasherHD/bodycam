@@ -22,12 +22,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-@SuppressWarnings({"null", "unchecked"})
+@SuppressWarnings({ "null", "unchecked" })
 @Mixin(SelectItemModel.UnbakedSwitch.class)
 public abstract class SelectItemModelUnbakedSwitchMixin<P extends SelectItemModelProperty<T>, T> {
     @Unique
-    private static final ResourceKey<TrimMaterial> BODYCAM_OBSERVATION_CRYSTAL =
-            ResourceKey.create(Registries.TRIM_MATERIAL, bodycam.id("observation_crystal"));
+    private static final ResourceKey<TrimMaterial> BODYCAM_OBSERVATION_CRYSTAL = ResourceKey
+            .create(Registries.TRIM_MATERIAL, bodycam.id("observation_crystal"));
 
     @Unique
     private static final Set<String> BODYCAM_SUPPORTED_ARMORS = Set.of(
@@ -38,8 +38,7 @@ public abstract class SelectItemModelUnbakedSwitchMixin<P extends SelectItemMode
             "golden_helmet", "golden_chestplate", "golden_leggings", "golden_boots",
             "diamond_helmet", "diamond_chestplate", "diamond_leggings", "diamond_boots",
             "leather_helmet", "leather_chestplate", "leather_leggings", "leather_boots",
-            "netherite_helmet", "netherite_chestplate", "netherite_leggings", "netherite_boots"
-    );
+            "netherite_helmet", "netherite_chestplate", "netherite_leggings", "netherite_boots");
 
     @Shadow
     @Final
@@ -49,17 +48,10 @@ public abstract class SelectItemModelUnbakedSwitchMixin<P extends SelectItemMode
     @Final
     private List<SelectItemModel.SwitchCase<T>> cases;
 
-    @ModifyExpressionValue(
-            method = {"resolveDependencies", "bake"},
-            at = @At(
-                    value = "FIELD",
-                    target = "Lnet/minecraft/client/renderer/item/SelectItemModel$UnbakedSwitch;cases:Ljava/util/List;",
-                    opcode = Opcodes.GETFIELD
-            )
-    )
+    @ModifyExpressionValue(method = { "resolveDependencies",
+            "bake" }, at = @At(value = "FIELD", target = "Lnet/minecraft/client/renderer/item/SelectItemModel$UnbakedSwitch;cases:Ljava/util/List;", opcode = Opcodes.GETFIELD))
     private List<SelectItemModel.SwitchCase<T>> bodycam$injectObservationCrystalCase(
-            List<SelectItemModel.SwitchCase<T>> original
-    ) {
+            List<SelectItemModel.SwitchCase<T>> original) {
         if (!(this.property instanceof TrimMaterialProperty) || original == null) {
             return original;
         }
@@ -90,10 +82,12 @@ public abstract class SelectItemModelUnbakedSwitchMixin<P extends SelectItemMode
             return original;
         }
         Identifier observationModel = bodycam.id("item/trims/" + armorName + "_observation_crystal_trim");
-        BlockModelWrapper.Unbaked wrappedObservation = new BlockModelWrapper.Unbaked(observationModel, template.tints());
+        BlockModelWrapper.Unbaked wrappedObservation = new BlockModelWrapper.Unbaked(observationModel,
+                template.tints());
         List<SelectItemModel.SwitchCase<T>> extended = new ArrayList<>(original.size() + 1);
         extended.addAll(original);
-        extended.add(new SelectItemModel.SwitchCase<>((List<T>) List.of(BODYCAM_OBSERVATION_CRYSTAL), wrappedObservation));
+        extended.add(
+                new SelectItemModel.SwitchCase<>((List<T>) List.of(BODYCAM_OBSERVATION_CRYSTAL), wrappedObservation));
         return extended;
     }
 }

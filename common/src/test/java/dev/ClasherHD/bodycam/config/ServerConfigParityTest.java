@@ -97,7 +97,8 @@ class ServerConfigParityTest {
 
             assertThat(ModServerConfig.isLoaded()).isTrue();
             assertThat(ModServerConfig.MAX_MONITOR_DISTANCE.get()).isEqualTo(750);
-            assertThat(ModServerConfig.BLACKLISTED_DIMENSIONS.get()).containsExactly("minecraft:the_nether", "custom:arena");
+            assertThat(ModServerConfig.BLACKLISTED_DIMENSIONS.get()).containsExactly("minecraft:the_nether",
+                    "custom:arena");
             assertThat(ModServerConfig.isDimensionBlacklisted("minecraft:the_nether")).isTrue();
             assertThat(ModServerConfig.isDimensionBlacklisted("MINECRAFT:THE_NETHER")).isTrue();
             assertThat(ModServerConfig.isDimensionBlacklisted("custom:arena")).isTrue();
