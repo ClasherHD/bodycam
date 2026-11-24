@@ -19,6 +19,7 @@ import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.util.FastColor;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.ItemDisplayContext;
@@ -37,12 +38,16 @@ public class PodestBlockEntityRenderer implements BlockEntityRenderer<PodestBloc
             {0.0F, 0.035F}
     };
     private static final RenderType OUTLINE_RENDER_TYPE = RenderType.entityTranslucentEmissive(InventoryMenu.BLOCK_ATLAS);
+    private static final VertexConsumer NOOP_CONSUMER = new NoopVertexConsumer();
 
     private final ItemRenderer itemRenderer;
     private final TintedOutlineVertexConsumer reusableOutlineConsumer = new TintedOutlineVertexConsumer();
     private final Map<PodestBlockEntity, CachedRenderStack> stackCache = new WeakHashMap<>();
     private MultiBufferSource activeBufferSource;
     private final MultiBufferSource tintedSource = renderType -> {
+        if (isGlintRenderType(renderType)) {
+            return NOOP_CONSUMER;
+        }
         this.reusableOutlineConsumer.setDelegate(this.activeBufferSource.getBuffer(OUTLINE_RENDER_TYPE));
         return this.reusableOutlineConsumer;
     };
@@ -51,28 +56,36 @@ public class PodestBlockEntityRenderer implements BlockEntityRenderer<PodestBloc
         this.itemRenderer = context.getItemRenderer();
     }
 
-    private ItemStack getRenderStack(PodestBlockEntity podest, ItemStack rawStack, boolean active) {
+    private static boolean isGlintRenderType(RenderType renderType) {
+        return renderType == RenderType.glint()
+                || renderType == RenderType.glintTranslucent()
+                || renderType == RenderType.entityGlint()
+                || renderType == RenderType.entityGlintDirect()
+                || renderType == RenderType.armorEntityGlint();
+    }
+
+    private CachedRenderStack getRenderStacks(PodestBlockEntity podest, ItemStack rawStack, boolean active) {
         boolean isJammer = rawStack.getItem() instanceof JammerItem;
         boolean isAnonymizer = !isJammer && rawStack.getItem() instanceof AnonymizerItem;
-        if (!isJammer && !isAnonymizer) {
-            return rawStack;
-        }
         int mode = isJammer ? (active ? podest.getEffectiveJammerMode() : 0) : -1;
         CachedRenderStack cached = this.stackCache.get(podest);
         if (cached != null && cached.active == active && cached.jammerMode == mode && ItemStack.matches(rawStack, cached.sourceSnapshot)) {
-            return cached.renderStack;
+            return cached;
         }
         ItemStack copy = rawStack.copy();
         if (isJammer) {
             ItemNbtAccess.updateTag(copy, tag -> tag.putInt("JammerMode", mode));
-        } else {
+        } else if (isAnonymizer) {
             ItemNbtAccess.updateTag(copy, tag -> tag.putBoolean("AnonymizerActive", active));
         }
-        this.stackCache.put(podest, new CachedRenderStack(rawStack.copy(), copy, active, mode));
-        return copy;
+        ItemStack outlineCopy = copy.copy();
+        outlineCopy.set(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, Boolean.FALSE);
+        CachedRenderStack created = new CachedRenderStack(rawStack.copy(), copy, outlineCopy, active, mode);
+        this.stackCache.put(podest, created);
+        return created;
     }
 
-    private record CachedRenderStack(ItemStack sourceSnapshot, ItemStack renderStack, boolean active, int jammerMode) {
+    private record CachedRenderStack(ItemStack sourceSnapshot, ItemStack renderStack, ItemStack outlineStack, boolean active, int jammerMode) {
     }
 
     @Override
@@ -90,7 +103,9 @@ public class PodestBlockEntityRenderer implements BlockEntityRenderer<PodestBloc
         boolean isEmptyItem = ItemDurabilityHelper.isEmpty(rawStack);
         boolean active = powered && charges > 0 && !isEmptyItem;
 
-        ItemStack renderStack = getRenderStack(podest, rawStack, active);
+        CachedRenderStack cachedStacks = getRenderStacks(podest, rawStack, active);
+        ItemStack renderStack = cachedStacks.renderStack();
+        ItemStack outlineStack = cachedStacks.outlineStack();
 
         poseStack.pushPose();
         poseStack.translate(0.5F, 1.0625F, 0.5F);
@@ -131,13 +146,13 @@ public class PodestBlockEntityRenderer implements BlockEntityRenderer<PodestBloc
 
             this.reusableOutlineConsumer.configure(r, g, b, a);
             this.activeBufferSource = bufferSource;
-            BakedModel model = this.itemRenderer.getModel(renderStack, podest.getLevel(), null, 0);
+            BakedModel model = this.itemRenderer.getModel(outlineStack, podest.getLevel(), null, 0);
 
             try {
                 for (float[] offset : OUTLINE_OFFSETS) {
                     poseStack.pushPose();
                     poseStack.translate(offset[0], offset[1], 0.004F);
-                    this.itemRenderer.render(renderStack, ItemDisplayContext.FIXED, false, poseStack, this.tintedSource, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, model);
+                    this.itemRenderer.render(outlineStack, ItemDisplayContext.FIXED, false, poseStack, this.tintedSource, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, model);
                     poseStack.popPose();
                 }
             } finally {
@@ -220,6 +235,52 @@ public class PodestBlockEntityRenderer implements BlockEntityRenderer<PodestBloc
         @Override
         public void addVertex(float x, float y, float z, int color, float u, float v, int packedOverlay, int packedLight, float normalX, float normalY, float normalZ) {
             delegate.addVertex(x, y, z, FastColor.ARGB32.color(this.a, this.r, this.g, this.b), u, v, packedOverlay, LightTexture.FULL_BRIGHT, normalX, normalY, normalZ);
+        }
+    }
+
+    private static class NoopVertexConsumer implements VertexConsumer {
+        @Override
+        public VertexConsumer addVertex(float x, float y, float z) {
+            return this;
+        }
+
+        @Override
+        public VertexConsumer setColor(int red, int green, int blue, int alpha) {
+            return this;
+        }
+
+        @Override
+        public VertexConsumer setColor(int color) {
+            return this;
+        }
+
+        @Override
+        public VertexConsumer setUv(float u, float v) {
+            return this;
+        }
+
+        @Override
+        public VertexConsumer setUv1(int u, int v) {
+            return this;
+        }
+
+        @Override
+        public VertexConsumer setUv2(int u, int v) {
+            return this;
+        }
+
+        @Override
+        public VertexConsumer setLight(int packedLight) {
+            return this;
+        }
+
+        @Override
+        public VertexConsumer setNormal(float x, float y, float z) {
+            return this;
+        }
+
+        @Override
+        public void addVertex(float x, float y, float z, int color, float u, float v, int packedOverlay, int packedLight, float normalX, float normalY, float normalZ) {
         }
     }
 }
